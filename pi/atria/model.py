@@ -46,7 +46,7 @@ COMPETENCES = ["chirurgie", "propulsion", "botanique", "navigation", "maintenanc
 
 POSTES = [
     Poste("chirurgie", "infirmerie", "chirurgie", 0.70, "vital"),
-    Poste("propulsion", "reacteur", "propulsion", 0.65, "vital"),
+    Poste("propulsion", "réacteur", "propulsion", 0.65, "vital"),
     Poste("navigation", "pont", "navigation", 0.60, "vital"),
     Poste("serre", "serre", "botanique", 0.40, "haute"),
     Poste("maintenance", "atelier", "maintenance", 0.50, "haute"),
@@ -55,7 +55,7 @@ POSTES = [
 
 COMPARTIMENTS = [
     Compartiment("infirmerie", 620, 41),
-    Compartiment("reacteur", 780, 68),
+    Compartiment("réacteur", 780, 68),
     Compartiment("pont", 540, 44),
     Compartiment("serre", 910, 52),
     Compartiment("atelier", 700, 61),

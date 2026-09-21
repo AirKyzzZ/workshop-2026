@@ -15,7 +15,7 @@ RATE = 16000
 LEAD_IN = 1.2
 
 MOTS_OUTILS = ["etat", "état", "de", "qui", "peut", "tenir", "le", "la", "au", "a",
-               "poste", "affecte", "situation", "statut", "rapport", "equipage",
+               "poste", "affecte", "situation", "statut", "rapport",
                "équipage", "alerte", "montre", "donne", "liste"]
 
 _model = None
