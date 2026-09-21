@@ -1,0 +1,16 @@
+[Unit]
+Description=ATRIA terminal de bord
+After=multi-user.target
+
+[Service]
+Type=simple
+User=atria
+WorkingDirectory=/home/atria/atria
+ExecStart=/home/atria/atria/.venv/bin/python -m atria.terminal
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
