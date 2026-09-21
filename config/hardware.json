@@ -1,0 +1,44 @@
+{
+  "mega_adk": {
+    "port": "/dev/ttyACM0",
+    "fqbn": "arduino:avr:megaADK",
+    "baud": 115200,
+    "pins": {
+      "A0": "sound_sensor",
+      "A1": "mq2_smoke",
+      "A2": "ad8232_output",
+      "D10": "ad8232_lo_minus",
+      "D11": "ad8232_lo_plus",
+      "D49": "rc522_rst",
+      "D50": "spi_miso",
+      "D51": "spi_mosi",
+      "D52": "spi_sck",
+      "D53": "rc522_ss"
+    }
+  },
+  "raspberry_pi": {
+    "model": "Pi 5 Model B Rev 1.1",
+    "ram_gb": 4,
+    "os": "Debian 13 trixie aarch64",
+    "spi0": "reserve pour PiTFT Adafruit 2.8 pouces",
+    "i2c": "/dev/i2c-1 libre"
+  },
+  "badges": {
+    "FC2A1B17": {
+      "support": "porte-cles",
+      "role": "crew"
+    },
+    "19BD41B2": {
+      "support": "carte blanche",
+      "role": "captain"
+    }
+  },
+  "pitft": {
+    "model": "Adafruit PiTFT 2.8 resistive, 40 broches",
+    "overlay": "pitft28-resistive,rotate=90,speed=32000000,fps=60",
+    "display": "OK — /dev/fb0, 320x240 RGB565, init automatique au boot",
+    "backlight": "OK depuis le reenfichage correct",
+    "touch": "HS — STMPE610 renvoie un chip id invalide (0x80 au lieu de 0x0811) a 500 kHz",
+    "decision": "utilise en affichage seul, interaction par badge NFC et boutons du Mega"
+  }
+}

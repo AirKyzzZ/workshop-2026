@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+
+models/
+*.onnx
+*.wav
+*.npy
+
+.DS_Store
+.claude/
