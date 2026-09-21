@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATRIA — Cahier des charges</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Martian+Mono:wght@300;400;600&display=swap">
+<link rel="stylesheet" href="../brand/tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--atria-neutre-000);
+    color: var(--atria-neutre-700);
+    font-family: var(--atria-interface);
+    font-size: 14px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 780px; margin: 0 auto; padding-inline: 32px; padding-block: 52px 80px; }
+  .mono { font-family: var(--atria-donnees); font-variant-numeric: tabular-nums; }
+
+  h1 {
+    font-family: var(--atria-display);
+    font-size: 76px; font-weight: 600; line-height: 0.88;
+    text-transform: uppercase; letter-spacing: 0.01em; margin: 0;
+  }
+  h2 {
+    font-family: var(--atria-display);
+    font-size: 30px; font-weight: 500; line-height: 1.05;
+    text-transform: uppercase; letter-spacing: 0.02em;
+    margin: 0 0 6px; padding-top: 46px;
+  }
+  h3 { font-size: 14px; font-weight: 600; margin: 28px 0 8px; }
+  p { margin: 0 0 15px; max-width: 66ch; }
+  ul { margin: 0 0 15px; padding-left: 19px; max-width: 66ch; }
+  li { margin-bottom: 7px; }
+  .lede { color: var(--atria-neutre-500); }
+
+  .rule { border: 0; border-top: 2px solid var(--atria-neutre-700); margin: 12px 0 24px; }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 22px; }
+  header .meta { text-align: right; font-size: 11px; color: var(--atria-neutre-500); line-height: 1.55; }
+  header img { height: 58px; width: auto; }
+
+  .resume {
+    background: var(--atria-neutre-050);
+    border-left: 3px solid var(--atria-neutre-700);
+    padding: 18px 22px; margin: 26px 0 0;
+  }
+  .resume p { margin: 0; font-size: 15px; }
+  .resume p + p { margin-top: 10px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 16px; }
+  th {
+    text-align: left; font-weight: 600; font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--atria-neutre-500);
+    padding: 0 12px 8px 0; border-bottom: 1px solid var(--atria-neutre-300);
+  }
+  td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--atria-neutre-100); vertical-align: top; }
+  td:last-child, th:last-child { padding-right: 0; }
+  .mark { white-space: nowrap; font-weight: 600; font-size: 12px; }
+  .mark.oui { color: var(--atria-nominal); }
+  .mark.non { color: var(--atria-critique); }
+  .mark.peut { color: var(--atria-attention); }
+
+  .quote {
+    font-family: var(--atria-donnees);
+    font-size: 12.5px; line-height: 1.75;
+    background: var(--atria-neutre-950); color: var(--atria-neutre-100);
+    padding: 18px 20px; margin: 18px 0; max-width: none;
+  }
+  .quote .who { color: var(--atria-neutre-400); }
+  .quote .refus { color: #F4705F; }
+
+  pre {
+    font-family: var(--atria-donnees); font-size: 10.5px; line-height: 1.5;
+    background: var(--atria-neutre-050); border: 1px solid var(--atria-neutre-200);
+    padding: 16px; overflow-x: auto; margin: 6px 0 16px;
+  }
+
+  footer {
+    margin-top: 54px; padding-top: 16px;
+    border-top: 2px solid var(--atria-neutre-700);
+    font-size: 11px; color: var(--atria-neutre-500);
+  }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 52px; }
+    header { flex-direction: column; align-items: flex-start; }
+    header .meta { text-align: left; }
+  }
+
+  @media print {
+    @page { size: A4; margin: 15mm; }
+    body { font-size: 10pt; }
+    .page { padding: 0; max-width: none; }
+    h2 { padding-top: 22px; page-break-after: avoid; }
+    table, .quote, pre, .resume { page-break-inside: avoid; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <img src="../brand/png/atria-lockup-dark-512.png" alt="ATRIA">
+      <h1 style="margin-top:14px">Cahier<br>des charges</h1>
+    </div>
+    <div class="meta">
+      Workshop National EPSI B3<br>
+      Horizon 2080, pilier 1<br>
+      Groupe <span class="mono">G2</span><br>
+      Alexandre, Melih, Maxime<br>
+      <span class="mono">Septembre 2026</span>
+    </div>
+  </header>
+  <hr class="rule">
+
+  <div class="resume">
+    <p>
+      ATRIA est une console de bord qui mesure l'état physiologique d'un équipage interstellaire
+      et arbitre ses affectations. Elle fonctionne sans aucune liaison avec la Terre, sur une carte
+      embarquée.
+    </p>
+    <p class="lede">
+      Le système attribue à chaque membre d'équipage une capacité cognitive calculée à partir de
+      mesures réelles. Chaque poste du vaisseau exige un seuil minimal. Quand la capacité passe
+      sous le seuil, ATRIA refuse l'affectation et le dit à voix haute.
+    </p>
+  </div>
+
+  <h2>Le problème</h2>
+  <hr class="rule">
+
+  <p>
+    Un vaisseau surveille son oxygène avec des capteurs, des seuils et des alarmes. Il surveille son
+    énergie avec des compteurs et des coupures automatiques. Il surveille ses humains avec un
+    questionnaire.
+  </p>
+  <p>
+    Cette asymétrie est le point de départ du projet. Sur une mission de plusieurs décennies sans
+    assistance possible depuis la Terre, l'équipage est une ressource critique au même titre que
+    l'air ou l'eau, et c'est la seule qui ne bénéficie d'aucune instrumentation continue.
+  </p>
+  <p>
+    Le sujet propose deux pistes pour ce pilier, une mallette médicale et un assistant
+    psychologique. Toutes deux traitent soit la crise aiguë, soit le ressenti déclaré par
+    l'astronaute. Entre les deux se trouve ce qui nous intéresse : la dégradation lente et
+    mesurable qui rend quelqu'un inapte à un poste bien avant qu'il ne tombe malade.
+  </p>
+
+  <h2>La solution</h2>
+  <hr class="rule">
+
+  <p>
+    ATRIA calcule pour chaque membre d'équipage une capacité cognitive comprise entre 0 et 1, mise à
+    jour en continu. Chaque poste du vaisseau porte un seuil : 0,70 pour la chirurgie, 0,65 pour la
+    propulsion, 0,40 pour la serre. Le régulateur compare l'une à l'autre et en tire ses décisions.
+  </p>
+
+  <h3>D'où vient la mesure</h3>
+  <p>
+    La capacité ne repose sur aucun questionnaire. Elle se calcule à partir de quatre sources
+    matérielles, toutes présentes sur le prototype.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Source</th><th>Mesure</th><th>Ce qu'elle apporte</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>AD8232</td><td>ECG une dérivation, 250 Hz</td>
+        <td>Variabilité de la fréquence cardiaque, marqueur du stress et de la récupération autonome</td>
+      </tr>
+      <tr>
+        <td>DHT22, MQ-2</td><td>Atmosphère du compartiment</td>
+        <td>Exposition au CO₂, dont l'effet sur la prise de décision est documenté sur l'ISS</td>
+      </tr>
+      <tr>
+        <td>Capteur de son</td><td>Niveau sonore continu</td>
+        <td>Exposition cumulée, et détection d'interaction humaine par la présence de voix</td>
+      </tr>
+      <tr>
+        <td>RC522</td><td>Badge NFC</td>
+        <td>Présence par compartiment, contacts entre membres, identité pour l'accès</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    La variabilité cardiaque est le maillon qui distingue ce projet des autres. Elle se mesure sur le
+    système nerveux autonome, que l'astronaute ne contrôle pas. Un équipier qui déclare aller bien
+    dans un questionnaire ne peut pas mentir à son propre rythme cardiaque.
+  </p>
+
+  <h3>Le refus, et son recours</h3>
+  <p>
+    ATRIA a le droit de refuser un ordre. Si le capitaine demande une affectation qui viole une
+    contrainte de santé, le système répond par la négative, à voix haute, avec son motif chiffré et
+    le nom d'un remplaçant.
+  </p>
+  <div class="quote">
+    <span class="who">CAPITAINE</span> &nbsp;affecte fournier à la chirurgie<br><br>
+    <span class="refus">ATRIA</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Négatif. Capacité cognitive de fournier : 0,56.<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Seuil requis pour le poste chirurgie : 0,70.<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Quatre heures de sommeil. Je recommande bernard.
+  </div>
+  <p>
+    Ce refus n'est pas définitif. Le capitaine peut passer outre, et c'est important : un système
+    critique qui ne laisse aucune porte de sortie à l'opérateur humain est un système qu'on finit par
+    contourner. La dérogation est donc horodatée, attribuée, et inscrite au journal de bord avec
+    l'état du membre concerné au moment de la décision.
+  </p>
+  <p>
+    Le journal tourne en permanence à l'écran. Il permet à n'importe qui de remonter la chaîne d'une
+    décision, ce qui répond par avance à la seule objection sérieuse qu'on puisse faire au projet :
+    que se passe-t-il quand ATRIA se trompe.
+  </p>
+
+  <h3>Deux niveaux d'accès, résolus par le matériel</h3>
+  <p>
+    L'identification se fait au badge NFC, sans mot de passe. Le porte-clés donne à un membre
+    d'équipage l'accès à ses propres données physiologiques. La carte donne au capitaine une vue
+    d'ensemble de l'équipage.
+  </p>
+  <p>
+    Le capitaine voit l'aptitude, jamais la cause. Il lit que Moreau est inapte aux gestes délicats
+    pour les dix-huit prochaines heures. Il ne lit ni sa variabilité cardiaque, ni son sommeil, ni
+    son niveau de stress. ATRIA fait office de frontière entre les données médicales de l'équipage et
+    la chaîne de commandement.
+  </p>
+
+  <h2>Périmètre</h2>
+  <hr class="rule">
+
+  <p>
+    Nous disposons de quatre jours de production. Le périmètre ci-dessous est celui que nous nous
+    engageons à livrer fonctionnel le jeudi soir.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Fonctionnalité</th><th style="width:74px">Engagé</th><th>Détail</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Terminal de bord</td><td class="mark oui">oui</td>
+          <td>Écran 2,8 pouces, navigation à quatre touches, menus équipage, postes, compartiments, alertes</td></tr>
+      <tr><td>Identification par badge</td><td class="mark oui">oui</td>
+          <td>Deux rôles, vues différenciées, retour sonore</td></tr>
+      <tr><td>Dialogue vocal hors ligne</td><td class="mark oui">oui</td>
+          <td>Reconnaissance et synthèse en français, quatre commandes</td></tr>
+      <tr><td>Régulateur et refus motivé</td><td class="mark oui">oui</td>
+          <td>Chaque décision porte son motif, journal des dérogations</td></tr>
+      <tr><td>Chaîne ECG vers capacité</td><td class="mark oui">oui</td>
+          <td>Détection des pics R, extraction HRV, modèle de stress entraîné</td></tr>
+      <tr><td>Dashboard de supervision</td><td class="mark oui">oui</td>
+          <td>Plan du vaisseau, équipage, journal, tracé ECG en direct</td></tr>
+      <tr><td>Deux scénarios de crise</td><td class="mark oui">oui</td>
+          <td>Combustion détectée au MQ-2, contamination avec traçage de contacts</td></tr>
+      <tr><td>Fonctionnement hors ligne vérifiable</td><td class="mark oui">oui</td>
+          <td>Démonstration réseau débranché</td></tr>
+      <tr><td>Compartiment déporté sans fil</td><td class="mark peut">si possible</td>
+          <td>ESP8266 avec bufferisation locale et resynchronisation</td></tr>
+      <tr><td>Prédiction d'incapacité</td><td class="mark peut">si possible</td>
+          <td>Extrapolation de tendance, annonce du franchissement de seuil à venir</td></tr>
+      <tr><td>Boîtier imprimé en 3D</td><td class="mark peut">si possible</td>
+          <td>Habillage du terminal</td></tr>
+      <tr><td>Ordonnancement optimisé sur 72 h</td><td class="mark non">non</td>
+          <td>Solveur de contraintes hors de portée en quatre jours, prévu en V1</td></tr>
+      <tr><td>Grand modèle de langage</td><td class="mark non">non</td>
+          <td>Écarté volontairement, voir ci-dessous</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Pourquoi pas de LLM</h3>
+  <p>
+    Le sujet suggère d'utiliser Ollama avec un petit modèle. Nous ne le faisons pas, et c'est une
+    décision d'ingénierie plutôt qu'une contrainte technique : le Raspberry Pi 5 pourrait faire
+    tourner un modèle de 1,5 milliard de paramètres.
+  </p>
+  <p>
+    Un modèle de langage produit du texte plausible. Dans une boucle qui décide qui opère un patient,
+    une hallucination n'est pas un désagrément, c'est une faute. Nous préférons un régulateur
+    déterministe, à temps d'exécution borné, dont chaque décision est traçable et reproductible.
+    L'intelligence du système vient de ce qu'il mesure, pas de la façon dont il formule ses phrases.
+  </p>
+  <p>
+    L'apprentissage automatique reste présent là où il est justifié : un modèle entraîné estime le
+    niveau de stress à partir des descripteurs de variabilité cardiaque. Il est entraîné sur nos
+    machines de développement, exporté, puis embarqué. Son inférence prend quelques microsecondes.
+  </p>
+
+  <h2>Architecture</h2>
+  <hr class="rule">
+
+  <p>
+    Le système livré tourne intégralement sur la carte embarquée. Les machines de développement
+    servent à écrire le code et à entraîner le modèle, elles ne font pas partie du vaisseau.
+  </p>
+  <pre>
+        Capteurs ──► Arduino Mega ADK ──USB série──► Raspberry Pi 5
+                                                          │
+                                   ┌──────────────────────┼──────────────────────┐
+                                   ▼                      ▼                      ▼
+                              atria-sense            atria-core             atria-voice
+                            ingestion + badges    régulateur + API        Vosk → Piper
+                                   │                      │
+                                   └──────► SQLite ◄──────┘
+                                                          │
+                                        ┌─────────────────┴─────────────────┐
+                                        ▼                                   ▼
+                                  écran de bord                     dashboard web
+                                   320 × 240                      export statique</pre>
+  <p>
+    Le découpage en trois services n'est pas cosmétique. Si la couche vocale tombe, la régulation
+    vitale continue de tourner. Nous le démontrerons en arrêtant un service devant le jury, ce qui
+    vaut mieux qu'un paragraphe sur la résilience.
+  </p>
+
+  <h3>Technologies</h3>
+  <table>
+    <thead><tr><th>Couche</th><th>Choix</th><th>Justification</th></tr></thead>
+    <tbody>
+      <tr><td>Calculateur</td><td>Raspberry Pi 5, 4 Go, Debian 13</td>
+          <td>Le système doit tenir sur la carte, sans réseau</td></tr>
+      <tr><td>Acquisition</td><td>Arduino Mega ADK</td>
+          <td>Seize entrées analogiques, échantillonnage ECG régulier à 250 Hz</td></tr>
+      <tr><td>Cœur applicatif</td><td>Python, FastAPI, SQLite</td>
+          <td>Traitement du signal et apprentissage dans le même langage</td></tr>
+      <tr><td>Synthèse vocale</td><td>Piper, voix française</td>
+          <td>Conçu pour le Raspberry Pi, plus rapide que le temps réel</td></tr>
+      <tr><td>Reconnaissance</td><td>Vosk, grammaire contrainte</td>
+          <td>Vingt fois plus rapide qu'en vocabulaire ouvert, et fiable</td></tr>
+      <tr><td>Interface de bord</td><td>Pillow sur framebuffer</td>
+          <td>Aucun serveur graphique, démarrage immédiat</td></tr>
+      <tr><td>Dashboard</td><td>Next.js en export statique</td>
+          <td>Construit sur poste de développement, servi en fichiers par le Pi</td></tr>
+      <tr><td>Exploitation</td><td>systemd</td>
+          <td>Redémarrage automatique, journalisation, démonstration de panne</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Organisation</h2>
+  <hr class="rule">
+
+  <p>
+    Alexandre et Melih montent la machine ensemble, puis se séparent : l'un descend vers le matériel
+    et l'acquisition, l'autre remonte vers l'exploitation et la résilience. Maxime tient le logiciel
+    applicatif. Les trois périmètres se recouvrent assez peu pour que personne n'attende le travail
+    d'un autre.
+  </p>
+  <table>
+    <thead><tr><th>Qui</th><th>Périmètre</th><th>Livrables</th></tr></thead>
+    <tbody>
+      <tr><td>Alexandre</td><td>Montage et acquisition</td>
+          <td>Assemblage de la machine, câblage des capteurs, firmware Arduino, qualité du signal ECG, compartiment déporté</td></tr>
+      <tr><td>Melih</td><td>Montage et exploitation</td>
+          <td>Assemblage de la machine, services systemd, supervision, scénarios de panne, déploiement</td></tr>
+      <tr><td>Maxime</td><td>Cœur applicatif et interfaces</td>
+          <td>Régulateur, modèle de stress, chaîne vocale, terminal de bord, dashboard</td></tr>
+    </tbody>
+  </table>
+  <p class="lede">
+    La documentation technique et le support de soutenance s'écrivent en parallèle du prototypage,
+    pas après. Le dépôt est sur GitHub, chaque brique est documentée au moment où elle est montée.
+  </p>
+
+  <h2>Démonstration</h2>
+  <hr class="rule">
+
+  <p>
+    La soutenance accorde trois minutes au prototype. Voici ce que nous montrerons, dans l'ordre.
+  </p>
+  <table>
+    <thead><tr><th style="width:56px">Temps</th><th>Séquence</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">0:00</td>
+          <td>État nominal. Le dashboard affiche le plan du vaisseau, l'équipage en service, les postes couverts. Les données viennent des capteurs posés sur la table.</td></tr>
+      <tr><td class="mono">0:30</td>
+          <td>Identification. Un badge, puis l'autre. La même fiche d'équipage affiche des informations différentes selon le rôle.</td></tr>
+      <tr><td class="mono">1:00</td>
+          <td>Le refus. Ordre vocal du capitaine, refus motivé d'ATRIA à voix haute, recommandation d'un remplaçant. Dérogation, et inscription au journal.</td></tr>
+      <tr><td class="mono">1:45</td>
+          <td>Crise. Combustion détectée dans un compartiment, l'alerte se propage, la couverture des postes s'effondre, le régulateur réaffecte.</td></tr>
+      <tr><td class="mono">2:30</td>
+          <td>Le réseau est débranché. Tout continue.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Le moment qui compte est celui d'une minute. Tout le reste de la démonstration existe pour le
+    rendre possible et pour lui donner son poids.
+  </p>
+
+  <h3>Comment nous saurons que c'est réussi</h3>
+  <ul>
+    <li>Un spectateur qui n'a rien suivi comprend ce que fait le système en regardant la séquence, sans commentaire.</li>
+    <li>Le refus vocal se déclenche du premier coup, avec les vraies valeurs, sans intervention au clavier.</li>
+    <li>Le réseau débranché ne change rien au comportement du système.</li>
+    <li>Un membre du jury peut demander pourquoi une décision a été prise, et la réponse est à l'écran.</li>
+  </ul>
+
+  <footer>
+    <p style="margin:0">
+      Dépôt du projet : <span class="mono">github.com/AirKyzzZ/workshop-2026</span><br>
+      Documentation matérielle, procédure d'installation et journal des écueils dans
+      <span class="mono">docs/</span>.
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>
