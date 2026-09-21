@@ -1,20 +1,68 @@
-BASE = (13, 20, 24)
-PANEL = (20, 31, 36)
-EDGE = (34, 48, 54)
-INK = (220, 227, 224)
-MUTED = (107, 123, 128)
-VITAL = (63, 217, 138)
-WATCH = (232, 178, 58)
-CRITICAL = (240, 85, 63)
-OFFLINE = (74, 90, 96)
+import os
 
-PLEX = "/usr/share/fonts/truetype/ibm-plex"
-DEJAVU = "/usr/share/fonts/truetype/dejavu"
+NEUTRE_950 = (18, 17, 17)
+NEUTRE_900 = (29, 27, 27)
+NEUTRE_800 = (42, 40, 40)
+NEUTRE_700 = (57, 56, 56)
+NEUTRE_500 = (109, 105, 105)
+NEUTRE_400 = (145, 141, 141)
+NEUTRE_200 = (215, 213, 213)
+NEUTRE_100 = (238, 237, 237)
+NEUTRE_000 = (255, 255, 255)
 
-SANS = f"{PLEX}/IBMPlexSans-Regular.ttf"
-SANS_BOLD = f"{PLEX}/IBMPlexSans-Bold.ttf"
-MONO = f"{PLEX}/IBMPlexMono-Regular.ttf"
-MONO_BOLD = f"{PLEX}/IBMPlexMono-Bold.ttf"
+BASE = NEUTRE_950
+PANEL = NEUTRE_900
+EDGE = NEUTRE_800
+INK = NEUTRE_100
+MUTED = NEUTRE_400
+
+VITAL = (75, 214, 148)
+WATCH = (232, 163, 60)
+CRITICAL = (244, 112, 95)
+OFFLINE = NEUTRE_500
+
+_CANDIDATS = {
+    "display": [
+        "/usr/share/fonts/truetype/atria/Teko-SemiBold.ttf",
+        "/usr/share/fonts/truetype/atria/Teko-Medium.ttf",
+        "/usr/share/fonts/truetype/ibm-plex/IBMPlexSans-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    ],
+    "sans": [
+        "/usr/share/fonts/truetype/atria/Inter-Regular.ttf",
+        "/usr/share/fonts/truetype/ibm-plex/IBMPlexSans-Regular.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    ],
+    "sans_bold": [
+        "/usr/share/fonts/truetype/atria/Inter-SemiBold.ttf",
+        "/usr/share/fonts/truetype/ibm-plex/IBMPlexSans-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    ],
+    "mono": [
+        "/usr/share/fonts/truetype/atria/MartianMono-Regular.ttf",
+        "/usr/share/fonts/truetype/ibm-plex/IBMPlexMono-Regular.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+    ],
+    "mono_bold": [
+        "/usr/share/fonts/truetype/atria/MartianMono-SemiBold.ttf",
+        "/usr/share/fonts/truetype/ibm-plex/IBMPlexMono-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf",
+    ],
+}
+
+
+def _resoudre(role):
+    for chemin in _CANDIDATS[role]:
+        if os.path.exists(chemin):
+            return chemin
+    raise FileNotFoundError(f"aucune police pour le role {role}")
+
+
+DISPLAY = _resoudre("display")
+SANS = _resoudre("sans")
+SANS_BOLD = _resoudre("sans_bold")
+MONO = _resoudre("mono")
+MONO_BOLD = _resoudre("mono_bold")
 
 WIDTH = 320
 HEIGHT = 240

@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATRIA — Charte graphique</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Martian+Mono:wght@300;400;600&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--atria-neutre-000);
+    color: var(--atria-neutre-700);
+    font-family: var(--atria-interface);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 820px; margin: 0 auto; padding-inline: 32px; padding-block: 56px 80px; }
+
+  .mono { font-family: var(--atria-donnees); font-variant-numeric: tabular-nums; }
+
+  h1 {
+    font-family: var(--atria-display);
+    font-size: 84px; font-weight: 600; line-height: 0.9;
+    letter-spacing: 0.01em; margin: 0; text-transform: uppercase;
+  }
+  h2 {
+    font-family: var(--atria-display);
+    font-size: 34px; font-weight: 500; line-height: 1;
+    text-transform: uppercase; letter-spacing: 0.02em;
+    margin: 0 0 4px; padding-top: 52px;
+  }
+  h3 { font-size: 13px; font-weight: 600; margin: 32px 0 12px; }
+  p { margin: 0 0 14px; max-width: 64ch; }
+  .lede { color: var(--atria-neutre-500); }
+
+  .rule { border: 0; border-top: 2px solid var(--atria-neutre-700); margin: 14px 0 26px; }
+  .hair { border: 0; border-top: 1px solid var(--atria-neutre-200); margin: 26px 0; }
+
+  header { display: flex; align-items: flex-end; gap: 22px; justify-content: space-between; }
+  header .meta { text-align: right; font-size: 11px; color: var(--atria-neutre-500); line-height: 1.5; }
+
+  .lockups { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .plate { padding: 34px; display: grid; place-items: center; border: 1px solid var(--atria-neutre-200); }
+  .plate.dark { background: var(--atria-neutre-700); border-color: var(--atria-neutre-700); }
+  .plate img { width: 100%; max-width: 190px; height: auto; }
+  .caption { font-size: 11px; color: var(--atria-neutre-500); margin-top: 8px; }
+
+  .scale-row { display: flex; align-items: flex-end; gap: 26px; flex-wrap: wrap; margin-top: 10px; }
+  .scale-row figure { margin: 0; display: grid; justify-items: center; gap: 7px; }
+  .scale-row figcaption { font-family: var(--atria-donnees); font-size: 9px; color: var(--atria-neutre-500); }
+  .scale-row svg { display: block; color: var(--atria-neutre-700); }
+
+  .ramp { display: grid; grid-template-columns: repeat(12, 1fr); border: 1px solid var(--atria-neutre-200); }
+  .ramp div { aspect-ratio: 1 / 2.2; position: relative; }
+  .ramp span {
+    position: absolute; inset-inline: 0; bottom: 6px; text-align: center;
+    font-family: var(--atria-donnees); font-size: 7px; letter-spacing: -0.03em;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th {
+    text-align: left; font-weight: 600; font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--atria-neutre-500);
+    padding: 0 10px 8px 0; border-bottom: 1px solid var(--atria-neutre-300);
+  }
+  td { padding: 10px 10px 10px 0; border-bottom: 1px solid var(--atria-neutre-100); vertical-align: top; }
+  td.hex { font-family: var(--atria-donnees); font-size: 11px; white-space: nowrap; }
+  .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 7px; vertical-align: -1px; }
+
+  .type-spec { margin: 0 0 8px; }
+  .t-display { font-family: var(--atria-display); font-size: 52px; font-weight: 600; line-height: 1; text-transform: uppercase; }
+  .t-ui { font-size: 21px; font-weight: 500; letter-spacing: -0.015em; }
+  .t-data { font-family: var(--atria-donnees); font-size: 16px; }
+
+  .demo {
+    background: var(--atria-neutre-950); color: var(--atria-neutre-100);
+    padding: 22px 24px; border: 1px solid var(--atria-neutre-800);
+  }
+  .demo .crew { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--atria-neutre-800); }
+  .demo .crew:last-child { border-bottom: 0; }
+  .demo .name { flex: 1; font-size: 13px; }
+  .demo .bar { width: 82px; height: 6px; background: var(--atria-neutre-800); }
+  .demo .bar i { display: block; height: 100%; }
+  .demo .val { font-family: var(--atria-donnees); font-size: 12px; width: 38px; text-align: right; }
+
+  .rules { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 26px; }
+  .rules div { padding-left: 15px; border-left: 2px solid var(--atria-neutre-200); }
+  .rules b { display: block; font-size: 12.5px; }
+  .rules.no b { color: var(--atria-critique); }
+  .rules.yes b { color: var(--atria-nominal); }
+  .rules p { font-size: 12px; color: var(--atria-neutre-500); margin: 2px 0 0; }
+
+  footer { margin-top: 60px; padding-top: 18px; border-top: 2px solid var(--atria-neutre-700); font-size: 11px; color: var(--atria-neutre-500); }
+
+  @media (max-width: 680px) {
+    h1 { font-size: 58px; }
+    .lockups, .rules { grid-template-columns: 1fr; }
+    .ramp { grid-template-columns: repeat(6, 1fr); }
+  }
+
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    body { font-size: 10.5pt; }
+    .page { padding: 0; max-width: none; }
+    h2 { padding-top: 26px; page-break-after: avoid; }
+    .lockups, .ramp, table, .demo, .rules { page-break-inside: avoid; }
+    .rules { page-break-inside: auto; }
+    a { text-decoration: none; color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <h1>Atria</h1>
+      <p class="lede" style="margin:6px 0 0">Charte graphique — v1</p>
+    </div>
+    <div class="meta">
+      Workshop National EPSI B3<br>
+      Horizon 2080 · Pilier 1<br>
+      <span class="mono">Septembre 2026</span>
+    </div>
+  </header>
+  <hr class="rule">
+
+  <p>
+    ATRIA régule la santé physique et mentale d'un équipage interstellaire et arbitre ses
+    affectations, entièrement hors ligne, sur une carte embarquée. L'identité doit tenir sur trois
+    supports qui n'ont rien en commun : un écran de 2,8 pouces à bord, un dossier d'ingénierie
+    imprimé, et une projection de soutenance. Ce document fixe ce qui ne bouge pas entre les trois.
+  </p>
+
+  <h2>Le signe</h2>
+  <hr class="rule">
+  <div class="lockups">
+    <div>
+      <div class="plate"><img src="png/atria-lockup-dark-512.png" alt="Logo ATRIA en gris sur fond blanc"></div>
+      <p class="caption">Sur fond clair — gris de marque <span class="mono">#393838</span></p>
+    </div>
+    <div>
+      <div class="plate dark"><img src="png/atria-lockup-light-512.png" alt="Logo ATRIA en blanc sur fond gris"></div>
+      <p class="caption">Sur fond sombre — blanc <span class="mono">#FFFFFF</span></p>
+    </div>
+  </div>
+
+  <h3>Deux versions, un seuil à 32 pixels</h3>
+  <p>
+    La version complète porte une orbite dont la contreforme est fine. Elle se lit jusqu'à
+    <b>32 pixels</b> et s'effondre en dessous. Sous ce seuil — favicon, en-tête du terminal, pastille
+    d'application — on passe à la <b>version compacte</b>, qui abandonne l'orbite et ne garde que le
+    disque et la lettre.
+  </p>
+  <div class="scale-row">
+    <figure>
+      <svg width="48" height="48" viewBox="0 0 64 64" fill="currentColor"><path fill-rule="evenodd" d="M32 4a28 28 0 1 0 0 56 28 28 0 0 0 0-56ZM32 13l13 38h-6.5l-2.5-8h-8l-2.5 8H19L32 13Zm0 16-2.4 8h4.8L32 29Z"/></svg>
+      <figcaption>48</figcaption>
+    </figure>
+    <figure>
+      <svg width="32" height="32" viewBox="0 0 64 64" fill="currentColor"><path fill-rule="evenodd" d="M32 4a28 28 0 1 0 0 56 28 28 0 0 0 0-56ZM32 13l13 38h-6.5l-2.5-8h-8l-2.5 8H19L32 13Zm0 16-2.4 8h4.8L32 29Z"/></svg>
+      <figcaption>32</figcaption>
+    </figure>
+    <figure>
+      <svg width="24" height="24" viewBox="0 0 64 64" fill="currentColor"><path fill-rule="evenodd" d="M32 4a28 28 0 1 0 0 56 28 28 0 0 0 0-56ZM32 13l13 38h-6.5l-2.5-8h-8l-2.5 8H19L32 13Zm0 16-2.4 8h4.8L32 29Z"/></svg>
+      <figcaption>24</figcaption>
+    </figure>
+    <figure>
+      <svg width="16" height="16" viewBox="0 0 64 64" fill="currentColor"><path fill-rule="evenodd" d="M32 4a28 28 0 1 0 0 56 28 28 0 0 0 0-56ZM32 13l13 38h-6.5l-2.5-8h-8l-2.5 8H19L32 13Zm0 16-2.4 8h4.8L32 29Z"/></svg>
+      <figcaption>16</figcaption>
+    </figure>
+  </div>
+
+  <h3>Usage</h3>
+  <div class="rules yes" style="margin-bottom:14px">
+    <div><b>Zone franche</b><p>Réserver autour du signe une marge égale au rayon du disque. Rien n'y entre.</p></div>
+    <div><b>Une seule couleur</b><p>Gris de marque, blanc, ou une couleur d'état si le signe sert d'indicateur.</p></div>
+  </div>
+  <div class="rules no">
+    <div><b>Ne pas déformer</b><p>Le rapport reste 1:1. Pas d'étirement, pas de rotation.</p></div>
+    <div><b>Ne pas recomposer</b><p>Le mot ne se recompose pas dans une autre police que Teko.</p></div>
+  </div>
+
+  <h2>Les neutres</h2>
+  <hr class="rule">
+  <p>
+    Le gris de marque <span class="mono">#393838</span> n'est pas un point isolé : c'est le palier
+    <b>700</b> d'une échelle calculée en teinte 0 et saturation 2 %. Tous les autres paliers en
+    descendent, ce qui garantit qu'un panneau surélevé, une bordure et un texte secondaire
+    appartiennent à la même famille au lieu d'être choisis au jugé.
+  </p>
+  <div class="ramp">
+    <div style="background:#121111"><span style="color:#B4B1B1">950</span></div>
+    <div style="background:#1D1B1B"><span style="color:#B4B1B1">900</span></div>
+    <div style="background:#2A2828"><span style="color:#B4B1B1">800</span></div>
+    <div style="background:#393838"><span style="color:#D7D5D5">700</span></div>
+    <div style="background:#4E4B4B"><span style="color:#D7D5D5">600</span></div>
+    <div style="background:#6D6969"><span style="color:#FFFFFF">500</span></div>
+    <div style="background:#918D8D"><span style="color:#FFFFFF">400</span></div>
+    <div style="background:#B4B1B1"><span style="color:#393838">300</span></div>
+    <div style="background:#D7D5D5"><span style="color:#393838">200</span></div>
+    <div style="background:#EEEDED"><span style="color:#393838">100</span></div>
+    <div style="background:#F9F8F8"><span style="color:#393838">050</span></div>
+    <div style="background:#FFFFFF"><span style="color:#393838">000</span></div>
+  </div>
+  <p class="caption" style="margin-top:9px">
+    700 est le gris de marque. 000 est le blanc de marque. Les dix autres en dérivent.
+  </p>
+
+  <h2>Les états</h2>
+  <hr class="rule">
+  <p>
+    Ces quatre couleurs ne sont pas décoratives et ne concurrencent jamais la marque : elles ne
+    servent qu'à dire dans quel état se trouve une mesure. Leur convention est <b>reprise des
+    moniteurs patient</b> — vert pour le nominal et le tracé cardiaque, ambre pour l'attention,
+    rouge pour le critique. C'est un langage déjà appris par les soignants, et jamais vu sur un
+    tableau de bord d'étudiant.
+  </p>
+  <p>
+    Chaque état a deux valeurs : une pour le fond clair du dossier, une pour le fond sombre des
+    écrans. Les huit passent le contraste <b>WCAG AA</b> sur leur fond respectif.
+  </p>
+  <table>
+    <thead>
+      <tr><th>État</th><th>Fond clair</th><th>Fond sombre</th><th>Signification</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="dot" style="background:#1E7F58"></span>Nominal</td>
+        <td class="hex">#1E7F58</td><td class="hex">#4BD694</td>
+        <td>Capacité au-dessus du seuil, poste couvert, tracé cardiaque</td>
+      </tr>
+      <tr>
+        <td><span class="dot" style="background:#9A6410"></span>Attention</td>
+        <td class="hex">#9A6410</td><td class="hex">#E8A33C</td>
+        <td>Dérive détectée, seuil approché, exposition cumulée</td>
+      </tr>
+      <tr>
+        <td><span class="dot" style="background:#B3311F"></span>Critique</td>
+        <td class="hex">#B3311F</td><td class="hex">#F4705F</td>
+        <td>Seuil franchi, poste vacant, ordre refusé, combustion</td>
+      </tr>
+      <tr>
+        <td><span class="dot" style="background:#6D6969"></span>Hors ligne</td>
+        <td class="hex">#6D6969</td><td class="hex">#6D6969</td>
+        <td>Absence de mesure — jamais confondue avec une mesure nulle</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="caption" style="margin-top:12px">
+    La couleur ne porte jamais l'information seule : elle double toujours une forme, une position ou
+    un chiffre. Un opérateur daltonien doit pouvoir lire le même état.
+  </p>
+
+  <h2>Typographie</h2>
+  <hr class="rule">
+
+  <h3>Teko — titres et grandes valeurs</h3>
+  <p class="type-spec t-display">Capacité cognitive 0,56</p>
+  <p class="lede">
+    Condensée, verticale, à fort caractère. Elle porte le nom, les titres du dossier, les en-têtes de
+    section et les valeurs affichées en grand. <b>Jamais sous 18 pixels</b> : en dessous, ses fûts se
+    referment et le texte devient illisible.
+  </p>
+
+  <h3>Inter — interface et texte courant</h3>
+  <p class="type-spec t-ui">Négatif. Seuil requis pour le poste chirurgie : 0,70.</p>
+  <p class="lede">
+    Neutre au point de disparaître derrière Teko, ce qui est exactement ce qu'on demande à une police
+    d'interface. Elle porte le corps du dossier, les libellés et toute la lecture continue.
+  </p>
+
+  <h3>Martian Mono — mesures et code</h3>
+  <p class="type-spec t-data">72 bpm · RMSSD 41 ms · CO₂ 910 ppm · 24/200</p>
+  <p class="lede">
+    Réservée aux valeurs numériques, jamais aux libellés. Sa seule justification est l'alignement :
+    des chiffres en colonne laissent voir un écart sans avoir à le chercher. Variable sur deux axes,
+    graisse et largeur.
+  </p>
+  <p class="caption">
+    Les trois sont libres et hébergées sur Google Fonts.
+  </p>
+
+  <h2>Application</h2>
+  <hr class="rule">
+  <p>Liste d'équipage telle qu'elle apparaît sur le terminal de bord et dans le dashboard.</p>
+  <div class="demo">
+    <div class="crew">
+      <span class="name">bernard</span>
+      <span class="bar"><i style="width:100%;background:#4BD694"></i></span>
+      <span class="val" style="color:#4BD694">1.00</span>
+    </div>
+    <div class="crew">
+      <span class="name">moreau</span>
+      <span class="bar"><i style="width:71%;background:#4BD694"></i></span>
+      <span class="val" style="color:#4BD694">0.71</span>
+    </div>
+    <div class="crew">
+      <span class="name">fournier</span>
+      <span class="bar"><i style="width:56%;background:#E8A33C"></i></span>
+      <span class="val" style="color:#E8A33C">0.56</span>
+    </div>
+    <div class="crew">
+      <span class="name">blanc</span>
+      <span class="bar"><i style="width:45%;background:#E8A33C"></i></span>
+      <span class="val" style="color:#E8A33C">0.45</span>
+    </div>
+    <div class="crew">
+      <span class="name">reyes</span>
+      <span class="bar"><i style="width:34%;background:#F4705F"></i></span>
+      <span class="val" style="color:#F4705F">0.34</span>
+    </div>
+  </div>
+  <p class="caption" style="margin-top:10px">
+    Trois encodages redondants pour un seul état : la couleur, la longueur de la jauge, et le chiffre
+    aligné en colonne.
+  </p>
+
+  <footer>
+    <p style="margin:0">
+      Jetons disponibles en CSS et JSON dans <span class="mono">brand/tokens.css</span> et
+      <span class="mono">brand/tokens.json</span>. Les SVG sont en
+      <span class="mono">currentColor</span> : ils prennent la couleur de leur parent, donc un seul
+      fichier sert partout.
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

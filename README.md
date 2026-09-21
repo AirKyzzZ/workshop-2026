@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/png/atria-lockup-light-512.png">
+  <img src="brand/png/atria-lockup-dark-512.png" alt="ATRIA" width="150">
+</picture>
+
 # ATRIA
 
 Régulation de la santé physique et mentale d'un équipage interstellaire.
@@ -33,7 +38,8 @@ Quatre commandes vocales, en français, entièrement hors ligne :
 | `situation` | synthèse : alertes, compartiments, indisponibilités |
 
 Deux niveaux d'accès, résolus physiquement par badge NFC : le porte-clés donne à un membre
-d'équipage l'accès à ses propres données, la carte donne au capitaine une vue globale.
+d'équipage l'accès à ses propres données, la carte donne au capitaine une vue globale — sur
+laquelle aucune donnée médicale n'apparaît.
 
 ## Contrainte d'architecture
 
@@ -45,12 +51,42 @@ du vaisseau.
 Aucune connexion Internet n'est requise à l'exécution. C'est la contrainte centrale du sujet,
 et c'est aussi ce qui rend la démonstration vérifiable : on débranche le réseau, tout continue.
 
+## Identité
+
+Charte complète : [`brand/charte.html`](brand/charte.html), et son rendu imprimable dans
+[`pdf/ATRIA-charte.pdf`](pdf/ATRIA-charte.pdf).
+
+Le gris de marque `#393838` est le palier 700 d'une échelle de douze neutres calculée en
+teinte 0, saturation 2 %. Quatre couleurs d'état s'y ajoutent, **reprises des conventions des
+moniteurs patient** — vert nominal, ambre attention, rouge critique — chacune déclinée pour
+fond clair et fond sombre, les huit validées en contraste WCAG AA.
+
+| | Police | Rôle |
+|---|---|---|
+| Display | **Teko** | nom, titres, grandes valeurs — jamais sous 18 px |
+| Interface | **Inter** | texte courant, libellés |
+| Données | **Martian Mono** | valeurs numériques uniquement, pour l'alignement en colonne |
+
+Les SVG sont en `currentColor` : un seul fichier sert sur fond clair, sur fond sombre et en
+couleur d'alerte. La marque complète se lit jusqu'à 32 pixels ; en dessous, utiliser la
+variante compacte `atria-mark-small.svg`.
+
+```
+brand/svg/          marque, mot, verrou, variante compacte
+brand/png/          30 déclinaisons transparentes, 32 à 512 px
+brand/fonts/        Teko, Inter, Martian Mono en TTF
+brand/tokens.css    variables CSS, thème clair et sombre
+brand/tokens.json   même palette, pour les outils non-web
+```
+
 ## Organisation du dépôt
 
 ```
 docs/         documentation technique
 firmware/     sketches Arduino (Mega ADK)
-pi/           scripts Python (Raspberry Pi 5)
+pi/           services Python (Raspberry Pi 5)
+brand/        identité visuelle et jetons de design
+systemd/      unités de service
 config/       cartographie matérielle et identifiants
 sujet/        énoncé officiel du workshop
 ```
@@ -65,3 +101,15 @@ Pour reconstruire le Raspberry Pi depuis une carte SD vierge, suivre
 
 Les écueils rencontrés pendant le montage, et leurs solutions, sont consignés dans
 [`docs/pieges.md`](docs/pieges.md). À lire avant de rebrancher quoi que ce soit.
+
+## Générer un PDF
+
+Les documents sont écrits en HTML et rendus par Chrome en mode headless, ce qui donne un PDF
+typographié avec les polices de la charte :
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless --disable-gpu --virtual-time-budget=8000 \
+  --run-all-compositor-stages-before-draw --no-pdf-header-footer \
+  --print-to-pdf="$PWD/pdf/sortie.pdf" "file://$PWD/chemin/document.html"
+```
