@@ -9,3 +9,5 @@ models/
 
 .DS_Store
 .claude/
+
+.atria_console_token

@@ -1,5 +1,6 @@
 import json
 import os
+import pathlib
 import socket
 import struct
 import subprocess
@@ -9,6 +10,8 @@ CONSOLE_HOST = os.environ.get("ATRIA_CONSOLE", "192.168.50.150")
 CONSOLE_PORT = 9800
 PIPER_MODEL = os.path.expanduser("~/atria/models/piper/fr_FR-siwis-medium.onnx")
 PIPER_PYTHON = os.path.expanduser("~/atria/.venv/bin/python")
+TOKEN_FILE = pathlib.Path.home() / ".atria_console_token"
+TOKEN = TOKEN_FILE.read_text().strip() if TOKEN_FILE.exists() else ""
 
 
 def _recv_exact(sock, n):
@@ -22,6 +25,7 @@ def _recv_exact(sock, n):
 
 
 def _request(header, payload=b"", timeout=60):
+    header = {**header, "token": TOKEN}
     with socket.create_connection((CONSOLE_HOST, CONSOLE_PORT), timeout=timeout) as s:
         raw = json.dumps(header).encode()
         s.sendall(struct.pack(">I", len(raw)) + raw)
