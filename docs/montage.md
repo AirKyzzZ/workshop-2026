@@ -9,56 +9,78 @@ voir [`hardware/wokwi/`](../hardware/wokwi/).
 
 ## Le montage actuel
 
+Relevé sur la carte le 2026-09-22 par `lsusb -t`, `/sys/kernel/debug/gpio`, `vcgencmd` et
+`/dev/serial/by-id`. Tout ce qui figure ici a été lu sur la machine, rien n'est supposé.
+
 ```mermaid
-graph LR
-  SECTEUR["Bloc secteur 5 V / 5 A"]
+graph TB
+  SECTEUR["Bloc secteur USB-C<br/>5,1 V / 5 A<br/>rail mesure a 5,11 V"]
 
-  subgraph PI["Raspberry Pi 5 · 4 Go · Debian 13"]
-    SERVICES["atria-api + atria-terminal<br/>Python 3.13"]
-    BASE[("SQLite WAL<br/>atria.db")]
-    VOIX["Vosk STT + Piper TTS<br/>modèles locaux"]
+  subgraph PI["Raspberry Pi 5 Model B Rev 1.1 - 4 Go - Debian 13 trixie"]
+    direction TB
+    SERVICES["atria-api  ·  atria-terminal  ·  atria-llm"]
+    BASE[("SQLite WAL  ·  data/atria.db<br/>25 crew · 899 ambiance · 226 journal · 16 gabarits")]
+    MODELES["modeles embarques 1,1 Go<br/>Qwen2.5-1.5B 941 Mo · Vosk 66 Mo<br/>Piper 61 Mo · YuNet+SFace 38 Mo"]
   end
 
-  subgraph MEGA["Arduino Mega ADK · firmware atria_link"]
-    LOOP["boucle 4450 Hz<br/>SENSE / BADGE / BEEP"]
+  subgraph HAT["PiTFT 2,8 pouces sur le connecteur 40 broches"]
+    ECRAN["ILI9340 320x240 RGB565<br/>/dev/fb0"]
+    GPIOS["SPI0 CS0 (GPIO8) ecran<br/>SPI0 CS1 (GPIO7) tactile HS<br/>GPIO25 data/command"]
+    BOUTONS["GPIO 17 · 22 · 23 · 27<br/>haut · bas · valider · retour"]
   end
 
-  subgraph R33["Rail 3,3 V"]
-    RC522["RC522<br/>lecteur NFC<br/>D53 SS · D49 RST · SPI D50-52"]
+  subgraph USB["Arbre USB"]
+    MEGA["Bus 001 · 2341:0044<br/>Arduino Mega ADK R3<br/>by-id ...0044_9533633373535..."]
+    CAM["Bus 003 · 046d:0825<br/>Logitech C270<br/>video + micro"]
+    NOEUD["libre<br/>noeud de compartiment"]
   end
 
-  subgraph R5["Rail 5 V"]
-    MIC["Capteur de son<br/>A0"]
-    MQ2["MQ-2<br/>fumée et gaz<br/>A1"]
-    DHT["DHT22<br/>température + humidité<br/>A3"]
+  subgraph PLAQUE["Plaque d'essai - front-end analogique du Mega"]
+    direction TB
+    R33["rail 3,3 V<br/>RC522 NFC"]
+    R5["rail 5 V<br/>capteur de son · MQ-2 · DHT22"]
+    ECG["AD8232 ECG<br/>liaison intermittente, hors service"]
   end
 
-  PITFT["PiTFT 2,8 pouces<br/>320x240 sur SPI0<br/>tactile HS"]
-  BOUTONS["4 boutons<br/>GPIO 17 · 22 · 23 · 27"]
-  BUZZER["Buzzer actif<br/>D6"]
-  CLIENTS["Navigateurs du bord<br/>dashboard :8000"]
+  RESERVE["En reserve : Mega 2560 + LCD1602,<br/>NodeMCU V3, ESP-12F"]
 
   SECTEUR --> PI
-  PI -- "USB-B · /dev/ttyACM0 · 115200" --> MEGA
-  PI --> PITFT
-  PI --> BOUTONS
-  MEGA --> R33
-  MEGA --> R5
-  MEGA --> BUZZER
+  PI --- HAT
+  PI --- USB
+  MEGA --- PLAQUE
   SERVICES --- BASE
-  SERVICES --- VOIX
-  PI -- "Wi-Fi · HTTP + WebSocket" --> CLIENTS
+  SERVICES --- MODELES
+  CAM -. "uvcvideo + snd-usb-audio" .-> SERVICES
+  NOEUD -. "a brancher" .-> RESERVE
+  PI -- "Wi-Fi 2,4 GHz · HTTP + WebSocket :8000" --> CLIENTS["Navigateurs du bord"]
 
   classDef ok fill:#E9F5EF,stroke:#1E7F58,color:#1D1B1B;
   classDef hs fill:#FBEBE8,stroke:#B3311F,color:#1D1B1B;
-  class RC522,MIC,MQ2,DHT,BUZZER,BOUTONS ok;
-  class PITFT hs;
+  classDef futur fill:#FDF4E6,stroke:#9A6410,color:#1D1B1B,stroke-dasharray:4 3;
+  class MEGA,CAM,ECRAN,BOUTONS,R33,R5 ok;
+  class ECG hs;
+  class NOEUD,RESERVE futur;
 ```
 
-Le Mega est le seul endroit où des capteurs sont câblés. Le connecteur 40 broches du Pi est
-entièrement recouvert par le PiTFT, et l'overlay de l'écran réquisitionne SPI0, donc tout ce
-qui arrive après passe par le Mega et remonte en USB. C'est aussi ce qui garde le 5 V du Mega
-loin du 3,3 V du Pi.
+### Ce que le Pi expose vraiment
+
+| Ressource | Etat mesure |
+|---|---|
+| `/dev/fb0` | `fb_ili9340`, 320x240, 16 bits |
+| GPIO 7 et 8 | `spi0 CS1` et `CS0`, pris par le PiTFT |
+| GPIO 25 | `dc`, data/command de l'ILI9340 |
+| GPIO 17 22 23 27 | revendiques par `lgpio`, les quatre boutons |
+| `/dev/i2c-1` | active, libre |
+| Capture audio | carte 0, micro integre de la C270 |
+| Sortie audio | **HDMI uniquement**, aucun peripherique USB audio |
+| `/dev/ttyACM0` | Mega ADK, adresse par son chemin `by-id` |
+
+Le connecteur 40 broches est entierement recouvert par le PiTFT et l'overlay de celui-ci
+reserve SPI0. Aucun capteur ne peut y aller : tout passe par le Mega, en USB.
+
+Le micro de la C270 change une conclusion prise plus tot dans le projet. La reconnaissance
+vocale redevient possible sans achat. Il manque toujours une **sortie** audio : seul le
+HDMI est disponible, donc pour que ATRIA parle il faut un dongle USB audio.
 
 ## Ce qui circule
 

@@ -16,8 +16,13 @@ d'**ESP8266**, pas d'ESP32. Une seule entrée analogique, pas de Bluetooth, mono
 
 ## Brochage du Mega ADK
 
-Le Mega est relié au Pi par un simple câble USB-B. Il est vu comme `/dev/ttyACM0` à
-115200 bauds, et il se reflashe à distance sans jamais débrancher un câble.
+Le Mega est relié au Pi par un simple câble USB-B, à 115200 bauds, et il se reflashe à
+distance sans jamais débrancher un câble.
+
+Il est adressé par son chemin stable
+`/dev/serial/by-id/usb-Arduino__www.arduino.cc__0044_953363337353517060D0-if00` et non par
+`/dev/ttyACM0`. Avec deux Arduino branchés, `ACM0` et `ACM1` s'échangent d'un démarrage à
+l'autre, et la passerelle se retrouverait à parler au nœud de compartiment.
 
 | Broche | Composant | État |
 |---|---|---|
@@ -91,10 +96,35 @@ Le RC522 est un composant 3,3 V piloté par un Mega en 5 V. C'est hors spécific
 fonctionne, mais si des lectures erratiques apparaissent, il faudra trois ponts diviseurs sur
 `MOSI`, `SCK` et `SS`.
 
+## Thermique
+
+Relevé sous charge le 2026-09-22 : **81,2 °C**, au-dessus du point de consigne de 75 °C,
+horloge retombée à 1800 MHz, `get_throttled` à `0xe0000`. Le bit de sous-tension est
+éteint, donc ce n'est plus l'alimentation : c'est du bridage thermique.
+
+La cause était logicielle. La boucle caméra calculait l'empreinte faciale SFace sur chaque
+image, environ 100 ms, soit un cœur entier en permanence pour personne. Elle ne détecte
+plus qu'en présence d'un spectateur ou d'un contrôle en cours, et ne calcule l'empreinte
+que pendant un contrôle.
+
+| | Avant | Après |
+|---|---|---|
+| CPU du service API au repos | 114 % | 2,5 % |
+| Température | 81,2 °C | 75,2 °C |
+
+Reste que la carte n'a aucun dissipateur. Sous charge simultanée du modèle de langage et
+de la caméra, elle repassera au-dessus de 80 °C. **Un dissipateur avec ventilateur est à
+prévoir** pour tenir une démonstration longue.
+
 ## Audio
 
 Le Raspberry Pi 5 **n'a plus de prise jack 3,5 mm**, et son connecteur GPIO est occupé par
 l'écran, ce qui exclut aussi un DAC I²S. Les seules sorties possibles sont l'USB et l'HDMI.
+
+**La webcam Logitech C270 apporte un micro.** Elle expose une interface `snd-usb-audio` en
+plus de la vidéo, et `arecord -l` la voit en carte 0. La reconnaissance vocale redevient
+donc possible sans achat, ce qui contredit une conclusion prise plus tôt dans le projet.
+Il manque toujours une **sortie** : `aplay -l` ne liste que le HDMI.
 
 En développement, un pont réseau sert de contournement : le Pi synthétise la voix, une machine
 du réseau la joue et lui renvoie son micro. Voir `pi/console.py` côté Pi et
