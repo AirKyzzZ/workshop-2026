@@ -1,20 +1,27 @@
 #include <SPI.h>
 #include <MFRC522.h>
+#include <DHT.h>
 
 const uint8_t SS_PIN = 53;
 const uint8_t RST_PIN = 49;
 const uint8_t BUZZER = 6;
 const uint8_t MIC = A0;
 const uint8_t MQ2 = A1;
+const uint8_t DHT_PIN = A3;
 
 const unsigned long SENSE_MS = 250;
+const unsigned long DHT_MS = 3000;
 const unsigned long BADGE_COOLDOWN_MS = 1500;
 
 MFRC522 lecteur(SS_PIN, RST_PIN);
+DHT climat(DHT_PIN, DHT22);
 
 unsigned long prochainSense = 0;
+unsigned long prochainDht = 0;
 unsigned long dernierBadge = 0;
 String dernierUid = "";
+int tempX10 = -9999;
+int humX10 = -9999;
 char ligne[24];
 uint8_t longueur = 0;
 
@@ -88,6 +95,15 @@ void lireBadge() {
   lecteur.PICC_HaltA();
 }
 
+void lireClimat() {
+  float h = climat.readHumidity();
+  float t = climat.readTemperature();
+  if (!isnan(h) && !isnan(t) && !(h == 0.0 && t == 0.0)) {
+    tempX10 = (int)(t * 10);
+    humX10 = (int)(h * 10);
+  }
+}
+
 void lireCapteurs() {
   uint16_t lo = 1023, hi = 0;
   unsigned long t0 = millis();
@@ -99,7 +115,11 @@ void lireCapteurs() {
   Serial.print(F("SENSE "));
   Serial.print(hi - lo);
   Serial.print(' ');
-  Serial.println(analogRead(MQ2));
+  Serial.print(analogRead(MQ2));
+  Serial.print(' ');
+  Serial.print(tempX10);
+  Serial.print(' ');
+  Serial.println(humX10);
 }
 
 void setup() {
@@ -109,6 +129,7 @@ void setup() {
   digitalWrite(BUZZER, LOW);
   SPI.begin();
   lecteur.PCD_Init();
+  climat.begin();
   delay(50);
   Serial.print(F("READY rc522=0x"));
   Serial.println(lecteur.PCD_ReadRegister(MFRC522::VersionReg), HEX);
@@ -118,6 +139,10 @@ void setup() {
 void loop() {
   lireSerie();
   lireBadge();
+  if (millis() >= prochainDht) {
+    prochainDht = millis() + DHT_MS;
+    lireClimat();
+  }
   if (millis() >= prochainSense) {
     prochainSense = millis() + SENSE_MS;
     lireCapteurs();

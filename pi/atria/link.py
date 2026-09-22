@@ -13,6 +13,8 @@ class Link:
         self.evenements = queue.Queue(maxsize=64)
         self.mic = 0
         self.mq2 = 0
+        self.temp_c = None
+        self.humidite = None
         self.connecte = False
         self._port = port
         self._baud = baud
@@ -47,11 +49,15 @@ class Link:
                 continue
             if ligne.startswith("SENSE "):
                 parts = ligne.split()
-                if len(parts) == 3:
-                    try:
+                try:
+                    if len(parts) >= 3:
                         self.mic, self.mq2 = int(parts[1]), int(parts[2])
-                    except ValueError:
-                        pass
+                    if len(parts) >= 5:
+                        t, h = int(parts[3]), int(parts[4])
+                        self.temp_c = t / 10.0 if t > -9000 else None
+                        self.humidite = h / 10.0 if h > -9000 else None
+                except ValueError:
+                    pass
             elif ligne.startswith("BADGE "):
                 self._publier(("badge", ligne[6:].strip()))
             elif ligne.startswith("READY"):

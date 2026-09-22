@@ -38,6 +38,8 @@ class Compartiment:
     co2: int
     bruit_db: int
     fumee: bool = False
+    temp_c: float = None
+    humidite: float = None
     occupants: list = field(default_factory=list)
 
 
@@ -109,6 +111,8 @@ class Etat:
                 co2=amb["co2"] if amb else 0,
                 bruit_db=amb["bruit_db"] if amb else 0,
                 fumee=bool(amb["fumee"]) if amb else False,
+                temp_c=amb["temp_c"] if amb else None,
+                humidite=amb["humidite"] if amb else None,
                 occupants=db.occupants(conn, r["nom"]),
             ))
 
@@ -161,7 +165,10 @@ class Etat:
         for comp in self.compartiments:
             if comp.fumee:
                 out.append(("critique", f"combustion {comp.nom}"))
-            elif comp.co2 > 1000:
+            elif comp.humidite and comp.humidite > db.SEUIL_HUMIDITE:
+                out.append(("attention",
+                            f"atmosphère dégradée {comp.nom} {comp.humidite:.0f}%"))
+            elif comp.co2 and comp.co2 > 1000:
                 out.append(("attention", f"CO2 élevé {comp.nom}"))
             elif comp.bruit_db > 65:
                 out.append(("attention", f"bruit {comp.nom} {comp.bruit_db} dB"))

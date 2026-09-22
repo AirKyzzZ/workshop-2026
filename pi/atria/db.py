@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS journal (
 );
 
 CREATE INDEX IF NOT EXISTS idx_journal_ts ON journal(ts DESC);
+CREATE INDEX IF NOT EXISTS idx_ambiance_ts ON ambiance(compartiment, ts DESC);
 CREATE INDEX IF NOT EXISTS idx_capacite_crew_ts ON capacite(crew, ts DESC);
 CREATE INDEX IF NOT EXISTS idx_presence_crew ON presence(crew, entree DESC);
 CREATE INDEX IF NOT EXISTS idx_presence_comp ON presence(compartiment, entree DESC);
@@ -99,12 +100,49 @@ TYPES_JOURNAL = ("refus", "derogation", "affectation", "alerte", "crise",
                  "identification", "systeme", "question")
 
 
+COLONNES_AJOUTEES = (
+    ("ambiance", "temp_c", "REAL"),
+    ("ambiance", "humidite", "REAL"),
+    ("ambiance", "mq2_brut", "INTEGER"),
+)
+
+
 def connexion(chemin=CHEMIN):
     os.makedirs(os.path.dirname(chemin), exist_ok=True)
     conn = sqlite3.connect(chemin, check_same_thread=False, timeout=10)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    for table, colonne, type_ in COLONNES_AJOUTEES:
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {colonne} {type_}")
+        except sqlite3.OperationalError:
+            pass
+    conn.commit()
     return conn
+
+
+SEUIL_HUMIDITE = 60.0
+SEUIL_MQ2 = 300
+SILENCE_PP = 2
+CLAQUEMENT_PP = 300
+
+
+def bruit_db(pp):
+    """Enveloppe micro en counts vers une echelle dB plausible."""
+    import math
+    pp = max(pp, SILENCE_PP)
+    ratio = math.log10(pp / SILENCE_PP) / math.log10(CLAQUEMENT_PP / SILENCE_PP)
+    return round(38 + ratio * 47)
+
+
+def enregistrer_ambiance(conn, compartiment, mic_pp, mq2, temp_c, humidite):
+    conn.execute(
+        "INSERT OR REPLACE INTO ambiance"
+        " (compartiment, ts, co2, bruit_db, fumee, temp_c, humidite, mq2_brut)"
+        " VALUES (?,?,?,?,?,?,?,?)",
+        (compartiment, time.time(), None, bruit_db(mic_pp),
+         1 if mq2 >= SEUIL_MQ2 else 0, temp_c, humidite, mq2))
+    conn.commit()
 
 
 def journaliser(conn, type_, motif, acteur=None, sujet=None, donnees=None):

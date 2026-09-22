@@ -4,8 +4,8 @@
     "fqbn": "arduino:avr:megaADK",
     "baud": 115200,
     "pins": {
-      "A0": "sound_sensor",
-      "A1": "mq2_smoke",
+      "A0": "sound_sensor (5V a rebrancher)",
+      "A1": "mq2_smoke (5V a rebrancher)",
       "A2": "ad8232_output",
       "D10": "ad8232_lo_minus",
       "D11": "ad8232_lo_plus",
@@ -13,7 +13,8 @@
       "D50": "spi_miso",
       "D51": "spi_mosi",
       "D52": "spi_sck",
-      "D53": "rc522_ss"
+      "D53": "rc522_ss",
+      "A3": "dht22_data"
     }
   },
   "raspberry_pi": {
@@ -40,5 +41,19 @@
     "backlight": "OK depuis le reenfichage correct",
     "touch": "HS — STMPE610 renvoie un chip id invalide (0x80 au lieu de 0x0811) a 500 kHz",
     "decision": "utilise en affichage seul, interaction par badge NFC et boutons du Mega"
+  },
+  "audit_2026_09_22": {
+    "dht22": "OK sur A3 — 27.3 C, 41.2 %RH",
+    "rc522": "OK — version 0x92",
+    "ad8232": "HS — liaison intermittente, cable ou module a remplacer",
+    "pitft_affichage": "OK",
+    "pitft_tactile": "HS — STMPE610 chip id invalide",
+    "buzzer": "OK sur D6",
+    "inutilises": [
+      "Mega 2560 R3",
+      "NodeMCU V3",
+      "ESP-12F devkit",
+      "ecran LCD"
+    ]
   }
 }

@@ -2,7 +2,7 @@ import sys
 import time
 import traceback
 
-from . import buttons, link, model, regulator, theme, ui, voice
+from . import buttons, db, link, model, regulator, theme, ui, voice
 
 BADGES = {
     "FC2A1B17": ("moreau", False),
@@ -17,6 +17,8 @@ SECTIONS = [
 ]
 
 BADGE_AFFICHAGE_S = 2.5
+COMPARTIMENT_LOCAL = "infirmerie"
+INGESTION_S = 20.0
 
 
 class Terminal:
@@ -34,6 +36,7 @@ class Terminal:
         self.badge_jusqua = 0.0
         self.badge_info = None
         self.dialogue = None
+        self.prochaine_ingestion = 0.0
         self.actif = True
 
     def porteur(self):
@@ -76,8 +79,14 @@ class Terminal:
                           theme.CRITICAL if decouverts else theme.VITAL)
             e.label_value(82, "Alertes actives", str(len(alertes)),
                           theme.WATCH if alertes else theme.VITAL)
-            e.label_value(104, "Ambiance sonore", f"{self.lien.mic} cc",
-                          theme.WATCH if self.lien.mic > 120 else theme.MUTED)
+            if self.lien.humidite is not None:
+                humide = self.lien.humidite > db.SEUIL_HUMIDITE
+                e.label_value(104, "Atmosphère infirmerie",
+                              f"{self.lien.temp_c:.0f}C  {self.lien.humidite:.0f}%",
+                              theme.WATCH if humide else theme.MUTED)
+            else:
+                e.label_value(104, "Ambiance sonore", f"{db.bruit_db(self.lien.mic)} dB",
+                              theme.MUTED)
             e.label_value(126, "Lien Terre", "AUCUN", theme.OFFLINE)
             couleur = theme.CRITICAL if decouverts else (theme.WATCH if alertes else theme.VITAL)
             etiquette = "INTERVENTION REQUISE" if decouverts else (
@@ -149,10 +158,15 @@ class Terminal:
                     couleur = theme.VITAL if couvert else theme.CRITICAL
                     e.row(y, obj.nom, obj.titulaire or "VACANT", couleur, selected)
                 elif self.vue == "compartiments":
-                    alerte = obj.fumee or obj.co2 > 1000 or obj.bruit_db > 65
+                    humide = obj.humidite is not None and obj.humidite > db.SEUIL_HUMIDITE
+                    alerte = obj.fumee or humide or obj.bruit_db > 65
                     couleur = theme.CRITICAL if obj.fumee else (
                         theme.WATCH if alerte else theme.VITAL)
-                    e.row(y, obj.nom, f"{obj.co2} ppm", couleur, selected)
+                    if obj.humidite is not None:
+                        valeur = f"{obj.temp_c:.0f}C {obj.humidite:.0f}%"
+                    else:
+                        valeur = f"{obj.bruit_db} dB"
+                    e.row(y, obj.nom, valeur, couleur, selected)
                 else:
                     couleur = theme.CRITICAL if cle == "critique" else theme.WATCH
                     e.row(y, obj, "!", couleur, selected)
@@ -216,10 +230,23 @@ class Terminal:
         else:
             self.vue, self.curseur, self.defilement = "menu", 0, 0
 
+    def ingerer(self):
+        if self.lien.temp_c is None:
+            return
+        db.enregistrer_ambiance(self.etat.conn, COMPARTIMENT_LOCAL, self.lien.mic,
+                                self.lien.mq2, self.lien.temp_c, self.lien.humidite)
+        self.etat.recharger()
+
     def boucle(self):
         self.rendre()
         dernier_rendu = time.monotonic()
         while self.actif:
+            if time.monotonic() >= self.prochaine_ingestion:
+                self.prochaine_ingestion = time.monotonic() + INGESTION_S
+                try:
+                    self.ingerer()
+                except Exception:
+                    pass
             evenement = self.lien.prochain()
             if evenement and evenement[0] == "badge":
                 self.sur_badge(evenement[1])
