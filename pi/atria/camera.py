@@ -22,7 +22,7 @@ PERIODE_CONTROLE_S = 0.08
 consomme un coeur entier et fait monter le SoC au-dela de sa consigne thermique.
 Au repos on se contente de detecter, ce qui est dix fois moins cher."""
 FRAMES_POUR_ACCORD = 3
-DELAI_VERIFICATION_S = 12.0
+DELAI_VERIFICATION_S = 8.0
 MAINTIEN_VERDICT_S = 6.0
 QUALITE_JPEG = 70
 

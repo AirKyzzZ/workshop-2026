@@ -230,8 +230,12 @@ class Terminal:
             return
 
         nom, capitaine = connu
-        self.badge_info = (f"{nom} · visage...", capitaine)
+        # Accuser reception tout de suite : le controle facial peut durer plusieurs
+        # secondes, et sans ce bip on croit que le lecteur n'a rien vu.
+        self.lien.beep("LISTEN")
+        self.badge_info = (f"{nom} · visage…", capitaine)
         self.vue = "badge"
+        self.badge_jusqua = time.monotonic() + 30
         self.rendre()
 
         accorde, score, motif = self.controle_facial(nom)
