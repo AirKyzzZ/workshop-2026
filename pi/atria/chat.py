@@ -5,31 +5,31 @@ from . import db, predict
 
 OUTILS = {
     "etat_membre": {
-        "description": "Etat physiologique et poste d'un membre d'equipage",
+        "description": "État physiologique et poste d'un membre d'équipage",
         "parametres": {"nom": "nom du membre"},
     },
     "qui_peut": {
-        "description": "Membres aptes a tenir un poste, classes par capacite",
+        "description": "Membres aptes à tenir un poste, classés par capacité",
         "parametres": {"poste": "nom du poste"},
     },
     "situation": {
-        "description": "Synthese: effectif, postes decouverts, alertes actives",
+        "description": "Synthèse : effectif, postes découverts, alertes actives",
         "parametres": {},
     },
     "tendance": {
-        "description": "Evolution de la capacite d'un membre et projection",
+        "description": "Évolution de la capacité d'un membre et projection",
         "parametres": {"nom": "nom du membre"},
     },
     "contacts": {
-        "description": "Membres ayant partage un compartiment avec quelqu'un",
+        "description": "Membres ayant partagé un compartiment avec quelqu'un",
         "parametres": {"nom": "nom du membre", "heures": "fenetre en heures"},
     },
     "journal": {
-        "description": "Dernieres decisions, refus et derogations",
+        "description": "Dernières décisions, refus et dérogations",
         "parametres": {"limite": "nombre d'entrees"},
     },
     "compartiment": {
-        "description": "Atmosphere et occupants d'un compartiment",
+        "description": "Atmosphère et occupants d'un compartiment",
         "parametres": {"nom": "nom du compartiment"},
     },
 }
@@ -147,17 +147,24 @@ def _compartiment(etat, nom):
     c = etat.compartiment(nom)
     if c is None:
         return f"Le compartiment {nom} n'existe pas.", {}
+
     morceaux = [f"{c.nom} :"]
     if c.humidite is not None:
-        morceaux.append(f"{c.temp_c:.1f} °C, {c.humidite:.0f} % d'humidité,")
-    morceaux.append(f"{c.bruit_db} dB.")
+        morceaux.append(f"{c.temp_c:.1f} °C, {c.humidite:.0f} % d'humidité, {c.bruit_db} dB.")
+    else:
+        instrumentes = [x.nom for x in etat.compartiments if x.humidite is not None]
+        morceaux.append(f"{c.bruit_db} dB. Aucune sonde d'atmosphère ici, "
+                        f"je ne connais ni sa température ni son humidité.")
+        if instrumentes:
+            morceaux.append("Compartiments instrumentés : " + ", ".join(instrumentes) + ".")
     if c.fumee:
         morceaux.append("COMBUSTION DÉTECTÉE.")
     if c.occupants:
         morceaux.append(f"Occupants : {', '.join(c.occupants)}.")
     else:
         morceaux.append("Aucun occupant.")
-    return " ".join(morceaux), {"occupants": len(c.occupants)}
+    return " ".join(morceaux), {"occupants": len(c.occupants),
+                                "instrumente": c.humidite is not None}
 
 
 IMPLEMENTATIONS = {
@@ -194,6 +201,14 @@ def router(etat, question):
         return "tendance", {"nom": nom}
     if any(k in q for k in ("qui peut", "qui pourrait", "aptes", "disponible")) and poste:
         return "qui_peut", {"poste": poste}
+    if any(k in q for k in ("température", "temperature", "humidité", "humidite",
+                            "atmosphère", "atmosphere", "air", "fumée", "fumee",
+                            "bruit", "sonore")):
+        if comp:
+            return "compartiment", {"nom": comp}
+        instrumente = next((c.nom for c in etat.compartiments if c.humidite is not None), None)
+        if instrumente:
+            return "compartiment", {"nom": instrumente}
     if comp and not nom:
         return "compartiment", {"nom": comp}
     if poste and not nom:
