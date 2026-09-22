@@ -225,9 +225,13 @@ def entrer(conn, crew, compartiment):
     conn.commit()
 
 
-SESSION_TTL_S = 180
-"""Duree de vie d'une identite badgee. Courte par conception : une session laissee
-ouverte expose les donnees medicales a tout navigateur du reseau de bord."""
+SESSION_TTL_S = 0
+"""Duree de vie d'une identite badgee, en secondes. 0 desactive l'expiration.
+
+La session se ferme desormais par le bouton du dashboard ou par un nouveau badge. Le
+compromis est assume : une session laissee ouverte expose les donnees medicales a tout
+navigateur du reseau de bord, mais un verrou qui saute toutes les trois minutes pendant
+une demonstration coutait plus qu'il ne protegeait."""
 
 
 def ouvrir_session(conn, acteur, role):
@@ -248,7 +252,8 @@ def fermer_session(conn):
 def session(conn):
     """Identite courante, derivee du dernier badge presente au terminal."""
     r = conn.execute("SELECT acteur, role, ts FROM session WHERE id = 1").fetchone()
-    if r is None or time.time() - r["ts"] > SESSION_TTL_S:
+    expiree = SESSION_TTL_S and time.time() - r["ts"] > SESSION_TTL_S if r else True
+    if r is None or not r["acteur"] or expiree:
         return {"acteur": None, "role": "anonyme", "capitaine": False, "expire": True}
     return {"acteur": r["acteur"], "role": r["role"],
             "capitaine": r["role"] == "capitaine", "expire": False}

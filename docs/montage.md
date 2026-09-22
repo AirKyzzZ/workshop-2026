@@ -4,6 +4,9 @@ Vue d'ensemble du vaisseau tel qu'il est câblé aujourd'hui. Le brochage détai
 et l'état de validation de chaque composant sont dans [`materiel.md`](materiel.md) ; ce
 document sert à voir d'un coup d'œil ce qui est relié à quoi.
 
+Pour le schéma électrique proprement dit, fil par fil et simulable,
+voir [`hardware/wokwi/`](../hardware/wokwi/).
+
 ## Le montage actuel
 
 ```mermaid

@@ -1,0 +1,340 @@
+{
+  "version": 1,
+  "author": "ATRIA - G2 - Alexandre, Melih, Maxime",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-arduino-mega",
+      "id": "mega",
+      "top": 200,
+      "left": 140,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht_infirmerie",
+      "top": -40,
+      "left": 150,
+      "attrs": {
+        "temperature": "27.3",
+        "humidity": "41"
+      }
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht_reacteur",
+      "top": -40,
+      "left": 330,
+      "attrs": {
+        "temperature": "34.0",
+        "humidity": "22"
+      }
+    },
+    {
+      "type": "wokwi-gas-sensor",
+      "id": "mq2",
+      "top": -50,
+      "left": 520,
+      "attrs": {
+        "ppm": "180",
+        "threshold": "4.4"
+      }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "micro",
+      "top": -30,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-microsd-card",
+      "id": "rc522",
+      "top": 470,
+      "left": 520,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "buzzer",
+      "top": 480,
+      "left": 180,
+      "attrs": {
+        "volume": "0.6"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_titre",
+      "top": -200,
+      "left": 0,
+      "attrs": {
+        "text": "ATRIA  ·  montage capteurs sur Arduino Mega ADK",
+        "fontSize": "26"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_micro",
+      "top": -80,
+      "left": 0,
+      "attrs": {
+        "text": "son  A0",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_dht1",
+      "top": -80,
+      "left": 150,
+      "attrs": {
+        "text": "DHT22 infirmerie  A3",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_dht2",
+      "top": -80,
+      "left": 330,
+      "attrs": {
+        "text": "DHT22 reacteur  A4",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_mq2",
+      "top": -90,
+      "left": 520,
+      "attrs": {
+        "text": "MQ-2  A1",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_buzzer",
+      "top": 445,
+      "left": 180,
+      "attrs": {
+        "text": "buzzer  D6",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_rc522",
+      "top": 435,
+      "left": 520,
+      "attrs": {
+        "text": "RC522 NFC  SPI + D53 / D49",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_legende",
+      "top": 600,
+      "left": 0,
+      "attrs": {
+        "text": "BROCHAGE\nA0  capteur de son          5 V\nA1  MQ-2 fumee et gaz       5 V\nA3  DHT22 infirmerie        5 V     valide\nA4  DHT22 reacteur          5 V     a cabler\nD6  buzzer actif\nD49 RC522 RST               3,3 V\nD53 RC522 SS                3,3 V\nD50 D51 D52  SPI materiel   MISO MOSI SCK",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_notes",
+      "top": 600,
+      "left": 560,
+      "attrs": {
+        "text": "REGLE D'ALIMENTATION\nLe RC522 est en 3,3 V, le MQ-2 et le capteur de son en 5 V.\nNe jamais partager une rangee entre 3,3 V et 5 V.\n\nLIAISON AVEC LE RASPBERRY PI 5\nUSB-B, /dev/ttyACM0, 115200 bauds. Aucune liaison directe\nentre les broches du Mega et le GPIO du Pi.\n\nSUBSTITUTIONS WOKWI\nLe capteur de son est represente par un potentiometre et le\nRC522 par un lecteur microSD : memes broches, meme bus SPI.\nWokwi ne fournit ni l'un ni l'autre.",
+        "fontSize": "15"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "dht_infirmerie:VCC",
+      "mega:5V",
+      "red",
+      [
+        "v-20",
+        "h-40"
+      ]
+    ],
+    [
+      "dht_infirmerie:GND",
+      "mega:GND.1",
+      "black",
+      [
+        "v-30",
+        "h-20"
+      ]
+    ],
+    [
+      "dht_infirmerie:SDA",
+      "mega:A3",
+      "green",
+      [
+        "v40",
+        "h20"
+      ]
+    ],
+    [
+      "dht_reacteur:VCC",
+      "mega:5V.1",
+      "red",
+      [
+        "v-30",
+        "h-60"
+      ]
+    ],
+    [
+      "dht_reacteur:GND",
+      "mega:GND.2",
+      "black",
+      [
+        "v-40",
+        "h-40"
+      ]
+    ],
+    [
+      "dht_reacteur:SDA",
+      "mega:A4",
+      "limegreen",
+      [
+        "v50",
+        "h-20"
+      ]
+    ],
+    [
+      "mq2:VCC",
+      "mega:5V.2",
+      "red",
+      [
+        "v-40",
+        "h-100"
+      ]
+    ],
+    [
+      "mq2:GND",
+      "mega:GND.3",
+      "black",
+      [
+        "v-50",
+        "h-80"
+      ]
+    ],
+    [
+      "mq2:AO",
+      "mega:A1",
+      "orange",
+      [
+        "v60",
+        "h-60"
+      ]
+    ],
+    [
+      "micro:VCC",
+      "mega:5V",
+      "red",
+      [
+        "v40",
+        "h60"
+      ]
+    ],
+    [
+      "micro:GND",
+      "mega:GND.1",
+      "black",
+      [
+        "v50",
+        "h80"
+      ]
+    ],
+    [
+      "micro:SIG",
+      "mega:A0",
+      "violet",
+      [
+        "v60",
+        "h100"
+      ]
+    ],
+    [
+      "rc522:VCC",
+      "mega:3.3V",
+      "#c47b00",
+      [
+        "v-30",
+        "h-140"
+      ]
+    ],
+    [
+      "rc522:GND",
+      "mega:GND.4",
+      "black",
+      [
+        "v-20",
+        "h-120"
+      ]
+    ],
+    [
+      "rc522:SCK",
+      "mega:52",
+      "blue",
+      [
+        "v-10",
+        "h-100"
+      ]
+    ],
+    [
+      "rc522:DI",
+      "mega:51",
+      "purple",
+      [
+        "v0",
+        "h-80"
+      ]
+    ],
+    [
+      "rc522:DO",
+      "mega:50",
+      "cyan",
+      [
+        "v10",
+        "h-60"
+      ]
+    ],
+    [
+      "rc522:CS",
+      "mega:53",
+      "gold",
+      [
+        "v20",
+        "h-40"
+      ]
+    ],
+    [
+      "buzzer:1",
+      "mega:GND.5",
+      "black",
+      [
+        "v-30",
+        "h-20"
+      ]
+    ],
+    [
+      "buzzer:2",
+      "mega:6",
+      "magenta",
+      [
+        "v-20",
+        "h0"
+      ]
+    ]
+  ],
+  "dependencies": {}
+}

@@ -105,6 +105,7 @@ brand/tokens.json   même palette, pour les outils non-web
 ```
 docs/         documentation technique
 firmware/     sketches Arduino (Mega ADK)
+hardware/     schema de montage Wokwi, versionne
 pi/           services Python (Raspberry Pi 5)
 brand/        identité visuelle et jetons de design
 systemd/      unités de service
@@ -115,7 +116,8 @@ sujet/        énoncé officiel du workshop
 ## Démarrage
 
 Le schéma du montage, ce qui est relié à quoi et ce qui reste à ajouter, est dans
-[`docs/montage.md`](docs/montage.md). L'inventaire complet, le brochage de chaque capteur et
+[`docs/montage.md`](docs/montage.md). Le schéma électrique fil par fil, simulable et
+versionné, est dans [`hardware/wokwi/`](hardware/wokwi/). L'inventaire complet, le brochage de chaque capteur et
 son état de validation sont dans [`docs/materiel.md`](docs/materiel.md).
 
 Pour reconstruire le Raspberry Pi depuis une carte SD vierge, suivre
