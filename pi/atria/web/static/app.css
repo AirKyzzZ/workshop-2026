@@ -180,6 +180,7 @@ nav { display: flex; gap: calc(var(--u) * .5); }
   font-family: Martian; font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
 }
 .bouton-theme:hover { color: var(--encre); border-color: var(--encre); }
+.bouton-theme.deconnexion:hover { color: var(--critique); border-color: var(--critique); }
 
 main {
   overflow-y: auto; padding: calc(var(--u) * 4);

@@ -18,6 +18,7 @@ from . import db, visage
 PERIODE_S = 0.08
 FRAMES_POUR_ACCORD = 3
 DELAI_VERIFICATION_S = 12.0
+MAINTIEN_VERDICT_S = 6.0
 QUALITE_JPEG = 70
 
 VERT = (88, 214, 75)
@@ -60,23 +61,37 @@ class Flux:
             self.verification = {
                 "nom": nom, "gabarits": gabarits, "etat": "en_cours",
                 "score": 0.0, "accords": 0, "expire": time.time() + DELAI_VERIFICATION_S,
-                "motif": "présentez votre visage",
+                "affichage": 0.0, "motif": "présentez votre visage",
             }
 
     def desarmer(self):
         with self.verrou:
             self.verification = None
 
+    def maintenir_verdict(self):
+        with self.verrou:
+            if self.verification is not None:
+                self.verification["affichage"] = time.time() + MAINTIEN_VERDICT_S
+
     def etat_verification(self):
+        """Le verdict survit a la verification elle-meme.
+
+        Sans ce maintien, l'ecran de verrouillage voit `null` des que le controle rend
+        la main, repasse en mode badge, et le dashboard n'apparait qu'au sondage suivant.
+        On garde donc le verdict quelques secondes, le temps que la session s'ouvre.
+        """
         with self.verrou:
             v = self.verification
             if v is None:
+                return None
+            if v["affichage"] and time.time() > v["affichage"]:
+                self.verification = None
                 return None
             return {"nom": v["nom"], "etat": v["etat"], "score": round(v["score"], 3),
                     "seuil": visage.SEUIL_COSINUS, "motif": v["motif"],
                     "reste": max(0.0, round(v["expire"] - time.time(), 1))}
 
-    def attendre_verdict(self, delai=DELAI_VERIFICATION_S + 1):
+    def attendre_verdict(self, delai=DELAI_VERIFICATION_S + 2):
         fin = time.time() + delai
         while time.time() < fin:
             with self.verrou:
@@ -86,7 +101,13 @@ class Flux:
                 if v["etat"] != "en_cours":
                     return {"etat": v["etat"], "score": v["score"], "motif": v["motif"]}
             time.sleep(0.1)
-        return {"etat": "refuse", "score": 0.0, "motif": "délai dépassé"}
+        with self.verrou:
+            v = self.verification
+            score = v["score"] if v else 0.0
+            if v:
+                v["etat"] = "refuse"
+                v["motif"] = "délai dépassé"
+        return {"etat": "refuse", "score": score, "motif": "délai dépassé"}
 
     # ---------- boucle ----------
 
@@ -213,7 +234,7 @@ def verifier(conn, nom):
 
     flux.armer(nom, gabarits)
     verdict = flux.attendre_verdict()
-    flux.desarmer()
+    flux.maintenir_verdict()
     if verdict is None:
         return True, None, "contrôle interrompu"
     return verdict["etat"] == "accorde", verdict["score"], verdict["motif"]

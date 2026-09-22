@@ -193,6 +193,12 @@ class Terminal:
         ne repond pas, on n'enferme pas non plus la passerelle.
         """
         if not visage.disponible() or not db.gabarits(self.etat.conn, nom):
+            # Le badge seul suffit tant que personne n'est enrole, sinon plus personne
+            # ne pourrait entrer pour s'enroler. On le trace, pour qu'aucun acces ne
+            # passe sans laisser de motif au journal.
+            db.journaliser(self.etat.conn, "identification",
+                           f"badge {nom} accepte sans controle facial, aucun gabarit",
+                           acteur=nom, sujet=nom)
             return True, None, "aucun gabarit enrole"
 
         charge = json.dumps({"nom": nom}).encode()

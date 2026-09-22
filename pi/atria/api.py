@@ -2,7 +2,7 @@ import asyncio
 import os
 import time
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -137,6 +137,27 @@ async def prechauffer_modele():
     asyncio.get_running_loop().run_in_executor(None, llm.prechauffer)
 
 
+LOCAUX = {"127.0.0.1", "::1", "localhost"}
+
+
+def refus_biometrie(requete, action, sujet=None):
+    """Garde des routes biometriques. Rend un refus, ou None si l'acces est legitime.
+
+    Un gabarit facial vaut une cle : qui peut en deposer un peut se faire passer pour
+    n'importe qui, et qui peut en effacer un fait retomber sa cible au badge seul. Ces
+    routes sont donc reservees au capitaine identifie, ou au terminal de bord lui-meme,
+    qui est le seul appelant local legitime.
+    """
+    if requete is not None and requete.client and requete.client.host in LOCAUX:
+        return None
+    session = db.session(etat.conn)
+    if session["capitaine"]:
+        return None
+    db.journaliser(etat.conn, "refus", f"{action} refuse, identification capitaine requise",
+                   acteur=session["acteur"] or "anonyme", sujet=sujet)
+    return {"erreur": "reserve au capitaine identifie"}
+
+
 @app.on_event("startup")
 async def demarrer_services():
     asyncio.get_running_loop().run_in_executor(None, llm.prechauffer)
@@ -183,15 +204,21 @@ def api_camera_etat():
 
 
 @app.get("/api/visage/enroles")
-def api_visage_enroles():
+def api_visage_enroles(requete: Request):
+    refus = refus_biometrie(requete, "consultation des gabarits")
+    if refus:
+        return refus
     return {"membres": [{"nom": n, "gabarits": k}
                         for n, k in db.membres_enroles(etat.conn)],
             "cible": visage.GABARITS_PAR_MEMBRE}
 
 
 @app.post("/api/visage/enroler")
-def api_visage_enroler(corps: dict):
+def api_visage_enroler(corps: dict, requete: Request):
     nom = (corps.get("nom") or "").strip().lower()
+    refus = refus_biometrie(requete, "enrolement facial", nom or None)
+    if refus:
+        return refus
     if not nom:
         return {"erreur": "nom manquant"}
     if etat.conn.execute("SELECT 1 FROM crew WHERE nom = ?", (nom,)).fetchone() is None:
@@ -211,7 +238,10 @@ def api_visage_enroler(corps: dict):
 
 
 @app.delete("/api/visage/{nom}")
-def api_visage_oublier(nom: str):
+def api_visage_oublier(nom: str, requete: Request):
+    refus = refus_biometrie(requete, "effacement des gabarits", nom)
+    if refus:
+        return refus
     n = db.oublier_gabarits(etat.conn, nom)
     db.journaliser(etat.conn, "biometrie", f"{n} gabarits faciaux effaces",
                    acteur="systeme", sujet=nom)
@@ -219,7 +249,10 @@ def api_visage_oublier(nom: str):
 
 
 @app.post("/api/visage/verifier")
-async def api_visage_verifier(corps: dict):
+async def api_visage_verifier(corps: dict, requete: Request):
+    refus = refus_biometrie(requete, "controle facial")
+    if refus:
+        return {**refus, "accorde": False}
     nom = (corps.get("nom") or "").strip().lower()
     accorde, score, motif = await asyncio.to_thread(camera.verifier, etat.conn, nom)
     return {"nom": nom, "accorde": accorde,
@@ -229,6 +262,17 @@ async def api_visage_verifier(corps: dict):
 @app.get("/api/session")
 def api_session():
     return db.session(etat.conn)
+
+
+@app.post("/api/session/fermer")
+def api_session_fermer():
+    session = db.session(etat.conn)
+    if session["acteur"]:
+        db.journaliser(etat.conn, "identification",
+                       f"session de {session['acteur']} fermee depuis le dashboard",
+                       acteur=session["acteur"], sujet=session["acteur"])
+    db.fermer_session(etat.conn)
+    return {"ferme": True}
 
 
 @app.get("/api/etat")

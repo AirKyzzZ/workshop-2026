@@ -39,6 +39,19 @@ boutonTheme.addEventListener("click", () =>
   appliquerTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
 appliquerTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
 
+/* ---------- deconnexion ---------- */
+
+document.getElementById("deconnexion").addEventListener("click", async () => {
+  try {
+    await fetch("/api/session/fermer", { method: "POST" });
+  } catch {}
+  session = { acteur: null, role: "anonyme", capitaine: false };
+  etat = null;
+  if (minuteur) { clearInterval(minuteur); minuteur = null; }
+  location.hash = "#/";
+  await verifierSession();
+});
+
 /* ---------- navigation ---------- */
 
 for (const o of ONGLETS) {
@@ -60,6 +73,19 @@ function marquerOnglet(route) {
 const controle = document.getElementById("controle");
 let fluxOuvert = false;
 let derniereEtape = null;
+let rafaleEnCours = false;
+
+async function rafaleSession() {
+  // Le verdict tombe avant que le terminal n'ouvre la session, d'ou cette rafale.
+  if (rafaleEnCours) return;
+  rafaleEnCours = true;
+  for (let i = 0; i < 20 && !verrou.hidden; i++) {
+    await verifierSession();
+    if (verrou.hidden) break;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  rafaleEnCours = false;
+}
 
 function fermerControle() {
   if (!fluxOuvert) return;
@@ -87,6 +113,7 @@ function peindreControle(v) {
     derniereEtape = v.etat;
     controle.classList.toggle("accorde", v.etat === "accorde");
     controle.classList.toggle("refuse", v.etat === "refuse");
+    if (v.etat === "accorde") rafaleSession();
   }
 }
 
