@@ -105,7 +105,7 @@ brand/tokens.json   même palette, pour les outils non-web
 ```
 docs/         documentation technique
 firmware/     sketches Arduino (Mega ADK)
-hardware/     plan de cablage et schemas Wokwi, versionnes
+hardware/     schema de cablage Wokwi, versionne
 pi/           services Python (Raspberry Pi 5)
 brand/        identité visuelle et jetons de design
 systemd/      unités de service
@@ -116,9 +116,7 @@ sujet/        énoncé officiel du workshop
 ## Démarrage
 
 Le schéma du montage, ce qui est relié à quoi et ce qui reste à ajouter, est dans
-[`docs/montage.md`](docs/montage.md). Le plan de câblage est dans
-[`hardware/montage-complet.svg`](hardware/montage-complet.svg), généré par
-[`hardware/schema.py`](hardware/schema.py), et le détail fil par fil simulable dans
+[`docs/montage.md`](docs/montage.md). Le schéma de câblage complet, fil par fil et simulable, est dans
 [`hardware/wokwi/`](hardware/wokwi/). L'inventaire complet, le brochage de chaque capteur et
 son état de validation sont dans [`docs/materiel.md`](docs/materiel.md).
 

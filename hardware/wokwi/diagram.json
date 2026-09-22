@@ -1,0 +1,557 @@
+{
+  "version": 1,
+  "author": "ATRIA - G2 - Alexandre, Melih, Maxime",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-text",
+      "id": "t0",
+      "top": -150,
+      "left": 0,
+      "attrs": {
+        "text": "ATRIA · montage complet",
+        "fontSize": "28"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t1",
+      "top": -112,
+      "left": 0,
+      "attrs": {
+        "text": "Le Raspberry Pi 5 est représenté par un Pico : Wokwi ne fournit pas de carte Linux. Seule la liaison USB compte ici.",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-pi-pico",
+      "id": "pi",
+      "top": 120,
+      "left": -40,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tpi",
+      "top": 80,
+      "left": -40,
+      "attrs": {
+        "text": "Raspberry Pi 5  ·  USB + PiTFT",
+        "fontSize": "14"
+      }
+    },
+    {
+      "type": "wokwi-arduino-mega",
+      "id": "mega",
+      "top": 60,
+      "left": 260,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tmega",
+      "top": 20,
+      "left": 260,
+      "attrs": {
+        "text": "Arduino Mega ADK  ·  passerelle",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-breadboard",
+      "id": "bb",
+      "top": 300,
+      "left": 260,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tbb",
+      "top": 282,
+      "left": 260,
+      "attrs": {
+        "text": "plaque d'essai  ·  rail haut 5 V  ·  rail bas 3,3 V",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-big-sound-sensor",
+      "id": "son",
+      "top": -60,
+      "left": 760,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tson",
+      "top": -86,
+      "left": 760,
+      "attrs": {
+        "text": "capteur de son  A0",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-gas-sensor",
+      "id": "mq2",
+      "top": -70,
+      "left": 960,
+      "attrs": {
+        "ppm": "180",
+        "threshold": "4.4"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tmq2",
+      "top": -96,
+      "left": 960,
+      "attrs": {
+        "text": "MQ-2  A1",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht",
+      "top": -70,
+      "left": 1130,
+      "attrs": {
+        "temperature": "27.6",
+        "humidity": "36"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tdht",
+      "top": -96,
+      "left": 1130,
+      "attrs": {
+        "text": "DHT22 infirmerie  A3",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-heart-beat-sensor",
+      "id": "ecg",
+      "top": -60,
+      "left": 1330,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tecg",
+      "top": -86,
+      "left": 1330,
+      "attrs": {
+        "text": "AD8232 ECG  A2  ·  hors service",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-rfid-reader",
+      "id": "rc",
+      "top": 120,
+      "left": 790,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "trc",
+      "top": 96,
+      "left": 790,
+      "attrs": {
+        "text": "RC522 NFC  D53 SS · D49 RST · SPI",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz",
+      "top": 150,
+      "left": 1080,
+      "attrs": {
+        "volume": "0.6"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tbz",
+      "top": 120,
+      "left": 1060,
+      "attrs": {
+        "text": "buzzer  D6",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tsep",
+      "top": 520,
+      "left": 0,
+      "attrs": {
+        "text": "────────────────────────────────────────────────────────────────",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tn0",
+      "top": 560,
+      "left": 0,
+      "attrs": {
+        "text": "Nœud de compartiment  ·  à brancher",
+        "fontSize": "18"
+      }
+    },
+    {
+      "type": "wokwi-arduino-mega",
+      "id": "noeud",
+      "top": 620,
+      "left": 260,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tn",
+      "top": 596,
+      "left": 260,
+      "attrs": {
+        "text": "Mega 2560  ·  réacteur",
+        "fontSize": "14"
+      }
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht2",
+      "top": 620,
+      "left": 760,
+      "attrs": {
+        "temperature": "34.0",
+        "humidity": "22"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tdht2",
+      "top": 596,
+      "left": 760,
+      "attrs": {
+        "text": "DHT22 réacteur  A0",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd",
+      "top": 760,
+      "left": 760,
+      "attrs": {
+        "pins": "full",
+        "background": "blue",
+        "color": "white"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tlcd",
+      "top": 736,
+      "left": 760,
+      "attrs": {
+        "text": "LCD1602  D8 D9 D4 D5 D6 D7",
+        "fontSize": "13"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "mega:5V",
+      "bb:tp.1",
+      "red",
+      [
+        "v40"
+      ]
+    ],
+    [
+      "mega:GND.1",
+      "bb:tn.1",
+      "black",
+      [
+        "v44"
+      ]
+    ],
+    [
+      "mega:3.3V",
+      "bb:bp.1",
+      "#c47b00",
+      [
+        "v48"
+      ]
+    ],
+    [
+      "mega:GND.2",
+      "bb:bn.1",
+      "black",
+      [
+        "v52"
+      ]
+    ],
+    [
+      "son:VCC",
+      "bb:tp.20",
+      "red",
+      [
+        "v-20"
+      ]
+    ],
+    [
+      "son:GND",
+      "bb:tn.20",
+      "black",
+      [
+        "v-24"
+      ]
+    ],
+    [
+      "son:AOUT",
+      "mega:A0",
+      "violet",
+      [
+        "v-30"
+      ]
+    ],
+    [
+      "mq2:VCC",
+      "bb:tp.30",
+      "red",
+      [
+        "v-20"
+      ]
+    ],
+    [
+      "mq2:GND",
+      "bb:tn.30",
+      "black",
+      [
+        "v-24"
+      ]
+    ],
+    [
+      "mq2:AOUT",
+      "mega:A1",
+      "orange",
+      [
+        "v-30"
+      ]
+    ],
+    [
+      "dht:VCC",
+      "bb:tp.40",
+      "red",
+      [
+        "v-20"
+      ]
+    ],
+    [
+      "dht:GND",
+      "bb:tn.40",
+      "black",
+      [
+        "v-24"
+      ]
+    ],
+    [
+      "dht:SDA",
+      "mega:A3",
+      "green",
+      [
+        "v-30"
+      ]
+    ],
+    [
+      "ecg:VCC",
+      "bb:bp.50",
+      "#c47b00",
+      [
+        "v-20"
+      ]
+    ],
+    [
+      "ecg:GND",
+      "bb:bn.50",
+      "black",
+      [
+        "v-24"
+      ]
+    ],
+    [
+      "ecg:OUT",
+      "mega:A2",
+      "grey",
+      [
+        "v-30"
+      ]
+    ],
+    [
+      "rc:VCC",
+      "bb:bp.10",
+      "#c47b00",
+      [
+        "v20"
+      ]
+    ],
+    [
+      "rc:GND",
+      "bb:bn.10",
+      "black",
+      [
+        "v24"
+      ]
+    ],
+    [
+      "rc:SCK",
+      "mega:52",
+      "blue",
+      [
+        "v28"
+      ]
+    ],
+    [
+      "rc:MOSI",
+      "mega:51",
+      "purple",
+      [
+        "v32"
+      ]
+    ],
+    [
+      "rc:MISO",
+      "mega:50",
+      "cyan",
+      [
+        "v36"
+      ]
+    ],
+    [
+      "rc:SDA",
+      "mega:53",
+      "gold",
+      [
+        "v40"
+      ]
+    ],
+    [
+      "rc:RST",
+      "mega:49",
+      "#8FB3E0",
+      [
+        "v44"
+      ]
+    ],
+    [
+      "bz:1",
+      "bb:tn.55",
+      "black",
+      [
+        "v20"
+      ]
+    ],
+    [
+      "bz:2",
+      "mega:6",
+      "magenta",
+      [
+        "v24"
+      ]
+    ],
+    [
+      "dht2:VCC",
+      "noeud:5V",
+      "red",
+      [
+        "v-20"
+      ]
+    ],
+    [
+      "dht2:GND",
+      "noeud:GND.1",
+      "black",
+      [
+        "v-24"
+      ]
+    ],
+    [
+      "dht2:SDA",
+      "noeud:A0",
+      "green",
+      [
+        "v-30"
+      ]
+    ],
+    [
+      "lcd:VSS",
+      "noeud:GND.2",
+      "black",
+      [
+        "v20"
+      ]
+    ],
+    [
+      "lcd:VDD",
+      "noeud:5V.1",
+      "red",
+      [
+        "v24"
+      ]
+    ],
+    [
+      "lcd:RS",
+      "noeud:8",
+      "blue",
+      [
+        "v28"
+      ]
+    ],
+    [
+      "lcd:E",
+      "noeud:9",
+      "purple",
+      [
+        "v32"
+      ]
+    ],
+    [
+      "lcd:D4",
+      "noeud:4",
+      "orange",
+      [
+        "v36"
+      ]
+    ],
+    [
+      "lcd:D5",
+      "noeud:5",
+      "gold",
+      [
+        "v40"
+      ]
+    ],
+    [
+      "lcd:D6",
+      "noeud:6",
+      "cyan",
+      [
+        "v44"
+      ]
+    ],
+    [
+      "lcd:D7",
+      "noeud:7",
+      "magenta",
+      [
+        "v48"
+      ]
+    ]
+  ],
+  "dependencies": {}
+}
