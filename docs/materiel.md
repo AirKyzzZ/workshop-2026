@@ -53,9 +53,47 @@ Le Mega 2560 est branché en USB au Pi et vu comme `/dev/ttyACM1`, chemin stable
 
 | Broche | Composant | État |
 |---|---|---|
-| `A0` | DHT22 réacteur, 5 V | à câbler |
-| `D8` `D9` | LCD `RS` et `E` | à câbler |
-| `D4` `D5` `D6` `D7` | LCD `D4`..`D7` | à câbler |
+| `A0` | DHT22 réacteur, 5 V | **câblage à reprendre**, voir ci-dessous |
+| `D8` `D9` | LCD `RS` et `E` | câblé |
+| `D4` `D5` `D6` `D7` | LCD `D4`..`D7` | câblé |
+
+### Le DHT22 du réacteur est mal câblé
+
+Symptôme : la carte redémarrait toutes les 0,9 s, sans jamais atteindre sa première
+mesure. Le diagnostic a été fait en bisectant le firmware, série seule puis série plus
+capteur :
+
+| Étape | Résultat |
+|---|---|
+| Série seule | stable, compteur qui monte sans interruption |
+| Série + DHT22 | redémarrage en boucle dès `climat.begin()` |
+
+Une sonde passive, qui lit les broches sans jamais les piloter, donne la réponse :
+
+```
+A0=945 (4,62 V)   A1=715 (3,49 V)   A2=570 (2,79 V)   A3=468 (2,29 V)
+```
+
+`A1` à `A3` flottent, c'est normal pour des broches libres. **`A0` est bloqué à 4,62 V**,
+alors qu'une ligne `DATA` de DHT22 au repos, tirée au niveau haut, doit lire près de
+1023 counts soit 5,00 V. Les 7 % de chute trahissent un courant qui passe dans la ligne.
+L'hypothèse la plus probable est que **`VCC` et `DATA` sont inversés** sur le module : la
+broche `A0` alimente le capteur au lieu de le lire, et dès que la bibliothèque active son
+pull-up la carte s'effondre.
+
+À vérifier dans cet ordre : l'orientation du module, puis que `VCC` va bien au 5 V et
+`GND` à la masse, et enfin que `DATA` arrive seul sur `A0`.
+
+Le firmware ne tombe plus dans la boucle. Il lit la broche au démarrage et refuse de
+toucher au capteur si le niveau de repos est douteux :
+
+```
+READY noeud=reacteur sonde=CABLAGE repos=945
+```
+
+L'écran affiche alors `CABLAGE SONDE !` en clair, et la carte continue d'annoncer son
+compartiment normalement. Une fois le câblage repris, le niveau de repos passera
+au-dessus de 1000 et la sonde s'activera toute seule au redémarrage suivant.
 
 La découverte est automatique : `pi/atria/noeud.py` scrute `/dev/serial/by-id` toutes les
 quinze secondes et ouvre toute carte dont la signature n'est pas celle de la passerelle.

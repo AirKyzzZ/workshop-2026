@@ -18,6 +18,14 @@ const uint8_t DHT_PIN = A0;
 const unsigned long MESURE_MS = 2000;
 const unsigned long ANNONCE_MS = 1000;
 
+const int SONDE_REPOS_MIN = 1000;
+/* Une ligne DATA de DHT22 au repos est tiree au niveau haut et lit pres de 1023.
+   Nettement en dessous, c'est qu'un courant passe dans la ligne, VCC et DATA inverses par
+   exemple. Piloter cette broche fait alors redemarrer la carte en boucle, donc on verifie
+   avant de toucher au capteur plutot que de tomber dans la boucle. */
+
+bool sonde_ok = false;
+
 // Cablage LCD 1602 en mode parallele, tel qu'il est monte sur le shield Elegoo.
 LiquidCrystal ecran(8, 9, 4, 5, 6, 7);
 DHT climat(DHT_PIN, DHT22);
@@ -63,7 +71,9 @@ void afficher() {
   }
 
   ecran.setCursor(0, 1);
-  if (tempX10 == -9999) {
+  if (!sonde_ok) {
+    ecran.print(F("CABLAGE SONDE ! "));
+  } else if (tempX10 == -9999) {
     ecran.print(F("sonde absente   "));
   } else {
     char tampon[17];
@@ -78,9 +88,19 @@ void setup() {
   Serial.begin(115200);
   ecran.begin(16, 2);
   ecran.print(F("ATRIA"));
-  climat.begin();
+
+  pinMode(DHT_PIN, INPUT);
+  delay(50);
+  int repos = analogRead(DHT_PIN);
+  sonde_ok = repos >= SONDE_REPOS_MIN;
+  if (sonde_ok) climat.begin();
+
   Serial.print(F("READY noeud="));
-  Serial.println(compartiment);
+  Serial.print(compartiment);
+  Serial.print(F(" sonde="));
+  Serial.print(sonde_ok ? F("ok") : F("CABLAGE"));
+  Serial.print(F(" repos="));
+  Serial.println(repos);
 }
 
 void loop() {
@@ -89,11 +109,13 @@ void loop() {
 
   if (maintenant >= prochaineMesure) {
     prochaineMesure = maintenant + MESURE_MS;
-    float t = climat.readTemperature();
-    float h = climat.readHumidity();
-    if (!isnan(t) && !isnan(h)) {
-      tempX10 = (int)(t * 10);
-      humX10 = (int)(h * 10);
+    if (sonde_ok) {
+      float t = climat.readTemperature();
+      float h = climat.readHumidity();
+      if (!isnan(t) && !isnan(h)) {
+        tempX10 = (int)(t * 10);
+        humX10 = (int)(h * 10);
+      }
     }
     afficher();
   }
