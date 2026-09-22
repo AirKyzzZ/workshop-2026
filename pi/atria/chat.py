@@ -48,13 +48,32 @@ def _etat_membre(etat, nom, capitaine):
                  f"{'Apte' if m.cognitive >= 0.60 else 'Aptitude réduite'}. "
                  f"Poste : {m.poste or 'aucun'}. Compartiment : {m.compartiment}. "
                  f"Les données physiologiques ne sont pas communiquées au commandement.")
-        return texte, {"cognitive": m.cognitive, "poste": m.poste}
+        return texte, {"cognitive": m.cognitive, "poste": m.poste}, {
+            "membre": m.nom,
+            "fonction": m.role,
+            "aptitude": "apte" if m.cognitive >= 0.60 else "réduite",
+            "poste": m.poste or "aucun",
+            "compartiment": m.compartiment,
+            "données physiologiques": "non communiquées au commandement",
+        }
     texte = (f"{m.nom}, {m.role}. Capacité cognitive {m.cognitive:.2f}. "
              f"Fréquence cardiaque {m.hr} bpm, RMSSD {m.rmssd:.0f} ms, "
              f"stress estimé {m.stress:.2f}. {m.sommeil_h:.1f} h de sommeil, "
              f"dette sociale {m.dette_sociale} jours. "
              f"Poste : {m.poste or 'aucun'}, compartiment {m.compartiment}.")
-    return texte, {"cognitive": m.cognitive, "hr": m.hr, "rmssd": m.rmssd}
+    faits = {
+        "membre": m.nom,
+        "fonction": m.role,
+        "capacité cognitive": f"{m.cognitive:.2f}",
+        "fréquence cardiaque": f"{m.hr} bpm",
+        "RMSSD": f"{m.rmssd:.0f} ms",
+        "stress estimé": f"{m.stress:.2f}",
+        "sommeil": f"{m.sommeil_h:.1f} h",
+        "dette sociale": f"{m.dette_sociale} jours",
+        "poste": m.poste or "aucun",
+        "compartiment": m.compartiment,
+    }
+    return texte, {"cognitive": m.cognitive, "hr": m.hr, "rmssd": m.rmssd}, faits
 
 
 def _qui_peut(etat, poste_nom):
@@ -115,7 +134,21 @@ def _tendance(etat, nom):
         if h:
             texte += (f" Il passera sous le seuil {cible.nom} ({cible.seuil:.2f}) "
                       f"dans environ {h:.1f} heures.")
-    return texte, {"pente_h": round(t.pente_h, 4), "r2": round(t.r2, 2)}
+    faits = {
+        "membre": m.nom,
+        "capacité actuelle": f"{m.cognitive:.2f}",
+        "sens": sens,
+        "pente": f"{abs(t.pente_h):.3f} par heure",
+        "qualité de l'ajustement": f"R² {t.r2:.2f}",
+        "projection à six heures": f"{t.projection(6):.2f}",
+    }
+    if eligibles and t.baisse:
+        cible = max(eligibles, key=lambda p: p.seuil)
+        h = t.heures_avant(cible.seuil)
+        if h:
+            faits["seuil franchi"] = (f"{cible.nom} ({cible.seuil:.2f}) "
+                                      f"dans environ {h:.1f} heures")
+    return texte, {"pente_h": round(t.pente_h, 4), "r2": round(t.r2, 2)}, faits
 
 
 def _contacts(etat, nom, heures=24):
@@ -163,8 +196,17 @@ def _compartiment(etat, nom):
         morceaux.append(f"Occupants : {', '.join(c.occupants)}.")
     else:
         morceaux.append("Aucun occupant.")
+    inconnu = "non mesurée, ce compartiment n'a pas de sonde"
+    faits = {
+        "compartiment": c.nom,
+        "température": f"{c.temp_c:.1f} °C" if c.humidite is not None else inconnu,
+        "humidité": f"{c.humidite:.0f} %" if c.humidite is not None else inconnu,
+        "niveau sonore": f"{c.bruit_db} dB",
+        "combustion": "détectée" if c.fumee else "aucune",
+        "occupants": ", ".join(c.occupants) or "aucun",
+    }
     return " ".join(morceaux), {"occupants": len(c.occupants),
-                                "instrumente": c.humidite is not None}
+                                "instrumente": c.humidite is not None}, faits
 
 
 IMPLEMENTATIONS = {
@@ -221,8 +263,13 @@ def router(etat, question):
     return None, {}
 
 
-SANS_MODELE = {"journal"}
-"""Le journal est une liste horodatee : la reformuler perdrait des lignes."""
+AVEC_MODELE = {"compartiment"}
+"""Perimetre du modele, tenu a ce qu'il fait mieux que le texte ecrit a la main.
+
+Sur un compartiment la question varie beaucoup (temperature, humidite, bruit, fumee,
+occupants) et le releve tient en six champs : la mise en forme gagne. Sur une fiche
+d'equipage ou une tendance, le 1.5B perd des champs et ajoute des causes que le releve
+ne donne pas, donc le texte deterministe passe tel quel."""
 
 MAX_QUESTION = 180
 
@@ -244,9 +291,17 @@ def repondre(etat, question, capitaine=False, medical=False):
             "outils": [], "erreur": True,
         }
 
-    texte, donnees = IMPLEMENTATIONS[outil](etat, args, not medical)
+    sortie = IMPLEMENTATIONS[outil](etat, args, not medical)
+    texte, donnees, faits = sortie if len(sortie) == 3 else (*sortie, None)
 
-    mise_en_forme = None if outil in SANS_MODELE else llm.reformuler(question, texte)
+    interdits = ()
+    if faits and outil in AVEC_MODELE:
+        cites = " ".join(str(v) for v in faits.values()).lower()
+        propres = ([c.nom for c in etat.equipage] + [c.nom for c in etat.compartiments]
+                   + [p.nom for p in etat.postes])
+        interdits = tuple(n for n in propres if n.lower() not in cites)
+    mise_en_forme = (llm.reformuler(question, faits, interdits)
+                     if faits and outil in AVEC_MODELE else None)
     db.journaliser(etat.conn, "question", assainir(question),
                    acteur="capitaine" if capitaine else "equipage",
                    donnees={"outil": outil, "args": args, "modele": mise_en_forme is not None})

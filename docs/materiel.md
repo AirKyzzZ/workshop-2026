@@ -137,6 +137,31 @@ contact, puis du pleine échelle sans que rien n'ait bougé. C'est le câble ou 
 Sans pièce de rechange, l'ECG est mis de côté. Ça ne bloque pas le modèle de stress, qui
 s'entraîne de toute façon sur WESAD ; le capteur ne servait qu'à valider sur un signal à nous.
 
+## Alimentation
+
+**C'est le point bloquant du montage.** Mesures prises pendant une génération du modèle,
+avec `vcgencmd` échantillonné toutes les 1,5 s :
+
+| | Au repos | 3 fils de calcul | 2 fils de calcul |
+|---|---|---|---|
+| Rail `EXT5V` | 4,97 V | descend à **4,66 V** | 4,85 à 5,03 V |
+| Horloge ARM | 1500 MHz | oscille 2400 ↔ **1000 MHz** | 1500 MHz stable |
+| `get_throttled` | `0x50000` | `0x50005` | `0x50000` |
+| Température | 56 °C | 74 °C | 54 °C |
+
+`0x50005` allume les bits 0 et 2, c'est-à-dire sous-tension **active** et bridage de
+fréquence **actif**. Le noyau le confirme au démarrage : `hwmon2: Undervoltage detected!`
+puis `Voltage normalised`, deux fois de suite. Sous charge le bloc ne tient plus le 5 V,
+le firmware divise l'horloge par 2,4 et la carte finit par s'éteindre.
+
+Deux conséquences directes : la carte tombe du réseau pendant les démonstrations, et le
+modèle de langage met 20 s au lieu de 7 s. Le contournement en place est
+`--threads 2` sur `atria-llm`, qui tient le rail et donne paradoxalement un meilleur débit
+que 3 fils, 8,2 jetons par seconde, puisque l'horloge ne s'effondre plus.
+
+Le vrai correctif est **un bloc Raspberry Pi 5 officiel de 27 W, 5,1 V / 5 A**. Sans lui
+rien de plus lourd ne passera, et la soutenance reste exposée à une extinction.
+
 ## À faire
 
 - Second DHT22 sur le réacteur, pour avoir deux atmosphères à comparer sur les courbes.

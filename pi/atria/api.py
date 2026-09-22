@@ -6,7 +6,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import db, model, predict, regulator
+from . import db, llm, model, predict, regulator
 
 WEB = os.path.join(os.path.dirname(__file__), "web")
 PERIODE_PUSH = 3.0
@@ -90,6 +90,11 @@ def instantane(medical=False):
             "lien_terre": False,
         },
     }
+
+
+@app.on_event("startup")
+async def prechauffer_modele():
+    asyncio.get_running_loop().run_in_executor(None, llm.prechauffer)
 
 
 @app.get("/api/session")
