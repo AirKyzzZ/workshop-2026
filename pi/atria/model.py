@@ -72,7 +72,8 @@ class Etat:
         }
 
         self.equipage = []
-        for r in conn.execute("SELECT * FROM crew ORDER BY nom"):
+        for r in conn.execute(
+                "SELECT * FROM crew WHERE statut != 'commandement' ORDER BY nom"):
             cap = derniers.get(r["nom"])
             vit = vitaux.get(r["nom"])
             self.equipage.append(Crew(

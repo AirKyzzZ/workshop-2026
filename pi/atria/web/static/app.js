@@ -4,6 +4,7 @@ import { vueCompartiment, vueVaisseau } from "./vue-vaisseau.js";
 import { vueEquipage, vueMembre } from "./vue-equipage.js";
 import { vueJournal } from "./vue-journal.js";
 import { vueConsole } from "./vue-console.js";
+import { fluxCamera, vueVisage } from "./vue-visage.js";
 
 const ONGLETS = [
   { route: "#/", libelle: "Bord" },
@@ -11,6 +12,7 @@ const ONGLETS = [
   { route: "#/equipage", libelle: "Équipage" },
   { route: "#/journal", libelle: "Journal" },
   { route: "#/atria", libelle: "Console" },
+  { route: "#/visage", libelle: "Visage" },
 ];
 
 const vue = document.getElementById("vue");
@@ -53,6 +55,52 @@ function marquerOnglet(route) {
   }
 }
 
+/* ---------- controle facial sur l'ecran de verrouillage ---------- */
+
+const controle = document.getElementById("controle");
+let fluxOuvert = false;
+let derniereEtape = null;
+
+function fermerControle() {
+  if (!fluxOuvert) return;
+  controle.replaceChildren();
+  controle.hidden = true;
+  fluxOuvert = false;
+  derniereEtape = null;
+}
+
+function peindreControle(v) {
+  if (!fluxOuvert) {
+    controle.replaceChildren();
+    controle.hidden = false;
+    const titre = el("p", "controle-titre", `Badge ${v.nom}`);
+    controle.appendChild(titre);
+    fluxCamera(controle);
+    controle.appendChild(el("p", "verdict", ""));
+    fluxOuvert = true;
+  }
+  const verdict = controle.querySelector(".verdict");
+  verdict.textContent = v.motif;
+  verdict.className = `verdict ${v.etat === "accorde" ? "accorde"
+    : v.etat === "refuse" ? "refuse" : ""}`;
+  if (v.etat !== derniereEtape) {
+    derniereEtape = v.etat;
+    controle.classList.toggle("accorde", v.etat === "accorde");
+    controle.classList.toggle("refuse", v.etat === "refuse");
+  }
+}
+
+async function suivreControle() {
+  if (verrou.hidden) return;
+  try {
+    const e = await json("/api/camera/etat");
+    if (e.verification) peindreControle(e.verification);
+    else fermerControle();
+  } catch {
+    fermerControle();
+  }
+}
+
 /* ---------- session ---------- */
 
 function peindreSession() {
@@ -75,8 +123,10 @@ async function verifierSession() {
   application.hidden = !ouvert;
   if (!ouvert) {
     if (minuteur) { clearInterval(minuteur); minuteur = null; }
+    suivreControle();
     return;
   }
+  fermerControle();
   peindreSession();
   if (avant !== session.acteur) {
     etat = await json("/api/etat");
@@ -107,6 +157,7 @@ async function router() {
     else if (section === "equipage") vueEquipage(vue, etat);
     else if (section === "journal") minuteur = await vueJournal(vue);
     else if (section === "atria") await vueConsole(vue);
+    else if (section === "visage") minuteur = await vueVisage(vue, session);
     else await vueBord(vue, etat, session);
   } catch (erreur) {
     vue.appendChild(el("div", "vide", `Impossible d'afficher cette vue : ${erreur.message}`));
@@ -131,3 +182,4 @@ function connecter() {
 
 verifierSession().then(() => { router(); connecter(); });
 setInterval(verifierSession, 4000);
+setInterval(() => { if (!verrou.hidden) suivreControle(); }, 700);

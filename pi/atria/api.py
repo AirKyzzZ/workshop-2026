@@ -3,10 +3,10 @@ import os
 import time
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import db, llm, model, predict, regulator
+from . import camera, db, llm, model, predict, regulator, visage
 
 WEB = os.path.join(os.path.dirname(__file__), "web")
 PERIODE_PUSH = 3.0
@@ -67,26 +67,66 @@ def tracer_acces_medical(session):
                    acteur=session["acteur"], sujet="équipage")
 
 
-def instantane(medical=False):
+def instantane(medical=False, acteur=None):
     etat.recharger()
     decouverts = etat.postes_decouverts()
+
     return {
         "ts": time.time(),
-        "equipage": [membre_json(c, medical) for c in
-                     sorted(etat.equipage, key=lambda c: c.cognitive)],
-        "postes": [{"nom": p.nom, "compartiment": p.compartiment,
-                    "competence": p.competence, "seuil": p.seuil,
-                    "criticite": p.criticite, "titulaire": p.titulaire}
-                   for p in etat.postes],
-        "compartiments": [compartiment_json(c) for c in etat.compartiments],
-        "alertes": [{"niveau": n, "texte": t} for n, t in etat.alertes()],
-        "previsions": regulator.alertes_predictives(etat, limite=4),
+
+        "equipage": [
+            membre_json(
+                c,
+                medical and c.nom == acteur
+            )
+            for c in sorted(
+                etat.equipage,
+                key=lambda c: c.cognitive
+            )
+        ],
+
+        "postes": [
+            {
+                "nom": p.nom,
+                "compartiment": p.compartiment,
+                "competence": p.competence,
+                "seuil": p.seuil,
+                "criticite": p.criticite,
+                "titulaire": p.titulaire
+            }
+            for p in etat.postes
+        ],
+
+        "compartiments": [
+            compartiment_json(c)
+            for c in etat.compartiments
+        ],
+
+        "alertes": [
+            {"niveau": n, "texte": t}
+            for n, t in etat.alertes()
+        ],
+
+        "previsions": regulator.alertes_predictives(
+            etat,
+            limite=4
+        ),
+
         "resume": {
-            "actifs": sum(1 for c in etat.equipage if c.statut == "actif"),
+            "actifs": sum(
+                1 for c in etat.equipage
+                if c.statut == "actif"
+            ),
             "total": 200,
             "decouverts": len(decouverts),
-            "aptes": sum(1 for c in etat.equipage if c.cognitive >= 0.70),
-            "critiques": sum(1 for c in etat.equipage if c.cognitive < 0.45),
+            "aptes": sum(
+                1 for c in etat.equipage
+                if c.cognitive >= 0.70
+            ),
+            "critiques": sum(
+                1 for c in etat.equipage
+                if c.cognitive < 0.45
+            ),
             "lien_terre": False,
         },
     }
@@ -97,6 +137,95 @@ async def prechauffer_modele():
     asyncio.get_running_loop().run_in_executor(None, llm.prechauffer)
 
 
+@app.on_event("startup")
+async def demarrer_services():
+    asyncio.get_running_loop().run_in_executor(None, llm.prechauffer)
+    if visage.disponible():
+        camera.flux.demarrer()
+
+
+@app.on_event("shutdown")
+async def arreter_services():
+    camera.flux.arreter()
+
+
+def flux_mjpeg():
+    limite = b"--trame"
+    vide = 0
+    while camera.flux.actif:
+        image = camera.flux.image()
+        if image is None:
+            vide += 1
+            if vide > 100:
+                break
+            time.sleep(0.05)
+            continue
+        vide = 0
+        yield (limite + b"\r\nContent-Type: image/jpeg\r\nContent-Length: "
+               + str(len(image)).encode() + b"\r\n\r\n" + image + b"\r\n")
+        time.sleep(0.08)
+
+
+@app.get("/api/camera/flux")
+def api_camera_flux():
+    if not camera.flux.actif:
+        return {"erreur": "flux camera inactif"}
+    return StreamingResponse(flux_mjpeg(),
+                             media_type="multipart/x-mixed-replace; boundary=trame")
+
+
+@app.get("/api/camera/etat")
+def api_camera_etat():
+    etat_flux = camera.flux.etat()
+    etat_flux["verification"] = camera.flux.etat_verification()
+    etat_flux["seuil"] = visage.SEUIL_COSINUS
+    return etat_flux
+
+
+@app.get("/api/visage/enroles")
+def api_visage_enroles():
+    return {"membres": [{"nom": n, "gabarits": k}
+                        for n, k in db.membres_enroles(etat.conn)],
+            "cible": visage.GABARITS_PAR_MEMBRE}
+
+
+@app.post("/api/visage/enroler")
+def api_visage_enroler(corps: dict):
+    nom = (corps.get("nom") or "").strip().lower()
+    if not nom:
+        return {"erreur": "nom manquant"}
+    if etat.conn.execute("SELECT 1 FROM crew WHERE nom = ?", (nom,)).fetchone() is None:
+        return {"erreur": f"{nom} ne figure pas au registre d'equipage"}
+
+    empreinte = camera.flux.empreinte_courante()
+    if empreinte is None:
+        return {"erreur": "aucun visage devant la camera",
+                "gabarits": len(db.gabarits(etat.conn, nom))}
+
+    db.enregistrer_gabarit(etat.conn, nom, empreinte)
+    total = len(db.gabarits(etat.conn, nom))
+    db.journaliser(etat.conn, "biometrie", f"gabarit facial {total} enrole",
+                   acteur="systeme", sujet=nom)
+    return {"nom": nom, "gabarits": total, "cible": visage.GABARITS_PAR_MEMBRE,
+            "surface": camera.flux.etat()["surface"]}
+
+
+@app.delete("/api/visage/{nom}")
+def api_visage_oublier(nom: str):
+    n = db.oublier_gabarits(etat.conn, nom)
+    db.journaliser(etat.conn, "biometrie", f"{n} gabarits faciaux effaces",
+                   acteur="systeme", sujet=nom)
+    return {"nom": nom, "supprimes": n}
+
+
+@app.post("/api/visage/verifier")
+async def api_visage_verifier(corps: dict):
+    nom = (corps.get("nom") or "").strip().lower()
+    accorde, score, motif = await asyncio.to_thread(camera.verifier, etat.conn, nom)
+    return {"nom": nom, "accorde": accorde,
+            "score": None if score is None else round(score, 3), "motif": motif}
+
+
 @app.get("/api/session")
 def api_session():
     return db.session(etat.conn)
@@ -105,10 +234,16 @@ def api_session():
 @app.get("/api/etat")
 def api_etat():
     session = db.session(etat.conn)
+
     medical = session["role"] == "equipage"
+
     if medical:
         tracer_acces_medical(session)
-    return instantane(medical)
+
+    return instantane(
+        medical,
+        session["acteur"]
+    )
 
 
 @app.get("/api/journal")
@@ -140,17 +275,48 @@ def api_ambiance(compartiment: str, heures: int = 24):
 
 @app.get("/api/vitals/{nom}")
 def api_vitals(nom: str, heures: int = 24):
-    if db.session(etat.conn)["role"] != "equipage":
-        return {"nom": nom, "points": [], "refuse": True,
-                "motif": "donnees physiologiques reservees au badge d'equipage"}
-    return {"nom": nom, "heures": heures,
-            "points": db.serie_vitals(etat.conn, nom, heures), "refuse": False}
+    session = db.session(etat.conn)
+
+    # Le capitaine n'a pas accès aux données physiologiques
+    if session["capitaine"]:
+        return {
+            "nom": nom,
+            "points": [],
+            "refuse": True,
+            "motif": "donnees physiologiques reservees"
+        }
+
+    # Un membre ne peut voir que ses propres données
+    if session["acteur"] != nom:
+        return {
+            "nom": nom,
+            "points": [],
+            "refuse": True,
+            "motif": "acces refuse"
+        }
+
+    return {
+        "nom": nom,
+        "heures": heures,
+        "points": db.serie_vitals(
+            etat.conn,
+            nom,
+            heures
+        ),
+        "refuse": False
+    }
 
 
 @app.get("/api/membre/{nom}")
 def api_membre(nom: str):
     session = db.session(etat.conn)
-    medical = session["role"] == "equipage"
+    if not session["capitaine"] and session["acteur"] != nom:
+        return {"erreur": "acces refuse"}
+
+    medical = (
+        session["role"] == "equipage"
+        and session["acteur"] == nom
+    )
     etat.recharger()
     m = etat.membre(nom)
     if m is None:
@@ -204,7 +370,10 @@ async def ws(socket: WebSocket):
             medical = session["role"] == "equipage"
             if medical:
                 tracer_acces_medical(session)
-            paquet = instantane(medical)
+            paquet = instantane(
+                medical,
+                session["acteur"]
+		)
             paquet["session"] = session
             await socket.send_json(paquet)
             await asyncio.sleep(PERIODE_PUSH)

@@ -74,6 +74,75 @@ a:hover { border-color: currentColor; }
 @media (prefers-reduced-motion: reduce) { .pulsation { animation: none; } }
 .verrou .aide { color: var(--faible); font-size: 12px; line-height: 1.8; }
 
+/* ---------- controle facial ---------- */
+
+.camera {
+  position: relative; width: 100%; max-width: 480px;
+  border: 1px solid var(--trait-fort); border-radius: var(--rayon);
+  overflow: hidden; background: var(--surface); line-height: 0;
+}
+.camera img { width: 100%; height: auto; display: block; }
+.camera-vide {
+  padding: calc(var(--u) * 5) 0; text-align: center;
+  color: var(--faible); font-size: 12.5px; line-height: 1.5;
+}
+
+.controle {
+  display: flex; flex-direction: column; align-items: center;
+  gap: calc(var(--u) * 1.5); margin-top: calc(var(--u) * 2);
+  padding: calc(var(--u) * 2); border-radius: var(--rayon);
+  border: 1px solid var(--trait-fort); transition: border-color .25s ease;
+}
+.controle .camera { max-width: 400px; }
+.controle-titre {
+  font-family: Martian; font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--faible);
+}
+.controle.accorde { border-color: var(--nominal); animation: deverrouille .6s ease; }
+.controle.refuse { border-color: var(--critique); animation: rejet .35s ease; }
+.controle.accorde .camera { border-color: var(--nominal); }
+.controle.refuse .camera { border-color: var(--critique); }
+
+@keyframes deverrouille {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.03); box-shadow: 0 0 0 6px color-mix(in srgb, var(--nominal) 22%, transparent); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes rejet {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .controle.accorde, .controle.refuse { animation: none; }
+}
+
+.verdict { font-size: 13px; color: var(--sourdine); text-align: center; min-height: 1.4em; }
+.verdict.accorde { color: var(--nominal); font-weight: 600; }
+.verdict.refuse { color: var(--critique); font-weight: 600; }
+
+.commandes {
+  display: flex; flex-wrap: wrap; gap: var(--u); align-items: center;
+  margin: calc(var(--u) * 2) 0 var(--u);
+}
+.champ {
+  background: var(--surface); border: 1px solid var(--trait); color: var(--encre);
+  border-radius: var(--rayon); padding: 9px 12px; font-family: inherit; font-size: 13px;
+}
+.action {
+  background: var(--encre); border: 1px solid var(--encre); color: var(--fond);
+  border-radius: var(--rayon); padding: 9px 16px; cursor: pointer;
+  font-family: inherit; font-size: 13px;
+}
+.action:hover { background: var(--encre-forte); }
+.action:disabled { opacity: .45; cursor: default; }
+.action.secondaire { background: none; color: var(--encre); }
+.action.secondaire:hover { background: var(--surface); }
+.lien-danger {
+  background: none; border: 0; color: var(--critique); cursor: pointer;
+  font-family: inherit; font-size: 11.5px; padding: 0 0 0 var(--u);
+}
+
 /* ---------- coquille ---------- */
 
 #application { height: 100%; display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
@@ -126,6 +195,7 @@ main[data-page="equipage"], main[data-page="journal"], main[data-page="atria"] {
   grid-template-columns: minmax(0, 860px); justify-content: center;
 }
 main[data-page="vaisseau"] { grid-template-columns: minmax(0, 1fr); }
+main[data-page="visage"] { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 main[data-page="compartiment"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 /* ---------- panneaux ---------- */

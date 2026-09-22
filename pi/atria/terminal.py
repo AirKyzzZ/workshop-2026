@@ -2,11 +2,15 @@ import sys
 import time
 import traceback
 
-from . import buttons, db, link, model, regulator, theme, ui, voice
+import json
+import urllib.error
+import urllib.request
+
+from . import buttons, db, link, model, regulator, theme, ui, visage, voice
 
 BADGES = {
     "FC2A1B17": ("moreau", False),
-    "19BD41B2": ("capitaine", True),
+    "19BD41B2": ("maxime", True),
 }
 
 SECTIONS = [
@@ -15,6 +19,9 @@ SECTIONS = [
     ("compartiments", "Compartiments"),
     ("alertes", "Alertes"),
 ]
+
+API = "http://127.0.0.1:8000"
+DELAI_CONTROLE_S = 20.0
 
 BADGE_AFFICHAGE_S = 2.5
 COMPARTIMENT_LOCAL = "infirmerie"
@@ -178,21 +185,66 @@ class Terminal:
 
         e.blit()
 
+    def controle_facial(self, nom):
+        """Second facteur, delegue a l'API qui detient la camera.
+
+        Un membre sans gabarit enrole passe au badge seul : la biometrie ne doit pas
+        verrouiller un equipage qui ne s'est jamais presente devant la camera. Si l'API
+        ne repond pas, on n'enferme pas non plus la passerelle.
+        """
+        if not visage.disponible() or not db.gabarits(self.etat.conn, nom):
+            return True, None, "aucun gabarit enrole"
+
+        charge = json.dumps({"nom": nom}).encode()
+        requete = urllib.request.Request(
+            f"{API}/api/visage/verifier", data=charge,
+            headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(requete, timeout=DELAI_CONTROLE_S) as r:
+                paquet = json.load(r)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            return True, None, f"controle indisponible : {str(exc)[:40]}"
+
+        return paquet.get("accorde", False), paquet.get("score"), paquet.get("motif", "")
+
     def sur_badge(self, uid):
         connu = BADGES.get(uid)
         if connu is None:
             self.lien.beep("DENY")
             self.badge_info = (f"inconnu {uid}", False)
             self.identite = (None, False)
-        else:
+            self.retour = self.vue if self.vue not in ("badge", "dialogue") else "accueil"
+            self.vue = "badge"
+            self.badge_jusqua = time.monotonic() + BADGE_AFFICHAGE_S
+            self.rendre()
+            return
+
+        nom, capitaine = connu
+        self.badge_info = (f"{nom} · visage...", capitaine)
+        self.vue = "badge"
+        self.rendre()
+
+        accorde, score, motif = self.controle_facial(nom)
+        donnees = {"similarite": round(score, 3) if score is not None else None,
+                   "seuil": visage.SEUIL_COSINUS}
+
+        if accorde:
             self.lien.beep("OK")
             self.identite = connu
             self.badge_info = connu
-            db.ouvrir_session(self.etat.conn, connu[0],
-                              "capitaine" if connu[1] else "equipage")
+            db.ouvrir_session(self.etat.conn, nom, "capitaine" if capitaine else "equipage")
             db.journaliser(self.etat.conn, "identification",
-                           f"badge {connu[0]} présenté au terminal",
-                           acteur=connu[0], sujet=connu[0])
+                           f"badge {nom} présenté au terminal, {motif}",
+                           acteur=nom, sujet=nom, donnees=donnees)
+        else:
+            self.lien.beep("DENY")
+            self.identite = (None, False)
+            self.badge_info = (f"{nom} REFUSE", False)
+            db.fermer_session(self.etat.conn)
+            db.journaliser(self.etat.conn, "refus",
+                           f"badge {nom} présenté sans correspondance faciale, {motif}",
+                           acteur="atria", sujet=nom, donnees=donnees)
+
         self.retour = self.vue if self.vue not in ("badge", "dialogue") else "accueil"
         self.vue = "badge"
         self.badge_jusqua = time.monotonic() + BADGE_AFFICHAGE_S

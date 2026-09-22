@@ -96,6 +96,14 @@ CREATE TABLE IF NOT EXISTS session (
   ts           REAL NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS gabarit (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  crew         TEXT NOT NULL REFERENCES crew(nom),
+  empreinte    BLOB NOT NULL,
+  cree_le      REAL NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_gabarit_crew ON gabarit(crew);
 CREATE INDEX IF NOT EXISTS idx_journal_ts ON journal(ts DESC);
 CREATE INDEX IF NOT EXISTS idx_ambiance_ts ON ambiance(compartiment, ts DESC);
 CREATE INDEX IF NOT EXISTS idx_capacite_crew_ts ON capacite(crew, ts DESC);
@@ -104,7 +112,7 @@ CREATE INDEX IF NOT EXISTS idx_presence_comp ON presence(compartiment, entree DE
 """
 
 TYPES_JOURNAL = ("refus", "derogation", "affectation", "alerte", "crise",
-                 "identification", "systeme", "question")
+                 "identification", "systeme", "question", "biometrie")
 
 
 COLONNES_AJOUTEES = (
@@ -231,6 +239,12 @@ def ouvrir_session(conn, acteur, role):
     conn.commit()
 
 
+def fermer_session(conn):
+    conn.execute("UPDATE session SET acteur=NULL, role='anonyme', ts=? WHERE id=1",
+                 (0.0,))
+    conn.commit()
+
+
 def session(conn):
     """Identite courante, derivee du dernier badge presente au terminal."""
     r = conn.execute("SELECT acteur, role, ts FROM session WHERE id = 1").fetchone()
@@ -256,3 +270,27 @@ def serie_vitals(conn, crew, heures=24):
         " WHERE crew = ? AND ts >= ? ORDER BY ts",
         (crew, depuis))
     return [dict(r) for r in curseur]
+
+
+def enregistrer_gabarit(conn, crew, empreinte):
+    conn.execute("INSERT INTO gabarit (crew, empreinte, cree_le) VALUES (?, ?, ?)",
+                 (crew, empreinte.astype("float32").tobytes(), time.time()))
+    conn.commit()
+
+
+def gabarits(conn, crew):
+    import numpy as np
+    lignes = conn.execute("SELECT empreinte FROM gabarit WHERE crew = ?", (crew,)).fetchall()
+    return [np.frombuffer(l["empreinte"], dtype="float32") for l in lignes]
+
+
+def membres_enroles(conn):
+    lignes = conn.execute(
+        "SELECT crew, COUNT(*) n FROM gabarit GROUP BY crew ORDER BY crew").fetchall()
+    return [(l["crew"], l["n"]) for l in lignes]
+
+
+def oublier_gabarits(conn, crew):
+    n = conn.execute("DELETE FROM gabarit WHERE crew = ?", (crew,)).rowcount
+    conn.commit()
+    return n
