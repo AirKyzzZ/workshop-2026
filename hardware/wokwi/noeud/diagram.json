@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "author": "ATRIA - G2 - Alexandre, Melih, Maxime",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-arduino-mega",
+      "id": "mega2560",
+      "top": 240,
+      "left": 160,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht_reacteur",
+      "top": -30,
+      "left": 220,
+      "attrs": {
+        "temperature": "34.0",
+        "humidity": "22"
+      }
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd",
+      "top": -60,
+      "left": 440,
+      "attrs": {
+        "pins": "full",
+        "background": "blue",
+        "color": "white"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_titre",
+      "top": -150,
+      "left": 0,
+      "attrs": {
+        "text": "ATRIA  ·  noeud de compartiment  ·  Mega 2560 + LCD1602",
+        "fontSize": "26"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_dht",
+      "top": -70,
+      "left": 220,
+      "attrs": {
+        "text": "DHT22 reacteur  A0",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_lcd",
+      "top": -95,
+      "left": 440,
+      "attrs": {
+        "text": "LCD1602  D8 D9 D4 D5 D6 D7",
+        "fontSize": "15"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "dht_reacteur:VCC",
+      "mega2560:5V",
+      "red",
+      [
+        "v-20",
+        "h-40"
+      ]
+    ],
+    [
+      "dht_reacteur:GND",
+      "mega2560:GND.1",
+      "black",
+      [
+        "v-30",
+        "h-20"
+      ]
+    ],
+    [
+      "dht_reacteur:SDA",
+      "mega2560:A0",
+      "green",
+      [
+        "v40",
+        "h20"
+      ]
+    ],
+    [
+      "lcd:VSS",
+      "mega2560:GND.2",
+      "black",
+      [
+        "v-40",
+        "h-100"
+      ]
+    ],
+    [
+      "lcd:VDD",
+      "mega2560:5V.1",
+      "red",
+      [
+        "v-50",
+        "h-80"
+      ]
+    ],
+    [
+      "lcd:RS",
+      "mega2560:8",
+      "blue",
+      [
+        "v60",
+        "h-60"
+      ]
+    ],
+    [
+      "lcd:E",
+      "mega2560:9",
+      "purple",
+      [
+        "v70",
+        "h-40"
+      ]
+    ],
+    [
+      "lcd:D4",
+      "mega2560:4",
+      "orange",
+      [
+        "v80",
+        "h-20"
+      ]
+    ],
+    [
+      "lcd:D5",
+      "mega2560:5",
+      "gold",
+      [
+        "v90",
+        "h0"
+      ]
+    ],
+    [
+      "lcd:D6",
+      "mega2560:6",
+      "cyan",
+      [
+        "v100",
+        "h20"
+      ]
+    ],
+    [
+      "lcd:D7",
+      "mega2560:7",
+      "magenta",
+      [
+        "v110",
+        "h40"
+      ]
+    ]
+  ],
+  "dependencies": {}
+}

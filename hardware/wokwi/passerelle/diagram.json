@@ -6,35 +6,25 @@
     {
       "type": "wokwi-arduino-mega",
       "id": "mega",
-      "top": 200,
-      "left": 140,
+      "top": 220,
+      "left": 160,
       "attrs": {}
     },
     {
       "type": "wokwi-dht22",
       "id": "dht_infirmerie",
       "top": -40,
-      "left": 150,
+      "left": 180,
       "attrs": {
-        "temperature": "27.3",
-        "humidity": "41"
-      }
-    },
-    {
-      "type": "wokwi-dht22",
-      "id": "dht_reacteur",
-      "top": -40,
-      "left": 330,
-      "attrs": {
-        "temperature": "34.0",
-        "humidity": "22"
+        "temperature": "27.6",
+        "humidity": "36"
       }
     },
     {
       "type": "wokwi-gas-sensor",
       "id": "mq2",
       "top": -50,
-      "left": 520,
+      "left": 360,
       "attrs": {
         "ppm": "180",
         "threshold": "4.4"
@@ -48,17 +38,42 @@
       "attrs": {}
     },
     {
+      "type": "wokwi-potentiometer",
+      "id": "ecg",
+      "top": -30,
+      "left": 560,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "lo_plus",
+      "top": 100,
+      "left": 620,
+      "attrs": {
+        "color": "grey"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "lo_moins",
+      "top": 160,
+      "left": 620,
+      "attrs": {
+        "color": "grey"
+      }
+    },
+    {
       "type": "wokwi-microsd-card",
       "id": "rc522",
-      "top": 470,
-      "left": 520,
+      "top": 500,
+      "left": 540,
       "attrs": {}
     },
     {
       "type": "wokwi-buzzer",
       "id": "buzzer",
-      "top": 480,
-      "left": 180,
+      "top": 510,
+      "left": 200,
       "attrs": {
         "volume": "0.6"
       }
@@ -66,10 +81,10 @@
     {
       "type": "wokwi-text",
       "id": "t_titre",
-      "top": -200,
+      "top": -150,
       "left": 0,
       "attrs": {
-        "text": "ATRIA  ·  montage capteurs sur Arduino Mega ADK",
+        "text": "ATRIA  ·  passerelle  ·  Arduino Mega ADK",
         "fontSize": "26"
       }
     },
@@ -87,7 +102,7 @@
       "type": "wokwi-text",
       "id": "t_dht1",
       "top": -80,
-      "left": 150,
+      "left": 180,
       "attrs": {
         "text": "DHT22 infirmerie  A3",
         "fontSize": "15"
@@ -95,19 +110,9 @@
     },
     {
       "type": "wokwi-text",
-      "id": "t_dht2",
-      "top": -80,
-      "left": 330,
-      "attrs": {
-        "text": "DHT22 reacteur  A4",
-        "fontSize": "15"
-      }
-    },
-    {
-      "type": "wokwi-text",
       "id": "t_mq2",
       "top": -90,
-      "left": 520,
+      "left": 360,
       "attrs": {
         "text": "MQ-2  A1",
         "fontSize": "15"
@@ -115,41 +120,31 @@
     },
     {
       "type": "wokwi-text",
-      "id": "t_buzzer",
-      "top": 445,
-      "left": 180,
+      "id": "t_ecg",
+      "top": -80,
+      "left": 560,
       "attrs": {
-        "text": "buzzer  D6",
+        "text": "AD8232 ECG  A2  ·  HORS SERVICE",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "t_buzzer",
+      "top": 475,
+      "left": 200,
+      "attrs": {
+        "text": "buzzer actif  D6",
         "fontSize": "15"
       }
     },
     {
       "type": "wokwi-text",
       "id": "t_rc522",
-      "top": 435,
-      "left": 520,
+      "top": 465,
+      "left": 540,
       "attrs": {
-        "text": "RC522 NFC  SPI + D53 / D49",
-        "fontSize": "15"
-      }
-    },
-    {
-      "type": "wokwi-text",
-      "id": "t_legende",
-      "top": 600,
-      "left": 0,
-      "attrs": {
-        "text": "BROCHAGE\nA0  capteur de son          5 V\nA1  MQ-2 fumee et gaz       5 V\nA3  DHT22 infirmerie        5 V     valide\nA4  DHT22 reacteur          5 V     a cabler\nD6  buzzer actif\nD49 RC522 RST               3,3 V\nD53 RC522 SS                3,3 V\nD50 D51 D52  SPI materiel   MISO MOSI SCK",
-        "fontSize": "15"
-      }
-    },
-    {
-      "type": "wokwi-text",
-      "id": "t_notes",
-      "top": 600,
-      "left": 560,
-      "attrs": {
-        "text": "REGLE D'ALIMENTATION\nLe RC522 est en 3,3 V, le MQ-2 et le capteur de son en 5 V.\nNe jamais partager une rangee entre 3,3 V et 5 V.\n\nLIAISON AVEC LE RASPBERRY PI 5\nUSB-B, /dev/ttyACM0, 115200 bauds. Aucune liaison directe\nentre les broches du Mega et le GPIO du Pi.\n\nSUBSTITUTIONS WOKWI\nLe capteur de son est represente par un potentiometre et le\nRC522 par un lecteur microSD : memes broches, meme bus SPI.\nWokwi ne fournit ni l'un ni l'autre.",
+        "text": "RC522 NFC  SPI + D53 (SS) / D49 (RST)",
         "fontSize": "15"
       }
     }
@@ -183,7 +178,7 @@
       ]
     ],
     [
-      "dht_reacteur:VCC",
+      "mq2:VCC",
       "mega:5V.1",
       "red",
       [
@@ -192,7 +187,7 @@
       ]
     ],
     [
-      "dht_reacteur:GND",
+      "mq2:GND",
       "mega:GND.2",
       "black",
       [
@@ -201,39 +196,12 @@
       ]
     ],
     [
-      "dht_reacteur:SDA",
-      "mega:A4",
-      "limegreen",
-      [
-        "v50",
-        "h-20"
-      ]
-    ],
-    [
-      "mq2:VCC",
-      "mega:5V.2",
-      "red",
-      [
-        "v-40",
-        "h-100"
-      ]
-    ],
-    [
-      "mq2:GND",
-      "mega:GND.3",
-      "black",
-      [
-        "v-50",
-        "h-80"
-      ]
-    ],
-    [
       "mq2:AO",
       "mega:A1",
       "orange",
       [
-        "v60",
-        "h-60"
+        "v50",
+        "h-20"
       ]
     ],
     [
@@ -261,6 +229,69 @@
       [
         "v60",
         "h100"
+      ]
+    ],
+    [
+      "ecg:VCC",
+      "mega:3.3V",
+      "#c47b00",
+      [
+        "v-40",
+        "h-160"
+      ]
+    ],
+    [
+      "ecg:GND",
+      "mega:GND.3",
+      "black",
+      [
+        "v-50",
+        "h-140"
+      ]
+    ],
+    [
+      "ecg:SIG",
+      "mega:A2",
+      "grey",
+      [
+        "v70",
+        "h-120"
+      ]
+    ],
+    [
+      "lo_plus:1.l",
+      "mega:11",
+      "grey",
+      [
+        "h-40",
+        "v40"
+      ]
+    ],
+    [
+      "lo_plus:2.l",
+      "mega:GND.3",
+      "black",
+      [
+        "h-60",
+        "v60"
+      ]
+    ],
+    [
+      "lo_moins:1.l",
+      "mega:10",
+      "grey",
+      [
+        "h-40",
+        "v20"
+      ]
+    ],
+    [
+      "lo_moins:2.l",
+      "mega:GND.3",
+      "black",
+      [
+        "h-60",
+        "v40"
       ]
     ],
     [
