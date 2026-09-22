@@ -4,9 +4,12 @@ Vue d'ensemble du vaisseau tel qu'il est câblé aujourd'hui. Le brochage détai
 et l'état de validation de chaque composant sont dans [`materiel.md`](materiel.md) ; ce
 document sert à voir d'un coup d'œil ce qui est relié à quoi.
 
-Le schéma de câblage complet, fil par fil et simulable, est dans
-[`hardware/wokwi/`](../hardware/wokwi/). Ce document porte la vue système : ce que le Pi
-expose, la circulation des données et ce qui reste à ajouter.
+![Montage complet d'ATRIA dans Wokwi](../hardware/wokwi/montage-complet.png)
+
+Le schéma ci-dessus est le rendu du projet Wokwi versionné dans
+[`hardware/wokwi/`](../hardware/wokwi/) : câblage fil par fil, deux cartes, et simulable.
+Ce document porte la vue système, c'est-à-dire ce que le Pi expose, la circulation des
+données et ce qui reste à ajouter.
 
 ## Le montage actuel
 

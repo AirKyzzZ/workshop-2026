@@ -5,6 +5,8 @@ du texte : il se lit dans un éditeur, se compare dans une pull request et se re
 graphiquement en ligne, contrairement à une capture d'écran qu'on ne peut pas mettre à
 jour proprement.
 
+![Montage complet d'ATRIA dans Wokwi](montage-complet.png)
+
 ## Ouvrir le schéma
 
 Aller sur [wokwi.com/projects/new/arduino-mega](https://wokwi.com/projects/new/arduino-mega),
