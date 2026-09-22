@@ -1,4 +1,7 @@
+import time
 from dataclasses import dataclass
+
+from . import db, predict
 
 
 @dataclass
@@ -58,7 +61,7 @@ def qui_peut(etat, nom_poste):
     return Reponse(parole, f"{poste.nom.upper()} — {len(aptes)} APTES", detail)
 
 
-def affecter(etat, nom, nom_poste):
+def affecter(etat, nom, nom_poste, auteur="capitaine"):
     membre = etat.membre(nom)
     poste = etat.poste(nom_poste)
     if membre is None:
@@ -68,6 +71,8 @@ def affecter(etat, nom, nom_poste):
 
     if poste.competence not in membre.competences:
         parole = (f"Negatif. {membre.nom} n est pas qualifie en {poste.competence}.")
+        db.journaliser(etat.conn, "refus", f"qualification {poste.competence} absente",
+                       acteur=auteur, sujet=membre.nom, donnees={"poste": poste.nom})
         return Reponse(parole, "REFUSE", f"{membre.nom} sans qualification {poste.competence}", False)
 
     if membre.cognitive < poste.seuil:
@@ -82,15 +87,18 @@ def affecter(etat, nom, nom_poste):
         if remplacants:
             parole += f" Je recommande {remplacants[0].nom}."
         detail = f"{membre.cognitive:.2f} < {poste.seuil:.2f} requis"
+        db.journaliser(etat.conn, "refus",
+                       f"capacité {membre.cognitive:.2f} sous le seuil {poste.seuil:.2f}",
+                       acteur=auteur, sujet=membre.nom,
+                       donnees={"poste": poste.nom, "capacite": membre.cognitive,
+                                "seuil": poste.seuil,
+                                "alternative": remplacants[0].nom if remplacants else None})
         return Reponse(parole, "ORDRE REFUSE", detail, False)
 
-    ancien = poste.titulaire
-    if ancien and ancien != membre.nom:
-        precedent = etat.membre(ancien)
-        if precedent:
-            precedent.poste = None
-    membre.poste = poste.nom
-    poste.titulaire = membre.nom
+    motif = f"capacité {membre.cognitive:.2f} au-dessus du seuil {poste.seuil:.2f}"
+    etat.affecter(membre.nom, poste.nom, motif, auteur)
+    db.journaliser(etat.conn, "affectation", motif, acteur=auteur, sujet=membre.nom,
+                   donnees={"poste": poste.nom, "capacite": membre.cognitive})
 
     parole = f"Affirmatif. {membre.nom} affecte au poste {poste.nom}."
     return Reponse(parole, "AFFECTATION VALIDEE",
@@ -115,3 +123,48 @@ def situation(etat):
 
     detail = f"{len(alertes)} alertes | {len(decouverts)} postes decouverts"
     return Reponse(" ".join(morceaux), "SITUATION", detail, not decouverts)
+
+
+def deroger(etat, nom, nom_poste, auteur="capitaine"):
+    membre = etat.membre(nom)
+    poste = etat.poste(nom_poste)
+    if membre is None or poste is None:
+        return Reponse("Dérogation impossible.", "DEROGATION REFUSEE", "cible inconnue", False)
+
+    motif = (f"dérogation du capitaine, capacité {membre.cognitive:.2f} "
+             f"sous le seuil {poste.seuil:.2f}")
+    etat.affecter(membre.nom, poste.nom, motif, auteur)
+    db.journaliser(etat.conn, "derogation", motif, acteur=auteur, sujet=membre.nom,
+                   donnees={"poste": poste.nom, "capacite": membre.cognitive,
+                            "seuil": poste.seuil})
+
+    parole = (f"Dérogation enregistrée. {membre.nom} affecté au poste {poste.nom} "
+              f"sous la responsabilité du capitaine.")
+    return Reponse(parole, "DEROGATION ENREGISTREE",
+                   f"{membre.nom} -> {poste.nom} hors seuil | tracée au journal")
+
+
+def alertes_predictives(etat, limite=3):
+    sorties = []
+    for membre in etat.equipage:
+        if membre.statut != "actif":
+            continue
+        tendance = predict.ajuster(etat.serie(membre.nom))
+        if tendance is None or not tendance.fiable or not tendance.baisse:
+            continue
+        eligibles = [p for p in etat.postes
+                     if p.competence in membre.competences and membre.cognitive >= p.seuil]
+        if not eligibles:
+            continue
+        cible = max(eligibles, key=lambda p: p.seuil)
+        heures = tendance.heures_avant(cible.seuil)
+        if heures is None:
+            continue
+        sorties.append({
+            "crew": membre.nom, "poste": cible.nom, "heures": round(heures, 1),
+            "pente": round(tendance.pente_h, 4), "actuel": membre.cognitive,
+            "seuil": cible.seuil, "r2": round(tendance.r2, 2),
+            "niveau": "critique" if heures < 3 else "attention",
+        })
+    sorties.sort(key=lambda s: s["heures"])
+    return sorties[:limite]

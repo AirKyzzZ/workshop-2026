@@ -1,10 +1,15 @@
+import os
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from . import theme
 
 FB = "/dev/fb0"
+MARK = os.path.join(os.path.dirname(__file__), "assets", "mark.png")
+
 _fonts = {}
+_mark = None
 
 
 def font(path, size):
@@ -12,6 +17,13 @@ def font(path, size):
     if key not in _fonts:
         _fonts[key] = ImageFont.truetype(path, size)
     return _fonts[key]
+
+
+def mark():
+    global _mark
+    if _mark is None and os.path.exists(MARK):
+        _mark = Image.open(MARK).convert("RGBA")
+    return _mark
 
 
 class Screen:
@@ -23,18 +35,26 @@ class Screen:
         self.d.rectangle((0, 0, theme.WIDTH, theme.HEIGHT), fill=theme.BASE)
 
     def header(self, title, right=None):
-        self.d.text((10, 6), title, font=font(theme.SANS_BOLD, 14), fill=theme.INK)
+        x = 10
+        logo = mark()
+        if logo is not None:
+            self.img.paste(logo, (x, 3), logo)
+            x += logo.width + 7
+
+        self.d.text((x, -1), title.upper(), font=font(theme.DISPLAY, 24), fill=theme.INK)
+
         if right:
-            f = font(theme.MONO, 10)
+            f = font(theme.MONO, 9)
             w = self.d.textlength(right, font=f)
-            self.d.text((theme.WIDTH - 10 - w, 10), right, font=f, fill=theme.MUTED)
+            self.d.text((theme.WIDTH - 10 - w, 9), right.upper(), font=f, fill=theme.MUTED)
+
         y = theme.HEADER_H
         self.d.line((0, y, theme.WIDTH, y), fill=theme.EDGE)
 
     def footer(self, hints):
         y = theme.HEIGHT - theme.FOOTER_H
         self.d.line((0, y, theme.WIDTH, y), fill=theme.EDGE)
-        self.d.text((10, y + 4), hints, font=font(theme.SANS, 10), fill=theme.MUTED)
+        self.d.text((10, y + 5), hints, font=font(theme.SANS, 9), fill=theme.MUTED)
 
     def label_value(self, y, label, value, colour=None):
         self.d.text((12, y), label, font=font(theme.SANS, 11), fill=theme.MUTED)
@@ -61,9 +81,12 @@ class Screen:
 
     def banner(self, y, text, colour):
         self.d.rectangle((8, y, theme.WIDTH - 8, y + 30), outline=colour, width=2)
-        f = font(theme.SANS_BOLD, 13)
-        w = self.d.textlength(text, font=f)
-        self.d.text(((theme.WIDTH - w) / 2, y + 7), text, font=f, fill=colour)
+        f = font(theme.DISPLAY, 22)
+        w = self.d.textlength(text.upper(), font=f)
+        self.d.text(((theme.WIDTH - w) / 2, y + 3), text.upper(), font=f, fill=colour)
+
+    def title(self, y, text, colour=None):
+        self.d.text((12, y), text.upper(), font=font(theme.DISPLAY, 20), fill=colour or theme.INK)
 
     def paragraph(self, y, text, colour=None, size=11, max_width=296):
         f = font(theme.SANS, size)
