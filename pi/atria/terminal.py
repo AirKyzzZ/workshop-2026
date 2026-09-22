@@ -92,7 +92,7 @@ class Terminal:
             etiquette = "INTERVENTION REQUISE" if decouverts else (
                 "SURVEILLANCE" if alertes else "SYSTEMES NOMINAUX")
             e.banner(158, etiquette, couleur)
-            e.footer("● menu    🎙 parler    badge pour s'identifier")
+            e.footer("● menu    ← retour    badge pour s'identifier")
 
         elif self.vue == "fiche":
             membre = self.selection
@@ -113,7 +113,7 @@ class Terminal:
                 e.label_value(120, "Sommeil", f"{membre.sommeil_h:.1f} h")
                 e.label_value(142, "Dette sociale", f"{membre.dette_sociale} j")
                 e.label_value(164, "Poste", membre.poste or "aucun")
-            e.footer("● retour    🎙 parler")
+            e.footer("● menu    ← retour")
 
         elif self.vue == "dialogue":
             e.header("DIALOGUE", self.porteur())
@@ -129,7 +129,7 @@ class Terminal:
                          font=ui.font(theme.SANS_BOLD, 13), fill=couleur)
                 y = e.paragraph(80, reponse.detail, theme.INK, 11)
                 e.paragraph(y + 6, reponse.parole, theme.MUTED, 10)
-            e.footer("● retour    🎙 reparler")
+            e.footer("● menu    ← retour")
 
         else:
             titres = {"menu": "MENU", "equipage": "EQUIPAGE", "postes": "POSTES",
@@ -174,7 +174,7 @@ class Terminal:
 
             if not lignes:
                 e.paragraph(90, "Rien a signaler.", theme.MUTED)
-            e.footer("▲▼ naviguer   ● ouvrir   🎙 parler")
+            e.footer("▲▼ naviguer   ● ouvrir   ← retour")
 
         e.blit()
 
@@ -217,6 +217,26 @@ class Terminal:
             voice.repondre(reponse)
         except Exception:
             pass
+
+    PARENT = {
+        "fiche": "equipage",
+        "equipage": "menu",
+        "postes": "menu",
+        "compartiments": "menu",
+        "alertes": "menu",
+        "dialogue": "menu",
+        "menu": "accueil",
+    }
+
+    def revenir(self):
+        if self.vue == "badge":
+            self.vue = self.retour
+            return
+        parent = self.PARENT.get(self.vue)
+        if parent is None:
+            return
+        self.vue = parent
+        self.curseur = self.defilement = 0
 
     def valider(self):
         lignes = self.lignes()
@@ -271,8 +291,9 @@ class Terminal:
                 continue
 
             lignes = self.lignes()
-            if pin == buttons.PARLER:
-                self.parler()
+            if pin == buttons.RETOUR:
+                self.revenir()
+                self.rendre()
             elif pin == buttons.VALIDER:
                 self.valider()
                 self.rendre()

@@ -139,8 +139,21 @@ s'entraîne de toute façon sur WESAD ; le capteur ne servait qu'à valider sur 
 
 ## Alimentation
 
-**C'est le point bloquant du montage.** Mesures prises pendant une génération du modèle,
-avec `vcgencmd` échantillonné toutes les 1,5 s :
+**Résolu.** Le bloc d'origine ne tenait pas le 5 V et provoquait des extinctions sèches en
+pleine démonstration. Après remplacement par un bloc 5 V / 5 A, `get_throttled` renvoie
+`0x0`, y compris sous charge du modèle : plus aucun bit, pas même les bits collants. Le
+rail mesure 5,16 V au lieu de 4,97 V, l'horloge tient 2400 MHz au lieu de s'effondrer à
+1000, et le modèle passe de 8,2 à 10,7 jetons par seconde.
+
+`usb_max_current_enable=1` a été ajouté dans `config.txt`. Sans ce drapeau le firmware
+plafonne l'ensemble des ports USB à 600 mA tant qu'il n'a pas négocié une alimentation
+5 A ; avec, il accorde 1,6 A, ce qui laisse le Mega ADK et la webcam énumérer ensemble.
+**Ce drapeau suppose un bloc réellement capable de 5 A**, sinon il aggrave les coupures.
+
+### Ce qui avait été mesuré avec l'ancien bloc
+
+Gardé parce que c'est la trace du diagnostic. Mesures pendant une génération du modèle,
+`vcgencmd` échantillonné toutes les 1,5 s :
 
 | | Au repos | 3 fils de calcul | 2 fils de calcul |
 |---|---|---|---|
@@ -159,8 +172,24 @@ modèle de langage met 20 s au lieu de 7 s. Le contournement en place est
 `--threads 2` sur `atria-llm`, qui tient le rail et donne paradoxalement un meilleur débit
 que 3 fils, 8,2 jetons par seconde, puisque l'horloge ne s'effondre plus.
 
-Le vrai correctif est **un bloc Raspberry Pi 5 officiel de 27 W, 5,1 V / 5 A**. Sans lui
-rien de plus lourd ne passera, et la soutenance reste exposée à une extinction.
+## Réseau
+
+Le Pi s'est retrouvé injoignable après plusieurs coupures sèches, et la reprise s'est faite
+par la carte SD depuis un Mac, sans écran ni Ethernet.
+
+Deux pièges y ont été trouvés. D'abord **cloud-init ne s'exécute plus** après le premier
+démarrage : modifier `network-config`, `user-data` ou `meta-data` sur la partition de boot
+n'a plus aucun effet, pas même en changeant l'`instance-id`. Ce qui marche est le crochet
+`systemd.run=` dans `cmdline.txt`, qui exécute un script avant tout le reste. Comme
+NetworkManager n'y tourne pas encore, le script écrit directement les fichiers
+`.nmconnection` dans `/etc/NetworkManager/system-connections/`, en `600` et `root`, faute de
+quoi ils sont ignorés.
+
+Ensuite, le routeur est en **Smart Connect** : le SSID `ASUS_E0_5G` est diffusé sur les deux
+bandes, canal 8 en 2,4 GHz et canal 100 en 5 GHz. Le nom est donc trompeur, et le canal 100
+est un canal DFS que le pilote Broadcom du Pi associe mal. La configuration retenue est un
+profil `ASUS_E0_5G-24` verrouillé sur `wifi.band bg` en priorité 20, avec le profil sans
+contrainte de bande en priorité 10 comme secours. Le signal passe de 80 à 97.
 
 ## À faire
 
