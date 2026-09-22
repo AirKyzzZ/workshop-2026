@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATRIA — Console de bord</title>
+<style>
+  @font-face { font-family: Teko; src: url(/static/fonts/Teko-SemiBold.ttf); font-weight: 600; }
+  @font-face { font-family: Inter; src: url(/static/fonts/Inter-Regular.ttf); font-weight: 400; }
+  @font-face { font-family: Inter; src: url(/static/fonts/Inter-SemiBold.ttf); font-weight: 600; }
+  @font-face { font-family: Martian; src: url(/static/fonts/MartianMono-Regular.ttf); }
+
+  :root {
+    --n950: #121111; --n900: #1D1B1B; --n800: #2A2828; --n700: #393838;
+    --n600: #4E4B4B; --n500: #6D6969; --n400: #918D8D; --n200: #D7D5D5;
+    --n100: #EEEDED; --n000: #FFFFFF;
+    --vital: #4BD694; --watch: #E8A33C; --crit: #F4705F; --off: #6D6969;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--n950); color: var(--n100);
+    font-family: Inter, system-ui, sans-serif; font-size: 13px;
+    display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
+  }
+  .mono { font-family: Martian, monospace; font-variant-numeric: tabular-nums; }
+
+  header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 18px; border-bottom: 1px solid var(--n800); background: var(--n900);
+  }
+  header img { width: 26px; height: 26px; }
+  header h1 {
+    font-family: Teko; font-size: 30px; font-weight: 600; line-height: 1;
+    letter-spacing: .02em; text-transform: uppercase;
+  }
+  header .spacer { flex: 1; }
+  .stat { display: flex; flex-direction: column; gap: 1px; }
+  .stat b { font-family: Martian; font-size: 14px; font-weight: 400; }
+  .stat span { font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--n500); }
+  .etiquette {
+    font-family: Teko; font-size: 20px; text-transform: uppercase; letter-spacing: .03em;
+    padding: 2px 14px; border: 2px solid currentColor;
+  }
+
+  main { display: grid; grid-template-columns: 1.35fr 1fr; gap: 1px; background: var(--n800); overflow: hidden; }
+  .col { display: grid; gap: 1px; background: var(--n800); overflow: hidden; }
+  .gauche { grid-template-rows: 1fr auto; }
+  .droite { grid-template-rows: 1.15fr auto 1fr; }
+  section { background: var(--n950); padding: 12px 16px; overflow: hidden; display: flex; flex-direction: column; }
+  h2 {
+    font-size: 9px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--n500); font-weight: 600; margin-bottom: 9px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  h2 em { font-family: Martian; font-style: normal; color: var(--n400); font-size: 10px; }
+  .corps { flex: 1; overflow-y: auto; min-height: 0; }
+  .corps::-webkit-scrollbar { width: 5px; }
+  .corps::-webkit-scrollbar-thumb { background: var(--n700); }
+
+  #plan { width: 100%; height: 100%; }
+  .comp-fond { fill: var(--n900); stroke: var(--n700); stroke-width: 1.5; }
+  .comp-fond.alerte { stroke: var(--watch); }
+  .comp-fond.feu { fill: #2A1614; stroke: var(--crit); stroke-width: 2.5; }
+  .comp-nom { font-family: Teko; font-size: 15px; fill: var(--n200); text-transform: uppercase; }
+  .comp-val { font-family: Martian; font-size: 8.5px; fill: var(--n500); }
+  .comp-val.chaud { fill: var(--watch); }
+  .coque { fill: none; stroke: var(--n700); stroke-width: 1.5; }
+  .membre-pt { fill: var(--vital); }
+  .membre-pt.bas { fill: var(--watch); }
+  .membre-pt.crit { fill: var(--crit); }
+  .poste-tag { font-family: Martian; font-size: 7px; fill: var(--n600); }
+
+  .crew { display: flex; align-items: center; gap: 9px; padding: 4px 0; }
+  .crew .nom { flex: 1; font-size: 12px; }
+  .crew .poste { font-size: 9px; color: var(--n500); }
+  .crew .jauge { width: 60px; height: 5px; background: var(--n800); }
+  .crew .jauge i { display: block; height: 100%; }
+  .crew .val { font-family: Martian; font-size: 11px; width: 34px; text-align: right; }
+
+  .prev { padding: 6px 0; border-bottom: 1px solid var(--n900); font-size: 11.5px; line-height: 1.45; }
+  .prev:last-child { border: 0; }
+  .prev b { color: var(--watch); font-weight: 600; }
+  .prev.critique b { color: var(--crit); }
+  .prev .mono { color: var(--n400); font-size: 10px; }
+
+  .log { display: grid; grid-template-columns: auto auto 1fr; gap: 6px 9px; font-size: 11px; padding: 3px 0; }
+  .log time { font-family: Martian; font-size: 10px; color: var(--n500); }
+  .log .type { font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--n400); }
+  .log .type.refus { color: var(--crit); }
+  .log .type.derogation { color: var(--watch); }
+  .log .type.affectation { color: var(--vital); }
+  .log .motif { color: var(--n200); }
+  .log .motif b { color: var(--n000); font-weight: 600; }
+
+  .alerte-l { display: flex; gap: 9px; align-items: center; padding: 4px 0; font-size: 12px; }
+  .pastille { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+
+  footer { border-top: 1px solid var(--n800); background: var(--n900); padding: 9px 16px; }
+  .chat-hist { max-height: 148px; overflow-y: auto; margin-bottom: 8px; display: none; }
+  .chat-hist.ouvert { display: block; }
+  .bulle { padding: 6px 0; font-size: 12px; line-height: 1.5; border-bottom: 1px solid var(--n800); }
+  .bulle:last-child { border: 0; }
+  .bulle .q { color: var(--n400); }
+  .bulle .r { color: var(--n100); white-space: pre-line; }
+  .bulle .outil {
+    font-family: Martian; font-size: 8.5px; color: var(--vital);
+    text-transform: uppercase; letter-spacing: .08em; margin-top: 3px;
+  }
+  .saisie { display: flex; gap: 9px; align-items: center; }
+  .saisie label { font-family: Martian; font-size: 10px; color: var(--vital); }
+  .saisie input {
+    flex: 1; background: var(--n950); border: 1px solid var(--n800); color: var(--n100);
+    padding: 8px 11px; font-family: Inter, sans-serif; font-size: 13px;
+  }
+  .saisie input:focus { outline: none; border-color: var(--n600); }
+  .saisie .lecture {
+    font-family: Martian; font-size: 8.5px; color: var(--n500);
+    text-transform: uppercase; letter-spacing: .08em;
+  }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    body { overflow: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="/static/mark.svg" alt="">
+  <h1>Atria</h1>
+  <div class="stat"><b id="h-equipage">—</b><span>en service</span></div>
+  <div class="stat"><b id="h-aptes">—</b><span>aptes</span></div>
+  <div class="stat"><b id="h-postes">—</b><span>postes vacants</span></div>
+  <div class="stat"><b class="mono" style="color:var(--off)">AUCUN</b><span>lien terre</span></div>
+  <div class="spacer"></div>
+  <div class="etiquette" id="h-etat" style="color:var(--vital)">Systèmes nominaux</div>
+</header>
+
+<main>
+  <div class="col gauche">
+    <section>
+      <h2>Plan du vaisseau <em id="p-instr"></em></h2>
+      <div class="corps"><svg id="plan" viewBox="0 0 620 330" preserveAspectRatio="xMidYMid meet"></svg></div>
+    </section>
+    <section style="max-height:150px">
+      <h2>Alertes <em id="a-nb"></em></h2>
+      <div class="corps" id="alertes"></div>
+    </section>
+  </div>
+
+  <div class="col droite">
+    <section>
+      <h2>Équipage <em id="e-nb"></em></h2>
+      <div class="corps" id="equipage"></div>
+    </section>
+    <section style="max-height:170px">
+      <h2>Prévisions <em>régression sur 24 h</em></h2>
+      <div class="corps" id="previsions"></div>
+    </section>
+    <section>
+      <h2>Journal des décisions <em>traçabilité</em></h2>
+      <div class="corps" id="journal"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="chat-hist" id="chat-hist"></div>
+  <form class="saisie" id="chat-form">
+    <label>ATRIA</label>
+    <input id="chat-input" autocomplete="off"
+           placeholder="Pourquoi la capacité de reyes baisse ? · qui peut tenir la chirurgie ? · journal">
+    <span class="lecture">lecture seule</span>
+  </form>
+</footer>
+
+<script>
+const PLAN = [
+  { nom: "pont",        x: 372, y: 34,  w: 140, h: 84 },
+  { nom: "infirmerie",  x: 208, y: 34,  w: 150, h: 84 },
+  { nom: "laboratoire", x: 44,  y: 34,  w: 150, h: 84 },
+  { nom: "réacteur",    x: 372, y: 132, w: 140, h: 84 },
+  { nom: "serre",       x: 208, y: 132, w: 150, h: 84 },
+  { nom: "atelier",     x: 44,  y: 132, w: 150, h: 84 },
+];
+const SVGNS = "http://www.w3.org/2000/svg";
+const el = (t, a = {}) => { const n = document.createElementNS(SVGNS, t);
+  for (const k in a) n.setAttribute(k, a[k]); return n; };
+const esc = s => String(s ?? "").replace(/[&<>"']/g,
+  c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const couleur = v => v >= 0.70 ? "var(--vital)" : v >= 0.45 ? "var(--watch)" : "var(--crit)";
+const classe = v => v >= 0.70 ? "" : v >= 0.45 ? "bas" : "crit";
+
+function dessinerPlan(data) {
+  const svg = document.getElementById("plan");
+  svg.replaceChildren();
+  const parComp = Object.fromEntries(data.compartiments.map(c => [c.nom, c]));
+  const capacites = Object.fromEntries(data.equipage.map(m => [m.nom, m.cognitive]));
+  const postes = {};
+  data.postes.forEach(p => (postes[p.compartiment] ??= []).push(p));
+
+  svg.appendChild(el("path", { class: "coque",
+    d: "M 20 118 L 20 64 Q 20 24 62 24 L 500 24 Q 556 24 576 76 L 592 124 Q 600 166 592 208 "
+     + "L 576 256 Q 556 306 500 306 L 62 306 Q 20 306 20 266 Z" }));
+
+  let instrumentes = 0;
+  for (const c of PLAN) {
+    const d = parComp[c.nom] ?? {};
+    if (d.instrumente) instrumentes++;
+    const g = el("g");
+    let cls = "comp-fond";
+    if (d.fumee) cls += " feu"; else if (d.alerte) cls += " alerte";
+    g.appendChild(el("rect", { class: cls, x: c.x, y: c.y, width: c.w, height: c.h, rx: 2 }));
+    const t = el("text", { class: "comp-nom", x: c.x + 9, y: c.y + 20 });
+    t.textContent = c.nom;
+    g.appendChild(t);
+
+    const v = el("text", { class: "comp-val" + (d.humidite > 60 ? " chaud" : ""),
+                           x: c.x + 9, y: c.y + 35 });
+    v.textContent = d.instrumente
+      ? `${d.temp_c?.toFixed(1)}C  ${d.humidite?.toFixed(0)}%  ${d.bruit_db}dB`
+      : `${d.bruit_db ?? "--"} dB`;
+    g.appendChild(v);
+
+    (postes[c.nom] || []).forEach((p, i) => {
+      const pt = el("text", { class: "poste-tag", x: c.x + c.w - 8, y: c.y + 15 + i * 9,
+                              "text-anchor": "end" });
+      pt.textContent = p.titulaire ? `${p.nom} · ${p.titulaire}` : `${p.nom} · VACANT`;
+      if (!p.titulaire) pt.setAttribute("fill", "var(--crit)");
+      g.appendChild(pt);
+    });
+
+    (d.occupants || []).forEach((nom, i) => {
+      const cx = c.x + 12 + (i % 10) * 13;
+      const cy = c.y + c.h - 14 + Math.floor(i / 10) * 11;
+      const pt = el("circle", { class: "membre-pt " + classe(capacites[nom] ?? 1),
+                                cx, cy, r: 4 });
+      pt.appendChild(el("title")).textContent = `${nom} — ${(capacites[nom] ?? 0).toFixed(2)}`;
+      g.appendChild(pt);
+    });
+    svg.appendChild(g);
+  }
+  document.getElementById("p-instr").textContent =
+    `${instrumentes} compartiment${instrumentes > 1 ? "s" : ""} instrumenté${instrumentes > 1 ? "s" : ""}`;
+}
+
+function rendre(data) {
+  const r = data.resume;
+  document.getElementById("h-equipage").textContent = `${r.actifs} / ${r.total}`;
+  document.getElementById("h-aptes").textContent = r.aptes;
+  document.getElementById("h-postes").textContent = r.decouverts;
+
+  const badge = document.getElementById("h-etat");
+  if (r.decouverts) { badge.textContent = "Intervention requise"; badge.style.color = "var(--crit)"; }
+  else if (data.alertes.length) { badge.textContent = "Surveillance"; badge.style.color = "var(--watch)"; }
+  else { badge.textContent = "Systèmes nominaux"; badge.style.color = "var(--vital)"; }
+
+  dessinerPlan(data);
+
+  document.getElementById("e-nb").textContent = `${data.equipage.length} membres`;
+  document.getElementById("equipage").innerHTML = data.equipage.map(m => `
+    <div class="crew">
+      <span class="nom">${esc(m.nom)}${m.poste ? ` <span class="poste">${esc(m.poste)}</span>` : ""}</span>
+      <span class="jauge"><i style="width:${m.cognitive * 100}%;background:${couleur(m.cognitive)}"></i></span>
+      <span class="val" style="color:${couleur(m.cognitive)}">${m.cognitive.toFixed(2)}</span>
+    </div>`).join("");
+
+  document.getElementById("a-nb").textContent = `${data.alertes.length}`;
+  document.getElementById("alertes").innerHTML = data.alertes.length
+    ? data.alertes.map(a => `<div class="alerte-l">
+        <span class="pastille" style="background:${a.niveau === "critique" ? "var(--crit)" : "var(--watch)"}"></span>
+        <span>${esc(a.texte)}</span></div>`).join("")
+    : `<div class="alerte-l" style="color:var(--n500)">Aucune alerte active.</div>`;
+
+  document.getElementById("previsions").innerHTML = data.previsions.length
+    ? data.previsions.map(p => `<div class="prev ${p.niveau}">
+        <b>${esc(p.crew)}</b> passera sous le seuil <b>${esc(p.poste)}</b> (${p.seuil.toFixed(2)})
+        dans <b>${p.heures} h</b>.
+        <div class="mono">actuel ${p.actuel.toFixed(2)} · pente ${p.pente}/h · R² ${p.r2}</div>
+      </div>`).join("")
+    : `<div class="prev" style="color:var(--n500)">Aucune dérive détectée sur l'équipage.</div>`;
+}
+
+async function chargerJournal() {
+  const { entrees } = await (await fetch("/api/journal?limite=24")).json();
+  document.getElementById("journal").innerHTML = entrees.map(e => {
+    const h = new Date(e.ts * 1000).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    return `<div class="log">
+      <time>${h}</time>
+      <span class="type ${esc(e.type)}">${esc(e.type)}</span>
+      <span class="motif">${e.sujet ? `<b>${esc(e.sujet)}</b> · ` : ""}${esc(e.motif)}</span>
+    </div>`;
+  }).join("");
+}
+
+const form = document.getElementById("chat-form");
+const input = document.getElementById("chat-input");
+const hist = document.getElementById("chat-hist");
+
+form.addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const texte = input.value.trim();
+  if (!texte) return;
+  input.value = "";
+  hist.classList.add("ouvert");
+  const bulle = document.createElement("div");
+  bulle.className = "bulle";
+  const q = document.createElement("div");
+  q.className = "q";
+  q.textContent = texte;
+  const r = document.createElement("div");
+  r.className = "r";
+  r.textContent = "…";
+  bulle.append(q, r);
+  hist.prepend(bulle);
+  try {
+    const rep = await (await fetch("/api/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texte }),
+    })).json();
+    bulle.querySelector(".r").textContent = rep.reponse;
+    if (rep.outils?.length) {
+      const o = document.createElement("div");
+      o.className = "outil";
+      o.textContent = `outil ${rep.outils[0].nom} · lecture seule`;
+      bulle.appendChild(o);
+    }
+  } catch {
+    bulle.querySelector(".r").textContent = "La console ne répond pas.";
+  }
+  chargerJournal();
+});
+
+function connecter() {
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onmessage = ev => rendre(JSON.parse(ev.data));
+  ws.onclose = () => setTimeout(connecter, 2000);
+}
+
+fetch("/api/etat").then(r => r.json()).then(rendre);
+chargerJournal();
+setInterval(chargerJournal, 8000);
+connecter();
+</script>
+</body>
+</html>
