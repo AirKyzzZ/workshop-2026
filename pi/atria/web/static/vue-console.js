@@ -16,7 +16,8 @@ export async function vueConsole(hote) {
   const intro = el("p", "intro",
     "ATRIA interroge les données du vaisseau et les explique. Elle ne dispose "
     + "d'aucun outil d'écriture : elle ne peut affecter personne, annuler aucun refus, "
-    + "ni modifier aucune mesure.");
+    + "ni modifier aucune mesure. Le modèle de langage tourne sur la carte et ne fait que "
+    + "mettre en forme la sortie d'un outil ; tout chiffre qu'il ajouterait est rejeté.");
   corps.appendChild(intro);
 
   const suggestions = el("div", "suggestions");
@@ -60,7 +61,14 @@ export async function vueConsole(hote) {
       reponse.textContent = r.reponse;
       if (r.outils?.length) {
         echange.appendChild(el("div", "trace",
-          `outil ${r.outils[0].nom} · lecture seule`));
+          `outil ${r.outils[0].nom} · lecture seule · `
+          + (r.modele ? "mis en forme par le modèle local" : "sortie brute de l'outil")));
+      }
+      if (r.modele && r.releve) {
+        const pli = el("details", "releve");
+        pli.appendChild(el("summary", null, "Voir le relevé d'origine"));
+        pli.appendChild(el("div", null, r.releve));
+        echange.appendChild(pli);
       }
     } catch {
       reponse.textContent = "La console ne répond pas.";

@@ -1,7 +1,7 @@
 import re
 import time
 
-from . import db, predict
+from . import db, llm, predict
 
 OUTILS = {
     "etat_membre": {
@@ -221,6 +221,9 @@ def router(etat, question):
     return None, {}
 
 
+SANS_MODELE = {"journal"}
+"""Le journal est une liste horodatee : la reformuler perdrait des lignes."""
+
 MAX_QUESTION = 180
 
 
@@ -242,8 +245,12 @@ def repondre(etat, question, capitaine=False, medical=False):
         }
 
     texte, donnees = IMPLEMENTATIONS[outil](etat, args, not medical)
+
+    mise_en_forme = None if outil in SANS_MODELE else llm.reformuler(question, texte)
     db.journaliser(etat.conn, "question", assainir(question),
                    acteur="capitaine" if capitaine else "equipage",
-                   donnees={"outil": outil, "args": args})
-    return {"reponse": texte, "outils": [{"nom": outil, "args": args, "ecriture": False}],
+                   donnees={"outil": outil, "args": args, "modele": mise_en_forme is not None})
+    return {"reponse": mise_en_forme or texte, "releve": texte,
+            "outils": [{"nom": outil, "args": args, "ecriture": False}],
+            "modele": mise_en_forme is not None,
             "donnees": donnees, "erreur": False}

@@ -265,6 +265,19 @@ h3 {
   text-transform: uppercase; letter-spacing: .08em; margin-top: 6px;
 }
 
+.releve { margin-top: 6px; font-size: 12px; color: var(--sourdine); }
+.releve summary {
+  cursor: pointer; color: var(--faible); font-size: 11px;
+  letter-spacing: .04em; list-style: none;
+}
+.releve summary::marker, .releve summary::-webkit-details-marker { display: none; }
+.releve summary::before { content: "+ "; font-family: Martian; }
+.releve[open] summary::before { content: "− "; }
+.releve > div {
+  margin-top: 5px; padding-left: calc(var(--u) * 1.5);
+  border-left: 1px solid var(--trait); line-height: 1.6;
+}
+
 .catalogue { margin-top: calc(var(--u) * 4); }
 .outil {
   display: grid; grid-template-columns: 130px 1fr; gap: calc(var(--u) * 1.5);
