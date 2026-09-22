@@ -41,6 +41,27 @@ Deux niveaux d'accès, résolus physiquement par badge NFC : le porte-clés donn
 d'équipage l'accès à ses propres données, la carte donne au capitaine une vue globale — sur
 laquelle aucune donnée médicale n'apparaît.
 
+## Dashboard de bord
+
+Le Pi sert un tableau de bord sur son propre réseau, en cinq onglets. On y entre en badgeant
+le terminal physique : sans badge présenté, il n'y a qu'un écran de verrouillage, et la
+session se referme d'elle-même au bout de trois minutes.
+
+| Onglet | Contenu |
+|---|---|
+| Bord | synthèse, alertes, prévisions par régression, atmosphère en direct |
+| Vaisseau | plan cliquable, puis atmosphère et occupants de chaque compartiment |
+| Équipage | liste triée par capacité, puis fiche complète avec courbes sur 24 h |
+| Journal | toutes les décisions, refus et dérogations, filtrables par type |
+| Console | questions en langage naturel, sept outils tous en lecture seule |
+
+Ce que voit le capitaine et ce que voit un membre d'équipage diffèrent. Le capitaine a la vue
+globale et les postes, jamais une donnée physiologique. Le porte-clés ouvre le détail médical,
+mais seulement à celui qui l'a présenté, et chaque consultation est écrite au journal.
+
+Les courbes sont dessinées à la main en SVG, sans bibliothèque : tout doit fonctionner sans
+réseau, donc rien n'est chargé depuis un CDN.
+
 ## Contrainte d'architecture
 
 **Le système livré tourne intégralement sur la carte.** Le Raspberry Pi 5 porte le régulateur,
@@ -93,8 +114,9 @@ sujet/        énoncé officiel du workshop
 
 ## Démarrage
 
-La documentation matérielle est dans [`docs/materiel.md`](docs/materiel.md) : inventaire
-complet, brochage de chaque capteur et état de validation.
+Le schéma du montage, ce qui est relié à quoi et ce qui reste à ajouter, est dans
+[`docs/montage.md`](docs/montage.md). L'inventaire complet, le brochage de chaque capteur et
+son état de validation sont dans [`docs/materiel.md`](docs/materiel.md).
 
 Pour reconstruire le Raspberry Pi depuis une carte SD vierge, suivre
 [`docs/installation-pi.md`](docs/installation-pi.md).

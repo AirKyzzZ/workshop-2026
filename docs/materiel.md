@@ -23,8 +23,8 @@ Le Mega est relié au Pi par un simple câble USB-B. Il est vu comme `/dev/ttyAC
 |---|---|---|
 | `A0` | Capteur de son (sortie analogique) | validé |
 | `A1` | MQ-2, fumée et gaz combustibles | alimenté, non testé au gaz |
-| `A2` | AD8232 `OUTPUT` — ECG | validé électriquement |
-| `A4` | DHT22 `DATA` | **ne répond pas** |
+| `A2` | AD8232 `OUTPUT`, ECG | alimentation OK, **liaison intermittente** |
+| `A3` | DHT22 `DATA` | validé, remonte jusqu'au dashboard |
 | `D6` | Buzzer actif `+` | validé |
 | `D10` | AD8232 `LO-` | validé |
 | `D11` | AD8232 `LO+` | validé |
@@ -127,10 +127,20 @@ Deux pièges : **le mot « atria » est absent du lexique** et ne peut pas servi
 sérialisée avec `ensure_ascii=False`, sinon les accents sont échappés et plus rien n'est
 reconnu.
 
+## ECG
+
+L'AD8232 est alimenté correctement, 3,33 V stables mesurés au multimètre, et les électrodes
+sont neuves. Le placement thoracique a bien fait remonter l'amplitude, de 117 à 381 counts,
+mais la liaison est intermittente : une minute de ligne plate à 27 counts avec `LO` à 0 % de
+contact, puis du pleine échelle sans que rien n'ait bougé. C'est le câble ou le module.
+
+Sans pièce de rechange, l'ECG est mis de côté. Ça ne bloque pas le modèle de stress, qui
+s'entraîne de toute façon sur WESAD ; le capteur ne servait qu'à valider sur un signal à nous.
+
 ## À faire
 
-- DHT22 : ne répond sur aucune broche, deux exemplaires testés. Mesurer `VCC` au multimètre et
-  vérifier la sérigraphie du module avant tout nouvel essai.
+- Second DHT22 sur le réacteur, pour avoir deux atmosphères à comparer sur les courbes.
 - MQ-2 : tester la réaction au gaz avec un briquet non allumé.
+- Elegoo Mega 2560 + LCD en afficheur de compartiment autonome.
 - NodeMCU : câbler en compartiment déporté, nécessite le point d'accès Wi-Fi du Pi.
 - Alimentation 5 V / 5 A pour le Pi, et dongle USB audio. Les deux seuls achats bloquants.
