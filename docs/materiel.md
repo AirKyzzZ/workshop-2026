@@ -6,7 +6,7 @@
 |---|---|---|
 | Raspberry Pi 5, 4 Go | Cerveau. Régulateur, modèle, base, voix, dashboard | opérationnel |
 | Arduino Mega ADK R3 | Front-end analogique et capteurs, relié au Pi en USB | opérationnel |
-| Elegoo Mega 2560 R3 | Second terminal, non encore utilisé | disponible |
+| Elegoo Mega 2560 R3 | Nœud de compartiment, réacteur | flashé, capteurs à câbler |
 | NodeMCU V3 (ESP8266) | Compartiment déporté en Wi-Fi | à câbler |
 | Geekcreit ESP-12F (ESP8266) | Troisième compartiment, ou secours | disponible |
 | Adafruit PiTFT 2,8" résistif | Afficheur de bord monté sur le Pi | affichage OK, tactile HS |
@@ -44,6 +44,38 @@ Ne jamais faire partager la même rangée d'alimentation à un composant 3,3 V e
 
 **Règle d'isolation.** Aucune liaison directe entre les broches du Mega et le GPIO du Pi. Le
 Mega est en 5 V, le GPIO du Pi en 3,3 V. Tout passe par l'USB.
+
+## Nœud de compartiment
+
+Le Mega 2560 est branché en USB au Pi et vu comme `/dev/ttyACM1`, chemin stable
+`usb-Arduino__www.arduino.cc__0042_85935333637351E0F190-if00`. Il est flashé avec
+[`firmware/atria_noeud/`](../firmware/atria_noeud/) et annonce une ligne par seconde.
+
+| Broche | Composant | État |
+|---|---|---|
+| `A0` | DHT22 réacteur, 5 V | à câbler |
+| `D8` `D9` | LCD `RS` et `E` | à câbler |
+| `D4` `D5` `D6` `D7` | LCD `D4`..`D7` | à câbler |
+
+La découverte est automatique : `pi/atria/noeud.py` scrute `/dev/serial/by-id` toutes les
+quinze secondes et ouvre toute carte dont la signature n'est pas celle de la passerelle.
+Tant que la sonde n'est pas câblée, la carte annonce `-9999`, que le Pi ignore.
+
+## Flasher une carte
+
+`arduino-cli` est installé sur le Pi, avec le cœur AVR et les bibliothèques DHT, MFRC522
+et LiquidCrystal. On reflashe donc n'importe quelle carte en SSH, sans débrancher :
+
+```bash
+sudo systemctl stop atria-terminal
+cd ~/atria/firmware
+arduino-cli compile --fqbn arduino:avr:mega:cpu=atmega2560 atria_noeud
+arduino-cli upload -p /dev/ttyACM1 --fqbn arduino:avr:mega:cpu=atmega2560 atria_noeud
+sudo systemctl start atria-terminal
+```
+
+Pour la passerelle, le FQBN est `arduino:avr:megaADK` sur `/dev/ttyACM0`. Arrêter le
+terminal avant tout téléversement : il tient le port.
 
 ## Raspberry Pi 5
 
@@ -223,7 +255,9 @@ contrainte de bande en priorité 10 comme secours. Le signal passe de 80 à 97.
 
 ## À faire
 
-- Second DHT22 sur le réacteur, pour avoir deux atmosphères à comparer sur les courbes.
+- Câbler le second DHT22 sur `A0` du nœud et le LCD sur `D8 D9 D4 D5 D6 D7`. La carte est
+  flashée et découverte automatiquement, elle annonce déjà `AMBIANCE reacteur -9999 -9999`,
+  soit « sonde absente ».
 - MQ-2 : tester la réaction au gaz avec un briquet non allumé.
 - Elegoo Mega 2560 + LCD en afficheur de compartiment autonome.
 - NodeMCU : câbler en compartiment déporté, nécessite le point d'accès Wi-Fi du Pi.
