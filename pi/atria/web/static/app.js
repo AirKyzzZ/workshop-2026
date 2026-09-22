@@ -1,11 +1,26 @@
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
-  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+import { el, json } from "./ui.js";
+import { vueBord } from "./vue-bord.js";
+import { vueCompartiment, vueVaisseau } from "./vue-vaisseau.js";
+import { vueEquipage, vueMembre } from "./vue-equipage.js";
+import { vueJournal } from "./vue-journal.js";
+import { vueConsole } from "./vue-console.js";
 
-const couleur = (v) =>
-  v >= 0.70 ? "var(--nominal)" : v >= 0.45 ? "var(--attention)" : "var(--critique)";
+const ONGLETS = [
+  { route: "#/", libelle: "Bord" },
+  { route: "#/vaisseau", libelle: "Vaisseau" },
+  { route: "#/equipage", libelle: "Équipage" },
+  { route: "#/journal", libelle: "Journal" },
+  { route: "#/atria", libelle: "Console" },
+];
 
-const heure = (ts) =>
-  new Date(ts * 1000).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const vue = document.getElementById("vue");
+const verrou = document.getElementById("verrou");
+const application = document.getElementById("application");
+const onglets = document.getElementById("onglets");
+
+let etat = null;
+let session = { acteur: null, role: "anonyme", capitaine: false };
+let minuteur = null;
 
 /* ---------- theme ---------- */
 
@@ -20,142 +35,99 @@ function appliquerTheme(nom) {
 
 boutonTheme.addEventListener("click", () =>
   appliquerTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
-
 appliquerTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
 
-/* ---------- rendu ---------- */
+/* ---------- navigation ---------- */
 
-function entete(data) {
-  const r = data.resume;
-  document.getElementById("h-equipage").textContent = `${r.actifs} / ${r.total}`;
-  document.getElementById("h-aptes").textContent = r.aptes;
-  document.getElementById("h-vacants").textContent = r.decouverts;
+for (const o of ONGLETS) {
+  const a = el("a", "onglet", o.libelle);
+  a.href = o.route;
+  a.dataset.route = o.route;
+  onglets.appendChild(a);
+}
 
-  const s = data.session;
-  const identite = document.getElementById("h-session");
-  identite.textContent = s?.acteur ? s.acteur.toUpperCase() : "AUCUNE";
-  identite.style.color = s?.capitaine ? "var(--attention)"
-    : s?.acteur ? "var(--nominal)" : "var(--faible)";
-  document.getElementById("mention").textContent =
-    s?.role === "equipage" ? "accès équipage · lecture seule"
-      : s?.capitaine ? "commandement · lecture seule" : "lecture seule";
-
-  const badge = document.getElementById("h-etat");
-  if (r.decouverts) {
-    badge.textContent = "Intervention requise";
-    badge.style.color = "var(--critique)";
-  } else if (data.alertes.length) {
-    badge.textContent = "Surveillance";
-    badge.style.color = "var(--attention)";
-  } else {
-    badge.textContent = "Systèmes nominaux";
-    badge.style.color = "var(--nominal)";
+function marquerOnglet(route) {
+  const racine = "#/" + (route.split("/")[1] ?? "");
+  for (const a of onglets.children) {
+    a.classList.toggle("actif", a.dataset.route === (racine === "#/" ? "#/" : racine));
   }
 }
 
-function equipage(data) {
-  document.getElementById("e-nb").textContent = `${data.equipage.length} membres`;
-  document.getElementById("equipage").innerHTML = data.equipage.map((m) => `
-    <div class="rang">
-      <span class="nom">${esc(m.nom)}${m.poste ? `<small>${esc(m.poste)}</small>` : ""}</span>
-      <span class="jauge"><i style="width:${m.cognitive * 100}%;background:${couleur(m.cognitive)}"></i></span>
-      <span class="val" style="color:${couleur(m.cognitive)}">${m.cognitive.toFixed(2)}</span>
-    </div>`).join("");
+/* ---------- session ---------- */
+
+function peindreSession() {
+  const identite = document.getElementById("identite");
+  const role = document.getElementById("role");
+  identite.textContent = session.acteur ? session.acteur.toUpperCase() : "—";
+  identite.style.color = session.capitaine ? "var(--attention)" : "var(--nominal)";
+  role.textContent = session.capitaine ? "commandement" : "équipage";
 }
 
-function alertes(data) {
-  document.getElementById("a-nb").textContent = data.alertes.length || "";
-  document.getElementById("alertes").innerHTML = data.alertes.length
-    ? data.alertes.map((a) => `<div class="signal">
-        <span class="point" style="background:${a.niveau === "critique" ? "var(--critique)" : "var(--attention)"}"></span>
-        <span>${esc(a.texte)}</span></div>`).join("")
-    : `<div class="vide">Aucune alerte active.</div>`;
+async function verifierSession() {
+  const avant = session.acteur;
+  try {
+    session = await json("/api/session");
+  } catch {
+    return;
+  }
+  const ouvert = Boolean(session.acteur) && !session.expire;
+  verrou.hidden = ouvert;
+  application.hidden = !ouvert;
+  if (!ouvert) {
+    if (minuteur) { clearInterval(minuteur); minuteur = null; }
+    return;
+  }
+  peindreSession();
+  if (avant !== session.acteur) {
+    etat = await json("/api/etat");
+    router();
+  }
 }
 
-function previsions(data) {
-  document.getElementById("previsions").innerHTML = data.previsions.length
-    ? data.previsions.map((p) => `<div class="prevision ${esc(p.niveau)}">
-        <strong>${esc(p.crew)}</strong> passera sous le seuil
-        <strong>${esc(p.poste)}</strong> (${p.seuil.toFixed(2)}) dans
-        <strong>${p.heures} h</strong>.
-        <div class="detail">actuel ${p.actuel.toFixed(2)} · pente ${p.pente}/h · R² ${p.r2}</div>
-      </div>`).join("")
-    : `<div class="vide">Aucune dérive détectée sur l'équipage.</div>`;
-}
+/* ---------- routeur ---------- */
 
-function rendre(data) {
-  entete(data);
-  dessinerPlan(data);
-  equipage(data);
-  alertes(data);
-  previsions(data);
-}
+async function router() {
+  if (!session.acteur) return;
+  if (minuteur) { clearInterval(minuteur); minuteur = null; }
 
-async function chargerJournal() {
-  const { entrees } = await (await fetch("/api/journal?limite=24")).json();
-  document.getElementById("journal").innerHTML = entrees.map((e) => `
-    <div class="entree">
-      <time>${heure(e.ts)}</time>
-      <span class="genre ${esc(e.type)}">${esc(e.type)}</span>
-      <span class="motif">${e.sujet ? `<b>${esc(e.sujet)}</b> · ` : ""}${esc(e.motif)}</span>
-    </div>`).join("");
-}
+  const route = location.hash || "#/";
+  marquerOnglet(route);
+  vue.replaceChildren();
+  vue.scrollTop = 0;
 
-/* ---------- console ---------- */
-
-const formulaire = document.getElementById("console");
-const champ = document.getElementById("question");
-const historique = document.getElementById("historique");
-
-formulaire.addEventListener("submit", async (ev) => {
-  ev.preventDefault();
-  const texte = champ.value.trim();
-  if (!texte) return;
-  champ.value = "";
-
-  const bloc = document.createElement("div");
-  bloc.className = "echange";
-  const demande = document.createElement("div");
-  demande.className = "demande";
-  demande.textContent = texte;
-  const reponse = document.createElement("div");
-  reponse.className = "reponse";
-  reponse.textContent = "…";
-  bloc.append(demande, reponse);
-  historique.prepend(bloc);
+  if (!etat) etat = await json("/api/etat");
+  const [, section, argument] = route.split("/");
+  vue.dataset.page = section || "bord";
+  const cible = decodeURIComponent(argument ?? "");
 
   try {
-    const rep = await (await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texte }),
-    })).json();
-    reponse.textContent = rep.reponse;
-    if (rep.outils?.length) {
-      const trace = document.createElement("div");
-      trace.className = "trace";
-      trace.textContent = `outil ${rep.outils[0].nom} · lecture seule`;
-      bloc.appendChild(trace);
-    }
-  } catch {
-    reponse.textContent = "La console ne répond pas.";
+    if (section === "vaisseau") await vueVaisseau(vue, etat);
+    else if (section === "compartiment") await vueCompartiment(vue, etat, cible);
+    else if (section === "equipage" && cible) await vueMembre(vue, cible);
+    else if (section === "equipage") vueEquipage(vue, etat);
+    else if (section === "journal") minuteur = await vueJournal(vue);
+    else if (section === "atria") await vueConsole(vue);
+    else await vueBord(vue, etat, session);
+  } catch (erreur) {
+    vue.appendChild(el("div", "vide", `Impossible d'afficher cette vue : ${erreur.message}`));
   }
-  chargerJournal();
-});
+}
 
-/* ---------- flux ---------- */
+window.addEventListener("hashchange", router);
+
+/* ---------- flux temps reel ---------- */
 
 function connecter() {
   const ws = new WebSocket(`ws://${location.host}/ws`);
-  ws.onmessage = (ev) => rendre(JSON.parse(ev.data));
+  ws.onmessage = (ev) => {
+    const paquet = JSON.parse(ev.data);
+    etat = paquet;
+    if (paquet.session) session = paquet.session;
+    const route = location.hash || "#/";
+    if (route === "#/" || route === "#/vaisseau" || route === "#/equipage") router();
+  };
   ws.onclose = () => setTimeout(connecter, 2000);
 }
 
-Promise.all([
-  fetch("/api/etat").then((r) => r.json()),
-  fetch("/api/session").then((r) => r.json()),
-]).then(([etat, session]) => rendre({ ...etat, session }));
-
-chargerJournal();
-setInterval(chargerJournal, 8000);
-connecter();
+verifierSession().then(() => { router(); connecter(); });
+setInterval(verifierSession, 4000);

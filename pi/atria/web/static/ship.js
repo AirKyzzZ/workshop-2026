@@ -30,9 +30,9 @@ const txt = (contenu, a) => {
 function structure(svg) {
   svg.appendChild(el("path", {
     class: "coque",
-    d: "M 40 92 Q 40 44 88 44 L 524 44 Q 570 44 588 88 L 606 176 "
-     + "Q 612 195 606 214 L 588 302 Q 570 346 524 346 L 88 346 "
-     + "Q 40 346 40 298 Z",
+    d: "M 36 78 Q 36 26 88 26 L 520 26 Q 566 26 582 66 L 606 176 "
+     + "Q 612 195 606 214 L 582 324 Q 566 364 520 364 L 88 364 "
+     + "Q 36 364 36 312 Z",
   }));
   svg.appendChild(el("line", {
     class: "couloir", x1: 58, y1: COULOIR_Y, x2: 596, y2: COULOIR_Y,
@@ -50,7 +50,7 @@ function structure(svg) {
   svg.appendChild(txt("POUPE", { class: "repere", x: 58, y: COULOIR_Y - 11 }));
 }
 
-function salle(svg, c, d, postes, capacites) {
+function salle(svg, c, d, postes, capacites, surClic) {
   const x = COL_X[c.col];
   const y = RANG_Y[c.rang];
   const g = el("g");
@@ -73,7 +73,7 @@ function salle(svg, c, d, postes, capacites) {
   });
 
   const mesures = d.instrumente
-    ? `${d.temp_c?.toFixed(1)} °C   ${d.humidite?.toFixed(0)} %   ${d.bruit_db} dB`
+    ? `${d.temp_c?.toFixed(1)} °C · ${d.humidite?.toFixed(0)} % · ${d.bruit_db} dB`
     : `${d.bruit_db ?? "--"} dB`;
   g.appendChild(txt(mesures, {
     class: "salle-val" + (d.humidite > 60 ? " chaud" : ""),
@@ -90,10 +90,14 @@ function salle(svg, c, d, postes, capacites) {
     g.appendChild(pt);
   });
 
+  if (surClic) {
+    g.setAttribute("class", "salle-groupe");
+    g.addEventListener("click", () => surClic(c.nom));
+  }
   svg.appendChild(g);
 }
 
-function dessinerPlan(data) {
+export function dessinerPlan(data, surClic) {
   const svg = document.getElementById("plan");
   svg.replaceChildren();
 
@@ -103,9 +107,7 @@ function dessinerPlan(data) {
   data.postes.forEach((p) => (postes[p.compartiment] ??= []).push(p));
 
   structure(svg);
-  for (const c of PLAN) salle(svg, c, parNom[c.nom] ?? {}, postes[c.nom], capacites);
+  for (const c of PLAN) salle(svg, c, parNom[c.nom] ?? {}, postes[c.nom], capacites, surClic);
 
-  const n = data.compartiments.filter((c) => c.instrumente).length;
-  document.getElementById("p-instr").textContent =
-    `${n} compartiment${n > 1 ? "s" : ""} instrumenté${n > 1 ? "s" : ""}`;
+  return data.compartiments.filter((c) => c.instrumente).length;
 }

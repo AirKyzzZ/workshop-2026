@@ -191,7 +191,7 @@ class Terminal:
             db.ouvrir_session(self.etat.conn, connu[0],
                               "capitaine" if connu[1] else "equipage")
             db.journaliser(self.etat.conn, "identification",
-                           f"badge {connu[0]} presente au terminal",
+                           f"badge {connu[0]} présenté au terminal",
                            acteur=connu[0], sujet=connu[0])
         self.retour = self.vue if self.vue not in ("badge", "dialogue") else "accueil"
         self.vue = "badge"

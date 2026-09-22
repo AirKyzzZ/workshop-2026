@@ -238,3 +238,21 @@ def session(conn):
         return {"acteur": None, "role": "anonyme", "capitaine": False, "expire": True}
     return {"acteur": r["acteur"], "role": r["role"],
             "capitaine": r["role"] == "capitaine", "expire": False}
+
+
+def serie_ambiance(conn, compartiment, heures=24):
+    depuis = time.time() - heures * 3600
+    curseur = conn.execute(
+        "SELECT ts, temp_c, humidite, bruit_db, mq2_brut, fumee FROM ambiance"
+        " WHERE compartiment = ? AND ts >= ? ORDER BY ts",
+        (compartiment, depuis))
+    return [dict(r) for r in curseur]
+
+
+def serie_vitals(conn, crew, heures=24):
+    depuis = time.time() - heures * 3600
+    curseur = conn.execute(
+        "SELECT ts, hr, rmssd, sdnn, stress FROM vitals"
+        " WHERE crew = ? AND ts >= ? ORDER BY ts",
+        (crew, depuis))
+    return [dict(r) for r in curseur]

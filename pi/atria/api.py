@@ -63,8 +63,8 @@ def tracer_acces_medical(session):
         return
     _dernier_acces_medical = maintenant
     db.journaliser(etat.conn, "identification",
-                   "consultation des donnees physiologiques",
-                   acteur=session["acteur"], sujet="equipage")
+                   "consultation des données physiologiques",
+                   acteur=session["acteur"], sujet="équipage")
 
 
 def instantane(medical=False):
@@ -124,6 +124,44 @@ def api_serie(nom: str, points: int = 48):
             "fiable": tendance.fiable,
             "projection_6h": round(tendance.projection(6), 3),
         },
+    }
+
+
+@app.get("/api/ambiance/{compartiment}")
+def api_ambiance(compartiment: str, heures: int = 24):
+    return {"compartiment": compartiment, "heures": heures,
+            "points": db.serie_ambiance(etat.conn, compartiment, heures)}
+
+
+@app.get("/api/vitals/{nom}")
+def api_vitals(nom: str, heures: int = 24):
+    if db.session(etat.conn)["role"] != "equipage":
+        return {"nom": nom, "points": [], "refuse": True,
+                "motif": "donnees physiologiques reservees au badge d'equipage"}
+    return {"nom": nom, "heures": heures,
+            "points": db.serie_vitals(etat.conn, nom, heures), "refuse": False}
+
+
+@app.get("/api/membre/{nom}")
+def api_membre(nom: str):
+    session = db.session(etat.conn)
+    medical = session["role"] == "equipage"
+    etat.recharger()
+    m = etat.membre(nom)
+    if m is None:
+        return {"erreur": "membre inconnu"}
+    serie = db.releve_capacite(etat.conn, nom, 48)
+    tendance = predict.ajuster(serie)
+    return {
+        "membre": membre_json(m, medical),
+        "capacite": [{"ts": ts, "valeur": v} for ts, v in serie],
+        "tendance": None if tendance is None else {
+            "pente_h": round(tendance.pente_h, 4), "r2": round(tendance.r2, 3),
+            "fiable": tendance.fiable, "projection_6h": round(tendance.projection(6), 3),
+        },
+        "contacts": [{"crew": a, "minutes": round(s / 60)}
+                     for a, s in db.contacts(etat.conn, nom, time.time() - 86400)][:8],
+        "medical": medical,
     }
 
 

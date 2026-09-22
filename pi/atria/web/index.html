@@ -15,62 +15,35 @@
 </head>
 <body>
 
-<header>
-  <img src="/static/mark.svg" alt="">
-  <span class="marque">Atria</span>
-
-  <div class="chiffre"><b id="h-equipage">—</b><span>en service</span></div>
-  <div class="chiffre"><b id="h-aptes">—</b><span>aptes</span></div>
-  <div class="chiffre"><b id="h-vacants">—</b><span>postes vacants</span></div>
-  <div class="chiffre"><b id="h-session">—</b><span>identité</span></div>
-  <div class="chiffre"><b class="mono">AUCUN</b><span>lien terre</span></div>
-
-  <span class="espace"></span>
-  <button class="bouton-theme" id="theme" type="button">Sombre</button>
-  <span class="badge-etat" id="h-etat">Systèmes nominaux</span>
-</header>
-
-<main>
-  <div class="colonne">
-    <section class="etire">
-      <h2>Plan du vaisseau <em id="p-instr"></em></h2>
-      <div class="corps">
-        <svg id="plan" viewBox="0 0 620 390" preserveAspectRatio="xMidYMid meet"></svg>
-      </div>
-    </section>
-    <section style="height:150px">
-      <h2>Alertes <em id="a-nb"></em></h2>
-      <div class="corps" id="alertes"></div>
-    </section>
+<div id="verrou" class="verrou">
+  <svg class="marque-signe" viewBox="0 0 64 64" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M32 4a28 28 0 1 0 0 56 28 28 0 0 0 0-56ZM32 13l13 38h-6.5l-2.5-8h-8l-2.5 8H19L32 13Zm0 16-2.4 8h4.8L32 29Z"/></svg>
+  <h1>Atria</h1>
+  <p class="baseline">Régulation de la santé et des affectations d'équipage</p>
+  <div class="consigne">
+    <span class="pulsation"></span>
+    Présentez votre badge sur le lecteur du terminal de bord
   </div>
+  <p class="aide">
+    Le porte-clés ouvre l'accès équipage avec le détail physiologique.<br>
+    La carte de commandement ouvre la vue d'ensemble, sans données médicales.
+  </p>
+</div>
 
-  <div class="colonne">
-    <section class="etire">
-      <h2>Équipage <em id="e-nb"></em></h2>
-      <div class="corps" id="equipage"></div>
-    </section>
-    <section style="height:158px">
-      <h2>Prévisions <em>régression sur 24 h</em></h2>
-      <div class="corps" id="previsions"></div>
-    </section>
-    <section class="etire">
-      <h2>Journal des décisions <em>traçabilité</em></h2>
-      <div class="corps" id="journal"></div>
-    </section>
-  </div>
-</main>
+<div id="application" hidden>
+  <header>
+    <svg class="marque-signe" viewBox="0 0 64 64" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M32 4a28 28 0 1 0 0 56 28 28 0 0 0 0-56ZM32 13l13 38h-6.5l-2.5-8h-8l-2.5 8H19L32 13Zm0 16-2.4 8h4.8L32 29Z"/></svg>
+    <span class="marque">Atria</span>
+    <nav id="onglets"></nav>
+    <span class="espace"></span>
+    <div class="chiffre">
+      <b id="identite">—</b>
+      <span id="role">—</span>
+    </div>
+    <button class="bouton-theme" id="theme" type="button">Sombre</button>
+  </header>
+  <main id="vue"></main>
+</div>
 
-<footer>
-  <div class="historique" id="historique"></div>
-  <form class="console" id="console">
-    <span class="invite">ATRIA</span>
-    <input id="question" autocomplete="off"
-           placeholder="Pourquoi la capacité de reyes baisse ?   ·   qui peut tenir la chirurgie ?   ·   journal">
-    <span class="mention" id="mention">lecture seule</span>
-  </form>
-</footer>
-
-<script src="/static/ship.js"></script>
-<script src="/static/app.js"></script>
+<script type="module" src="/static/app.js"></script>
 </body>
 </html>
