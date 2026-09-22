@@ -185,6 +185,7 @@ async def flux_mjpeg(requete):
     limite = b"--trame"
     vide = 0
     _spectateurs += 1
+    camera.flux.regarder(+1)
     try:
         while camera.flux.actif:
             if await requete.is_disconnected():
@@ -202,6 +203,7 @@ async def flux_mjpeg(requete):
             await asyncio.sleep(0.08)
     finally:
         _spectateurs -= 1
+        camera.flux.regarder(-1)
 
 
 @app.get("/api/camera/flux")

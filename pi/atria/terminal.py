@@ -6,7 +6,7 @@ import json
 import urllib.error
 import urllib.request
 
-from . import buttons, db, link, model, regulator, theme, ui, visage, voice
+from . import buttons, db, link, model, noeud, regulator, theme, ui, visage, voice
 
 BADGES = {
     "FC2A1B17": ("moreau", False),
@@ -26,6 +26,7 @@ DELAI_CONTROLE_S = 20.0
 BADGE_AFFICHAGE_S = 2.5
 COMPARTIMENT_LOCAL = "infirmerie"
 INGESTION_S = 20.0
+SCRUTATION_S = 15.0
 
 
 class Terminal:
@@ -34,6 +35,8 @@ class Terminal:
         self.ecran = ui.Screen()
         self.boutons = buttons.Boutons()
         self.lien = link.Link()
+        self.reseau = noeud.Reseau(self.etat.conn)
+        self.reseau.scruter()
         self.vue = "accueil"
         self.retour = "accueil"
         self.curseur = 0
@@ -44,6 +47,7 @@ class Terminal:
         self.badge_info = None
         self.dialogue = None
         self.prochaine_ingestion = 0.0
+        self.prochaine_scrutation = 0.0
         self.actif = True
 
     def porteur(self):
@@ -324,6 +328,10 @@ class Terminal:
         self.rendre()
         dernier_rendu = time.monotonic()
         while self.actif:
+            if time.monotonic() >= self.prochaine_scrutation:
+                self.prochaine_scrutation = time.monotonic() + SCRUTATION_S
+                self.reseau.scruter()
+
             if time.monotonic() >= self.prochaine_ingestion:
                 self.prochaine_ingestion = time.monotonic() + INGESTION_S
                 try:
@@ -366,6 +374,7 @@ class Terminal:
     def fermer(self):
         self.boutons.fermer()
         self.lien.fermer()
+        self.reseau.fermer()
 
 
 def main():

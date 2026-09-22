@@ -1,22 +1,40 @@
+import glob
 import queue
 import threading
 import time
 
 import serial
 
-PORT = "/dev/ttyACM0"
 BAUD = 115200
+BY_ID = "/dev/serial/by-id/"
+SIGNATURE_ADK = "0044"
+"""Identifiant produit USB du Mega ADK, present dans son nom by-id."""
+
+
+def resoudre_port(signature=SIGNATURE_ADK, defaut="/dev/ttyACM0"):
+    """Chemin stable d'une carte, par signature USB plutot que par ordre d'enumeration.
+
+    Avec deux Arduino branches, /dev/ttyACM0 et ACM1 s'echangent d'un demarrage a
+    l'autre : la passerelle se retrouverait alors a parler au noeud de compartiment.
+    """
+    for chemin in sorted(glob.glob(BY_ID + "*")):
+        if signature in chemin:
+            return chemin
+    return defaut
+
+
+PORT = None
 
 
 class Link:
-    def __init__(self, port=PORT, baud=BAUD):
+    def __init__(self, port=None, baud=BAUD):
         self.evenements = queue.Queue(maxsize=64)
         self.mic = 0
         self.mq2 = 0
         self.temp_c = None
         self.humidite = None
         self.connecte = False
-        self._port = port
+        self._port = port or resoudre_port()
         self._baud = baud
         self._serie = None
         self._verrou = threading.Lock()

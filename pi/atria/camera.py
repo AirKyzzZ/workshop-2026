@@ -15,7 +15,12 @@ import cv2
 
 from . import db, visage
 
-PERIODE_S = 0.08
+PERIODE_VEILLE_S = 1.0
+PERIODE_REPOS_S = 0.20
+PERIODE_CONTROLE_S = 0.08
+"""Deux cadences. SFace coute environ 100 ms par image : le calculer en continu
+consomme un coeur entier et fait monter le SoC au-dela de sa consigne thermique.
+Au repos on se contente de detecter, ce qui est dix fois moins cher."""
 FRAMES_POUR_ACCORD = 3
 DELAI_VERIFICATION_S = 12.0
 MAINTIEN_VERDICT_S = 6.0
@@ -37,8 +42,11 @@ class Flux:
         self.visage_present = False
         self.surface = 0
         self.empreinte = None
+        self.image_brute = None
+        self.boite = None
         self.erreur = None
         self.verification = None
+        self.spectateurs = 0
 
     # ---------- cycle de vie ----------
 
@@ -63,6 +71,14 @@ class Flux:
                 "score": 0.0, "accords": 0, "expire": time.time() + DELAI_VERIFICATION_S,
                 "affichage": 0.0, "motif": "présentez votre visage",
             }
+
+    def regarder(self, delta):
+        """Compte les flux MJPEG ouverts. Sans spectateur ni controle, la boucle dort.
+
+        Detecter et encoder en continu coutait un demi-coeur pour personne, et faisait
+        monter le SoC au-dela de sa consigne thermique."""
+        with self.verrou:
+            self.spectateurs = max(0, self.spectateurs + delta)
 
     def desarmer(self):
         with self.verrou:
@@ -123,27 +139,39 @@ class Flux:
         self.erreur = None
 
         while self.actif:
+            with self.verrou:
+                controle = self.verification is not None
+                regarde = self.spectateurs > 0
+
             ok, img = capture.read()
             if not ok:
                 time.sleep(0.2)
                 continue
+
+            if not controle and not regarde:
+                time.sleep(PERIODE_VEILLE_S)
+                continue
+
             try:
                 self._traiter(img)
             except Exception as exc:
                 self.erreur = str(exc)[:80]
-            time.sleep(PERIODE_S)
+            time.sleep(PERIODE_CONTROLE_S if controle else PERIODE_REPOS_S)
 
         capture.release()
 
     def _traiter(self, img):
+        brute = img.copy()
         boite = visage.plus_grand_visage(img)
-        empreinte = visage.empreinte(img, boite) if boite is not None else None
-        couleur, legende = GRIS, "aucun visage"
 
         with self.verrou:
             v = self.verification
 
-        if v is not None and v["etat"] == "en_cours":
+        actif = v is not None and v["etat"] == "en_cours"
+        empreinte = visage.empreinte(img, boite) if (actif and boite is not None) else None
+        couleur, legende = GRIS, "aucun visage"
+
+        if actif:
             couleur, legende = self._juger(v, empreinte, boite)
         elif boite is not None:
             couleur, legende = AMBRE, "visage détecté"
@@ -162,6 +190,8 @@ class Flux:
             self.visage_present = boite is not None
             self.surface = int(boite[2] * boite[3]) if boite is not None else 0
             self.empreinte = empreinte
+            self.image_brute = brute
+            self.boite = boite
 
     def _juger(self, v, empreinte, boite):
         with self.verrou:
@@ -213,12 +243,19 @@ class Flux:
             return {
                 "actif": self.actif, "erreur": self.erreur,
                 "visage": self.visage_present, "surface": self.surface,
+                "spectateurs": self.spectateurs,
                 "age": round(time.time() - self.ts, 2) if self.ts else None,
             }
 
     def empreinte_courante(self):
+        """Calculee a la demande : l'enrolement est rare, la boucle tourne en continu."""
         with self.verrou:
-            return None if self.empreinte is None else self.empreinte.copy()
+            if self.empreinte is not None:
+                return self.empreinte.copy()
+            img, boite = self.image_brute, self.boite
+        if img is None or boite is None:
+            return None
+        return visage.empreinte(img, boite)
 
 
 flux = Flux()
