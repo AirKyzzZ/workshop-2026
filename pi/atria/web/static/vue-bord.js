@@ -1,4 +1,5 @@
 import { courbe } from "./charts.js";
+import { panneauAffectation } from "./vue-affectation.js";
 import { bloc, couleur, el, json, paire, rangee } from "./ui.js";
 
 function resume(hote, etat) {
@@ -153,7 +154,10 @@ export async function vueBord(hote, etat, session) {
   resume(hote, etat);
   alertes(hote, etat);
   previsions(hote, etat);
-  if (session.capitaine) postes(hote, etat);
+  if (session.capitaine) {
+    panneauAffectation(hote, etat, () => { location.reload(); });
+    postes(hote, etat);
+  }
   attention(hote, etat);
   await atmosphere(hote, etat);
 }

@@ -4,7 +4,7 @@ import { vueCompartiment, vueVaisseau } from "./vue-vaisseau.js";
 import { vueEquipage, vueMembre } from "./vue-equipage.js";
 import { vueJournal } from "./vue-journal.js";
 import { vueConsole } from "./vue-console.js";
-import { fluxCamera, vueVisage } from "./vue-visage.js";
+import { fluxCamera, libererFlux, vueVisage } from "./vue-visage.js";
 
 const ONGLETS = [
   { route: "#/", libelle: "Bord" },
@@ -89,6 +89,7 @@ async function rafaleSession() {
 
 function fermerControle() {
   if (!fluxOuvert) return;
+  libererFlux(controle);
   controle.replaceChildren();
   controle.hidden = true;
   fluxOuvert = false;
@@ -169,6 +170,7 @@ async function router() {
 
   const route = location.hash || "#/";
   marquerOnglet(route);
+  libererFlux(vue);
   vue.replaceChildren();
   vue.scrollTop = 0;
 

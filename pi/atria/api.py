@@ -170,28 +170,47 @@ async def arreter_services():
     camera.flux.arreter()
 
 
-def flux_mjpeg():
+SPECTATEURS_MAX = 3
+_spectateurs = 0
+
+
+async def flux_mjpeg(requete):
+    """Un flux MJPEG ne se termine jamais de lui-meme.
+
+    Il faut donc surveiller la deconnexion du client, sans quoi le generateur tourne
+    indefiniment : le navigateur sature ses six creneaux par hote et le dashboard entier
+    se fige, requetes de session comprises.
+    """
+    global _spectateurs
     limite = b"--trame"
     vide = 0
-    while camera.flux.actif:
-        image = camera.flux.image()
-        if image is None:
-            vide += 1
-            if vide > 100:
+    _spectateurs += 1
+    try:
+        while camera.flux.actif:
+            if await requete.is_disconnected():
                 break
-            time.sleep(0.05)
-            continue
-        vide = 0
-        yield (limite + b"\r\nContent-Type: image/jpeg\r\nContent-Length: "
-               + str(len(image)).encode() + b"\r\n\r\n" + image + b"\r\n")
-        time.sleep(0.08)
+            image = camera.flux.image()
+            if image is None:
+                vide += 1
+                if vide > 100:
+                    break
+                await asyncio.sleep(0.05)
+                continue
+            vide = 0
+            yield (limite + b"\r\nContent-Type: image/jpeg\r\nContent-Length: "
+                   + str(len(image)).encode() + b"\r\n\r\n" + image + b"\r\n")
+            await asyncio.sleep(0.08)
+    finally:
+        _spectateurs -= 1
 
 
 @app.get("/api/camera/flux")
-def api_camera_flux():
+async def api_camera_flux(requete: Request):
     if not camera.flux.actif:
         return {"erreur": "flux camera inactif"}
-    return StreamingResponse(flux_mjpeg(),
+    if _spectateurs >= SPECTATEURS_MAX:
+        return {"erreur": f"deja {_spectateurs} flux ouverts"}
+    return StreamingResponse(flux_mjpeg(requete),
                              media_type="multipart/x-mixed-replace; boundary=trame")
 
 
@@ -262,6 +281,62 @@ async def api_visage_verifier(corps: dict, requete: Request):
 @app.get("/api/session")
 def api_session():
     return db.session(etat.conn)
+
+
+def reponse_json(r, extra=None):
+    return {"accepte": r.accepte, "titre": r.titre, "parole": r.parole,
+            "detail": r.detail, **(extra or {})}
+
+
+def alternative(nom, nom_poste):
+    """Le remplacant que le regulateur recommande, pour l'afficher a cote du refus."""
+    poste = etat.poste(nom_poste)
+    if poste is None:
+        return None
+    aptes = sorted((c for c in etat.equipage
+                    if poste.competence in c.competences and c.cognitive >= poste.seuil),
+                   key=lambda c: c.cognitive, reverse=True)
+    if not aptes:
+        return None
+    return {"nom": aptes[0].nom, "cognitive": round(aptes[0].cognitive, 2)}
+
+
+@app.post("/api/affectation")
+def api_affectation(corps: dict):
+    """Seule route qui modifie l'etat operationnel du vaisseau.
+
+    Le capitaine propose, le regulateur tranche, et un refus n'est pas une erreur :
+    c'est une reponse motivee, chiffree, assortie d'une alternative.
+    """
+    session = db.session(etat.conn)
+    if not session["capitaine"]:
+        db.journaliser(etat.conn, "refus", "affectation refusee, capitaine non identifie",
+                       acteur=session["acteur"] or "anonyme")
+        return {"erreur": "reserve au capitaine identifie", "accepte": False}
+
+    nom = (corps.get("nom") or "").strip().lower()
+    poste = (corps.get("poste") or "").strip().lower()
+    etat.recharger()
+    reponse = regulator.affecter(etat, nom, poste, auteur=session["acteur"])
+    return reponse_json(reponse, {"nom": nom, "poste": poste,
+                                  "alternative": None if reponse.accepte
+                                  else alternative(nom, poste)})
+
+
+@app.post("/api/derogation")
+def api_derogation(corps: dict):
+    """Passage en force du capitaine. Horodate, attribue, journalise."""
+    session = db.session(etat.conn)
+    if not session["capitaine"]:
+        db.journaliser(etat.conn, "refus", "derogation refusee, capitaine non identifie",
+                       acteur=session["acteur"] or "anonyme")
+        return {"erreur": "reserve au capitaine identifie", "accepte": False}
+
+    nom = (corps.get("nom") or "").strip().lower()
+    poste = (corps.get("poste") or "").strip().lower()
+    etat.recharger()
+    return reponse_json(regulator.deroger(etat, nom, poste, auteur=session["acteur"]),
+                        {"nom": nom, "poste": poste})
 
 
 @app.post("/api/session/fermer")

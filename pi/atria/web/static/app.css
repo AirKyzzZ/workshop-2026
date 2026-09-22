@@ -356,6 +356,33 @@ h3 {
 }
 .outil code { font-size: 10.5px; color: var(--encre); }
 
+/* ---------- verdict d'affectation ---------- */
+
+.liant { color: var(--faible); font-size: 12.5px; }
+
+.carte-verdict {
+  margin-top: calc(var(--u) * 2); padding: calc(var(--u) * 2);
+  border: 1px solid var(--trait-fort); border-left-width: 3px;
+  border-radius: var(--rayon); background: var(--surface);
+}
+.carte-verdict.accorde { border-left-color: var(--nominal); }
+.carte-verdict.refuse { border-left-color: var(--critique); }
+.verdict-titre {
+  font-family: Martian; font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--faible); margin-bottom: 6px;
+}
+.carte-verdict.accorde .verdict-titre { color: var(--nominal); }
+.carte-verdict.refuse .verdict-titre { color: var(--critique); }
+.verdict-parole { font-size: 14px; line-height: 1.55; color: var(--encre-forte); }
+.verdict-detail {
+  font-family: Martian; font-size: 10px; color: var(--faible);
+  margin-top: 6px; line-height: 1.6;
+}
+.verdict-alt { font-size: 13px; color: var(--sourdine); margin-top: calc(var(--u) * 1.5); }
+.mesure-inline { font-family: Martian; font-size: 12.5px; }
+.action.danger { background: var(--critique); border-color: var(--critique); color: #FFF; }
+.action.danger:hover { filter: brightness(1.08); }
+
 /* ---------- graphiques ---------- */
 
 .graphique { margin-top: var(--u); max-width: 1100px; }

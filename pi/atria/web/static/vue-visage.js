@@ -6,6 +6,16 @@ const poster = (url, corps) =>
     body: JSON.stringify(corps),
   }).then((r) => r.json());
 
+export function libererFlux(racine) {
+  // Un flux MJPEG ne se termine jamais tout seul. Sans cette liberation, Chrome garde
+  // la connexion ouverte, sature ses six creneaux par hote, et toutes les requetes
+  // suivantes du dashboard restent en attente indefiniment.
+  for (const img of racine.querySelectorAll(".camera img")) {
+    img.src = "";
+    img.removeAttribute("src");
+  }
+}
+
 export function fluxCamera(hote) {
   const cadre = el("div", "camera");
   const image = el("img");
