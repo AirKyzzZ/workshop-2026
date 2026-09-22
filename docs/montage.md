@@ -4,8 +4,17 @@ Vue d'ensemble du vaisseau tel qu'il est câblé aujourd'hui. Le brochage détai
 et l'état de validation de chaque composant sont dans [`materiel.md`](materiel.md) ; ce
 document sert à voir d'un coup d'œil ce qui est relié à quoi.
 
-Pour le schéma électrique proprement dit, fil par fil et simulable,
-voir [`hardware/wokwi/`](../hardware/wokwi/).
+![Plan de câblage d'ATRIA](../hardware/montage-complet.svg)
+
+Ce plan est généré par [`hardware/schema.py`](../hardware/schema.py), un script plutôt
+qu'un dessin fait à la main : la géométrie reste cohérente quand on déplace une carte ou
+qu'on ajoute un capteur, et un diff reste lisible dans une pull request. Le relancer
+régénère le SVG.
+
+Wokwi ne propose aucun Raspberry Pi, seulement le Pico qui est un microcontrôleur : y
+mettre un Pico à la place du Pi 5 serait faux. Le détail électrique fil par fil et
+simulable des cartes Arduino reste donc dans [`hardware/wokwi/`](../hardware/wokwi/), et
+ce plan porte la vue d'ensemble.
 
 ## Le montage actuel
 
