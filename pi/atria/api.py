@@ -430,9 +430,15 @@ def api_vitals(nom: str, heures: int = 24):
 
 @app.get("/api/membre/{nom}")
 def api_membre(nom: str):
+    """Fiche d'un membre. La partie operationnelle est ouverte, le medical ne l'est pas.
+
+    Le classement de l'equipage affiche deja la capacite de chacun : refuser la fiche
+    complete casserait la navigation sans rien proteger. Ce qui doit rester ferme, ce sont
+    les donnees physiologiques, reservees au porteur du badge.
+    """
     session = db.session(etat.conn)
-    if not session["capitaine"] and session["acteur"] != nom:
-        return {"erreur": "acces refuse"}
+    if not session["acteur"]:
+        return {"erreur": "aucune identite badgee"}
 
     medical = (
         session["role"] == "equipage"

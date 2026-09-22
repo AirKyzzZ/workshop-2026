@@ -12,7 +12,9 @@ export function vueEquipage(hote, etat) {
 export async function vueMembre(hote, nom) {
   const d = await json(`/api/membre/${encodeURIComponent(nom)}`);
   if (d.erreur) {
-    hote.appendChild(el("div", "vide", `Membre ${nom} inconnu.`));
+    const retour = el("a", "retour", "← équipage");
+    retour.href = "#/equipage";
+    hote.append(retour, el("div", "vide", d.erreur));
     return;
   }
   const m = d.membre;
