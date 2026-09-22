@@ -89,6 +89,13 @@ CREATE TABLE IF NOT EXISTS journal (
   donnees      TEXT
 );
 
+CREATE TABLE IF NOT EXISTS session (
+  id           INTEGER PRIMARY KEY CHECK (id = 1),
+  acteur       TEXT,
+  role         TEXT NOT NULL DEFAULT 'anonyme',
+  ts           REAL NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_journal_ts ON journal(ts DESC);
 CREATE INDEX IF NOT EXISTS idx_ambiance_ts ON ambiance(compartiment, ts DESC);
 CREATE INDEX IF NOT EXISTS idx_capacite_crew_ts ON capacite(crew, ts DESC);
@@ -208,3 +215,24 @@ def entrer(conn, crew, compartiment):
     conn.execute("INSERT INTO presence (crew, compartiment, entree) VALUES (?,?,?)",
                  (crew, compartiment, maintenant))
     conn.commit()
+
+
+SESSION_TTL_S = 900
+
+
+def ouvrir_session(conn, acteur, role):
+    conn.execute(
+        "INSERT INTO session (id, acteur, role, ts) VALUES (1,?,?,?)"
+        " ON CONFLICT(id) DO UPDATE SET acteur=excluded.acteur,"
+        " role=excluded.role, ts=excluded.ts",
+        (acteur, role, time.time()))
+    conn.commit()
+
+
+def session(conn):
+    """Identite courante, derivee du dernier badge presente au terminal."""
+    r = conn.execute("SELECT acteur, role, ts FROM session WHERE id = 1").fetchone()
+    if r is None or time.time() - r["ts"] > SESSION_TTL_S:
+        return {"acteur": None, "role": "anonyme", "capitaine": False, "expire": True}
+    return {"acteur": r["acteur"], "role": r["role"],
+            "capitaine": r["role"] == "capitaine", "expire": False}

@@ -214,7 +214,7 @@ def assainir(texte):
     return re.sub(r"[<>&\"\']", " ", texte)[:MAX_QUESTION].strip()
 
 
-def repondre(etat, question, capitaine=False):
+def repondre(etat, question, capitaine=False, medical=False):
     etat.recharger()
     outil, args = router(etat, question)
 
@@ -226,7 +226,7 @@ def repondre(etat, question, capitaine=False):
             "outils": [], "erreur": True,
         }
 
-    texte, donnees = IMPLEMENTATIONS[outil](etat, args, capitaine)
+    texte, donnees = IMPLEMENTATIONS[outil](etat, args, not medical)
     db.journaliser(etat.conn, "question", assainir(question),
                    acteur="capitaine" if capitaine else "equipage",
                    donnees={"outil": outil, "args": args})

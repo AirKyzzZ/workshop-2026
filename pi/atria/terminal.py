@@ -188,6 +188,11 @@ class Terminal:
             self.lien.beep("OK")
             self.identite = connu
             self.badge_info = connu
+            db.ouvrir_session(self.etat.conn, connu[0],
+                              "capitaine" if connu[1] else "equipage")
+            db.journaliser(self.etat.conn, "identification",
+                           f"badge {connu[0]} presente au terminal",
+                           acteur=connu[0], sujet=connu[0])
         self.retour = self.vue if self.vue not in ("badge", "dialogue") else "accueil"
         self.vue = "badge"
         self.badge_jusqua = time.monotonic() + BADGE_AFFICHAGE_S

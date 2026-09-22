@@ -29,7 +29,7 @@ def compartiment_json(c):
     }
 
 
-def membre_json(c, capitaine=False):
+def membre_json(c, medical=False):
     base = {
         "nom": c.nom,
         "role": c.role,
@@ -40,7 +40,7 @@ def membre_json(c, capitaine=False):
         "statut": c.statut,
         "apte": c.cognitive >= 0.60,
     }
-    if not capitaine:
+    if medical:
         base.update({
             "hr": c.hr, "rmssd": c.rmssd, "stress": c.stress,
             "sommeil_h": c.sommeil_h, "dette_sociale": c.dette_sociale,
@@ -49,12 +49,12 @@ def membre_json(c, capitaine=False):
     return base
 
 
-def instantane(capitaine=False):
+def instantane(medical=False):
     etat.recharger()
     decouverts = etat.postes_decouverts()
     return {
         "ts": time.time(),
-        "equipage": [membre_json(c, capitaine) for c in
+        "equipage": [membre_json(c, medical) for c in
                      sorted(etat.equipage, key=lambda c: c.cognitive)],
         "postes": [{"nom": p.nom, "compartiment": p.compartiment,
                     "competence": p.competence, "seuil": p.seuil,
@@ -74,9 +74,14 @@ def instantane(capitaine=False):
     }
 
 
+@app.get("/api/session")
+def api_session():
+    return db.session(etat.conn)
+
+
 @app.get("/api/etat")
-def api_etat(capitaine: bool = False):
-    return instantane(capitaine)
+def api_etat():
+    return instantane(db.session(etat.conn)["role"] == "equipage")
 
 
 @app.get("/api/journal")
@@ -118,10 +123,11 @@ def api_outils():
 async def api_chat(message: dict):
     from . import chat
     question = (message.get("texte") or "").strip()
-    capitaine = bool(message.get("capitaine"))
+    session = db.session(etat.conn)
     if not question:
         return {"reponse": "Pose une question.", "outils": [], "erreur": True}
-    return await asyncio.to_thread(chat.repondre, etat, question, capitaine)
+    return await asyncio.to_thread(chat.repondre, etat, question,
+                                   session["capitaine"], session["role"] == "equipage")
 
 
 @app.websocket("/ws")
@@ -129,7 +135,10 @@ async def ws(socket: WebSocket):
     await socket.accept()
     try:
         while True:
-            await socket.send_json(instantane())
+            session = db.session(etat.conn)
+            paquet = instantane(session["role"] == "equipage")
+            paquet["session"] = session
+            await socket.send_json(paquet)
             await asyncio.sleep(PERIODE_PUSH)
     except (WebSocketDisconnect, RuntimeError):
         pass
@@ -141,4 +150,4 @@ def index():
 
 
 if os.path.isdir(WEB):
-    app.mount("/static", StaticFiles(directory=WEB), name="static")
+    app.mount("/static", StaticFiles(directory=os.path.join(WEB, "static")), name="static")

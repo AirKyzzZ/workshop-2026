@@ -1,0 +1,223 @@
+@font-face { font-family: Teko; src: url(/static/fonts/Teko-SemiBold.ttf); font-weight: 600; }
+@font-face { font-family: Inter; src: url(/static/fonts/Inter-Regular.ttf); font-weight: 400; }
+@font-face { font-family: Inter; src: url(/static/fonts/Inter-SemiBold.ttf); font-weight: 600; }
+@font-face { font-family: Martian; src: url(/static/fonts/MartianMono-Regular.ttf); }
+
+:root {
+  --fond: #FFFFFF;
+  --surface: #F9F8F8;
+  --trait: #EEEDED;
+  --trait-fort: #D7D5D5;
+  --encre: #393838;
+  --encre-forte: #1D1B1B;
+  --sourdine: #6D6969;
+  --faible: #918D8D;
+  --nominal: #1E7F58;
+  --attention: #9A6410;
+  --critique: #B3311F;
+  --inactif: #B4B1B1;
+
+  --u: 8px;
+  --rayon: 3px;
+}
+
+[data-theme="dark"] {
+  --fond: #121111;
+  --surface: #1D1B1B;
+  --trait: #2A2828;
+  --trait-fort: #393838;
+  --encre: #EEEDED;
+  --encre-forte: #FFFFFF;
+  --sourdine: #918D8D;
+  --faible: #6D6969;
+  --nominal: #4BD694;
+  --attention: #E8A33C;
+  --critique: #F4705F;
+  --inactif: #4E4B4B;
+}
+
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; }
+
+body {
+  background: var(--fond);
+  color: var(--encre);
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono { font-family: Martian, monospace; font-variant-numeric: tabular-nums; }
+
+/* ---------- en-tete ---------- */
+
+header {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 4);
+  padding: calc(var(--u) * 1.75) calc(var(--u) * 3);
+  border-bottom: 1px solid var(--trait);
+}
+header img { width: 28px; height: 28px; color: var(--encre); }
+.marque {
+  font-family: Teko; font-size: 32px; font-weight: 600;
+  line-height: 1; letter-spacing: .02em; text-transform: uppercase;
+  color: var(--encre-forte);
+}
+header .espace { flex: 1; }
+
+.chiffre { display: flex; flex-direction: column; gap: 1px; }
+.chiffre b {
+  font-family: Martian; font-size: 15px; font-weight: 400;
+  color: var(--encre-forte); line-height: 1.2;
+}
+.chiffre span {
+  font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--faible);
+}
+
+.badge-etat {
+  font-family: Teko; font-size: 21px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .03em; line-height: 1;
+  padding: calc(var(--u) * .75) calc(var(--u) * 2);
+  border: 1.5px solid currentColor; border-radius: var(--rayon);
+}
+
+.bouton-theme {
+  background: none; border: 1px solid var(--trait-fort); color: var(--sourdine);
+  border-radius: var(--rayon); padding: 6px 10px; cursor: pointer;
+  font-family: Martian; font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+}
+.bouton-theme:hover { color: var(--encre); border-color: var(--encre); }
+
+/* ---------- grille ---------- */
+
+main { display: grid; grid-template-columns: 1.4fr 1fr; overflow: hidden; }
+.colonne { display: flex; flex-direction: column; overflow: hidden; }
+.colonne + .colonne { border-left: 1px solid var(--trait); }
+
+section {
+  padding: calc(var(--u) * 2.5) calc(var(--u) * 3);
+  display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+}
+section + section { border-top: 1px solid var(--trait); }
+.etire { flex: 1; }
+
+h2 {
+  font-size: 9px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faible);
+  margin-bottom: calc(var(--u) * 1.75);
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--u);
+}
+h2 em { font-style: normal; font-family: Martian; font-size: 9px; letter-spacing: .04em; }
+
+.corps { flex: 1; overflow-y: auto; min-height: 0; }
+.corps::-webkit-scrollbar { width: 4px; }
+.corps::-webkit-scrollbar-thumb { background: var(--trait-fort); border-radius: 2px; }
+
+/* ---------- plan ---------- */
+
+#plan { width: 100%; height: 100%; display: block; }
+.coque { fill: none; stroke: var(--trait-fort); stroke-width: 1.25; }
+.couloir { stroke: var(--trait); stroke-width: 9; stroke-linecap: round; fill: none; }
+.embranchement { stroke: var(--trait); stroke-width: 4; }
+.salle { fill: var(--surface); stroke: var(--trait-fort); stroke-width: 1; }
+.salle.alerte { stroke: var(--attention); stroke-width: 1.75; }
+.salle.feu { fill: color-mix(in srgb, var(--critique) 12%, var(--fond)); stroke: var(--critique); stroke-width: 2; }
+.salle-nom {
+  font-family: Teko; font-size: 18px; font-weight: 600;
+  fill: var(--encre-forte); text-transform: uppercase; letter-spacing: .02em;
+}
+.salle-poste { font-family: Martian; font-size: 7.5px; fill: var(--sourdine); }
+.salle-poste.vacant { fill: var(--critique); }
+.salle-val { font-family: Martian; font-size: 8.5px; fill: var(--faible); }
+.salle-val.chaud { fill: var(--attention); }
+.temoin { fill: var(--nominal); }
+.repere { font-family: Martian; font-size: 7px; fill: var(--inactif); letter-spacing: .16em; }
+.membre-pt { fill: var(--nominal); }
+.membre-pt.bas { fill: var(--attention); }
+.membre-pt.crit { fill: var(--critique); }
+
+/* ---------- listes ---------- */
+
+.rang {
+  display: flex; align-items: center; gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * .75) 0;
+}
+.rang .nom { flex: 1; font-size: 12.5px; color: var(--encre); }
+.rang .nom small {
+  font-size: 9.5px; color: var(--faible); margin-left: 6px;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.rang .jauge { width: 64px; height: 4px; background: var(--trait); border-radius: 2px; }
+.rang .jauge i { display: block; height: 100%; border-radius: 2px; }
+.rang .val { font-family: Martian; font-size: 11.5px; width: 36px; text-align: right; }
+
+.prevision { padding: calc(var(--u) * 1.25) 0; font-size: 12.5px; line-height: 1.55; }
+.prevision + .prevision { border-top: 1px solid var(--trait); }
+.prevision strong { font-weight: 600; color: var(--attention); }
+.prevision.critique strong { color: var(--critique); }
+.prevision .detail {
+  font-family: Martian; font-size: 9.5px; color: var(--faible); margin-top: 3px;
+}
+
+.entree {
+  display: grid; grid-template-columns: 42px 76px 1fr;
+  gap: var(--u); padding: calc(var(--u) * .75) 0; font-size: 12px; align-items: baseline;
+}
+.entree + .entree { border-top: 1px solid var(--trait); }
+.entree time { font-family: Martian; font-size: 10px; color: var(--faible); }
+.entree .genre {
+  font-family: Martian; font-size: 8px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--sourdine);
+}
+.entree .genre.refus { color: var(--critique); }
+.entree .genre.derogation { color: var(--attention); }
+.entree .genre.affectation { color: var(--nominal); }
+.entree .motif { color: var(--encre); }
+.entree .motif b { font-weight: 600; color: var(--encre-forte); }
+
+.signal { display: flex; gap: calc(var(--u) * 1.25); align-items: center; padding: 5px 0; }
+.point { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.vide { color: var(--faible); font-size: 12px; padding: 5px 0; }
+
+/* ---------- console ---------- */
+
+footer { border-top: 1px solid var(--trait); padding: calc(var(--u) * 1.5) calc(var(--u) * 3); }
+.historique { max-height: 152px; overflow-y: auto; margin-bottom: calc(var(--u) * 1.5); }
+.historique:empty { display: none; }
+.echange { padding: calc(var(--u) * 1.25) 0; font-size: 12.5px; line-height: 1.6; }
+.echange + .echange { border-top: 1px solid var(--trait); }
+.echange .demande { color: var(--sourdine); }
+.echange .reponse { color: var(--encre); white-space: pre-line; margin-top: 3px; }
+.echange .trace {
+  font-family: Martian; font-size: 8.5px; color: var(--nominal);
+  text-transform: uppercase; letter-spacing: .08em; margin-top: 5px;
+}
+
+.console { display: flex; gap: calc(var(--u) * 1.5); align-items: center; }
+.console .invite {
+  font-family: Martian; font-size: 10px; color: var(--nominal); letter-spacing: .06em;
+}
+.console input {
+  flex: 1; background: var(--surface); border: 1px solid var(--trait);
+  border-radius: var(--rayon); color: var(--encre);
+  padding: 10px 13px; font-family: Inter, sans-serif; font-size: 13px;
+}
+.console input:focus { outline: none; border-color: var(--trait-fort); background: var(--fond); }
+.console input::placeholder { color: var(--faible); }
+.console .mention {
+  font-family: Martian; font-size: 8.5px; color: var(--faible);
+  text-transform: uppercase; letter-spacing: .08em; white-space: nowrap;
+}
+
+@media (max-width: 960px) {
+  body { overflow: auto; }
+  main { grid-template-columns: 1fr; }
+  .colonne + .colonne { border-left: 0; border-top: 1px solid var(--trait); }
+  header { flex-wrap: wrap; gap: calc(var(--u) * 2); }
+}
