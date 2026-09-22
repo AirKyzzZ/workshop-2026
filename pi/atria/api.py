@@ -14,6 +14,13 @@ PERIODE_PUSH = 3.0
 app = FastAPI(title="ATRIA", docs_url=None, redoc_url=None)
 etat = model.Etat()
 
+_dernier_acces_medical = 0.0
+
+"""Modele d'acces : une seule console active a bord. L'identite vient du dernier badge
+presente au terminal physique, elle expire en trois minutes, et chaque ouverture d'acces
+medical est tracee au journal. Il n'y a pas d'authentification par client : le reseau de
+bord est considere comme le perimetre de confiance, comme sur une passerelle reelle."""
+
 
 def compartiment_json(c):
     return {
@@ -49,6 +56,17 @@ def membre_json(c, medical=False):
     return base
 
 
+def tracer_acces_medical(session):
+    global _dernier_acces_medical
+    maintenant = time.time()
+    if maintenant - _dernier_acces_medical < 60:
+        return
+    _dernier_acces_medical = maintenant
+    db.journaliser(etat.conn, "identification",
+                   "consultation des donnees physiologiques",
+                   acteur=session["acteur"], sujet="equipage")
+
+
 def instantane(medical=False):
     etat.recharger()
     decouverts = etat.postes_decouverts()
@@ -81,7 +99,11 @@ def api_session():
 
 @app.get("/api/etat")
 def api_etat():
-    return instantane(db.session(etat.conn)["role"] == "equipage")
+    session = db.session(etat.conn)
+    medical = session["role"] == "equipage"
+    if medical:
+        tracer_acces_medical(session)
+    return instantane(medical)
 
 
 @app.get("/api/journal")
@@ -136,7 +158,10 @@ async def ws(socket: WebSocket):
     try:
         while True:
             session = db.session(etat.conn)
-            paquet = instantane(session["role"] == "equipage")
+            medical = session["role"] == "equipage"
+            if medical:
+                tracer_acces_medical(session)
+            paquet = instantane(medical)
             paquet["session"] = session
             await socket.send_json(paquet)
             await asyncio.sleep(PERIODE_PUSH)

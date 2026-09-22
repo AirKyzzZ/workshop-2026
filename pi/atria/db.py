@@ -217,7 +217,9 @@ def entrer(conn, crew, compartiment):
     conn.commit()
 
 
-SESSION_TTL_S = 900
+SESSION_TTL_S = 180
+"""Duree de vie d'une identite badgee. Courte par conception : une session laissee
+ouverte expose les donnees medicales a tout navigateur du reseau de bord."""
 
 
 def ouvrir_session(conn, acteur, role):
