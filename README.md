@@ -115,12 +115,13 @@ sujet/        énoncé officiel du workshop
 
 ## Démarrage
 
-Le schéma du montage, ce qui est relié à quoi et ce qui reste à ajouter, est dans
-[`docs/montage.md`](docs/montage.md). Le schéma de câblage complet, fil par fil et simulable, est dans
-[`hardware/wokwi/`](hardware/wokwi/).
+![Montage complet d'ATRIA](hardware/wokwi/montage-complet.png)
 
-![Montage complet d'ATRIA](hardware/wokwi/montage-complet.png) L'inventaire complet, le brochage de chaque capteur et
-son état de validation sont dans [`docs/materiel.md`](docs/materiel.md).
+Le câblage complet, fil par fil et simulable, est versionné dans
+[`hardware/wokwi/`](hardware/wokwi/). La vue système, avec le Pi, son écran et la
+circulation des données, est dans [`docs/montage.md`](docs/montage.md). L'inventaire, le
+brochage de chaque capteur et son état de validation sont dans
+[`docs/materiel.md`](docs/materiel.md).
 
 Pour reconstruire le Raspberry Pi depuis une carte SD vierge, suivre
 [`docs/installation-pi.md`](docs/installation-pi.md).
