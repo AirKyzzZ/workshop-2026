@@ -30,7 +30,7 @@ graph LR
     DHT["DHT22<br/>température + humidité<br/>A3"]
   end
 
-  PITFT["PiTFT 2,8&quot;<br/>320x240 sur SPI0<br/>tactile HS"]
+  PITFT["PiTFT 2,8 pouces<br/>320x240 sur SPI0<br/>tactile HS"]
   BOUTONS["4 boutons<br/>GPIO 17 · 22 · 23 · 27"]
   BUZZER["Buzzer actif<br/>D6"]
   CLIENTS["Navigateurs du bord<br/>dashboard :8000"]
