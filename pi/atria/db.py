@@ -96,6 +96,19 @@ CREATE TABLE IF NOT EXISTS session (
   ts           REAL NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS incident (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  crew         TEXT REFERENCES crew(nom),
+  ts           REAL NOT NULL,
+  canal        TEXT NOT NULL,
+  type         TEXT NOT NULL,
+  gravite      REAL NOT NULL,
+  detail       TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_incident_crew_ts ON incident(crew, ts DESC);
+CREATE INDEX IF NOT EXISTS idx_incident_ts ON incident(ts DESC);
+
 CREATE TABLE IF NOT EXISTS gabarit (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   crew         TEXT NOT NULL REFERENCES crew(nom),
@@ -112,7 +125,7 @@ CREATE INDEX IF NOT EXISTS idx_presence_comp ON presence(compartiment, entree DE
 """
 
 TYPES_JOURNAL = ("refus", "derogation", "affectation", "alerte", "crise",
-                 "identification", "systeme", "question", "biometrie")
+                 "identification", "systeme", "question", "biometrie", "conduite")
 
 
 COLONNES_AJOUTEES = (
@@ -299,3 +312,76 @@ def oublier_gabarits(conn, crew):
     n = conn.execute("DELETE FROM gabarit WHERE crew = ?", (crew,)).rowcount
     conn.commit()
     return n
+
+
+SEUIL_CONDUITE = 0.60
+DEMI_VIE_INCIDENT_S = 7200.0
+"""Deux heures. Un incident pese pleinement sur le moment, puis s'efface de moitie toutes
+les deux heures. Personne n'ecrit le score de conduite : il se deduit des incidents, donc
+il remonte tout seul des que le comportement cesse."""
+
+FENETRE_INCIDENT_S = 86400.0
+
+
+def enregistrer_incident(conn, crew, canal, type_, gravite, detail=None):
+    conn.execute(
+        "INSERT INTO incident (crew, ts, canal, type, gravite, detail)"
+        " VALUES (?,?,?,?,?,?)",
+        (crew, time.time(), canal, type_, gravite, detail))
+    conn.commit()
+
+
+def incidents(conn, crew=None, limite=40, depuis=None):
+    depuis = depuis if depuis is not None else time.time() - FENETRE_INCIDENT_S
+    if crew:
+        lignes = conn.execute(
+            "SELECT * FROM incident WHERE crew = ? AND ts >= ? ORDER BY ts DESC LIMIT ?",
+            (crew, depuis, limite)).fetchall()
+    else:
+        lignes = conn.execute(
+            "SELECT * FROM incident WHERE ts >= ? ORDER BY ts DESC LIMIT ?",
+            (depuis, limite)).fetchall()
+    return [dict(l) for l in lignes]
+
+
+def conduite(conn, crew, maintenant=None):
+    """Score de conduite entre 0 et 1, deduit des incidents amortis par le temps."""
+    maintenant = maintenant or time.time()
+    lignes = conn.execute(
+        "SELECT ts, gravite FROM incident WHERE crew = ? AND ts >= ?",
+        (crew, maintenant - FENETRE_INCIDENT_S)).fetchall()
+    penalite = 0.0
+    for l in lignes:
+        age = max(0.0, maintenant - l["ts"])
+        penalite += l["gravite"] * (0.5 ** (age / DEMI_VIE_INCIDENT_S))
+    return max(0.0, min(1.0, 1.0 - penalite))
+
+
+def conduites(conn, maintenant=None):
+    """Conduite de tout l'equipage en une passe, pour l'instantane du dashboard."""
+    maintenant = maintenant or time.time()
+    scores = {}
+    lignes = conn.execute(
+        "SELECT crew, ts, gravite FROM incident WHERE crew IS NOT NULL AND ts >= ?",
+        (maintenant - FENETRE_INCIDENT_S,)).fetchall()
+    for l in lignes:
+        age = max(0.0, maintenant - l["ts"])
+        scores[l["crew"]] = scores.get(l["crew"], 0.0) + \
+            l["gravite"] * (0.5 ** (age / DEMI_VIE_INCIDENT_S))
+    return {nom: max(0.0, min(1.0, 1.0 - p)) for nom, p in scores.items()}
+
+
+def serie_conduite(conn, crew, heures=24, pas=30):
+    """Reconstitue la courbe de conduite en rejouant les incidents dans le temps."""
+    maintenant = time.time()
+    debut = maintenant - heures * 3600
+    lignes = conn.execute(
+        "SELECT ts, gravite FROM incident WHERE crew = ? AND ts >= ?",
+        (crew, debut - FENETRE_INCIDENT_S)).fetchall()
+    points = []
+    for i in range(pas + 1):
+        t = debut + (maintenant - debut) * i / pas
+        penalite = sum(l["gravite"] * (0.5 ** ((t - l["ts"]) / DEMI_VIE_INCIDENT_S))
+                       for l in lignes if l["ts"] <= t)
+        points.append({"ts": t, "valeur": round(max(0.0, min(1.0, 1.0 - penalite)), 3)})
+    return points

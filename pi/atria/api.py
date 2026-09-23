@@ -36,7 +36,7 @@ def compartiment_json(c):
     }
 
 
-def membre_json(c, medical=False):
+def membre_json(c, medical=False, conduite=None):
     base = {
         "nom": c.nom,
         "role": c.role,
@@ -46,6 +46,7 @@ def membre_json(c, medical=False):
         "poste": c.poste,
         "statut": c.statut,
         "apte": c.cognitive >= 0.60,
+        "conduite": 1.0 if conduite is None else round(conduite, 3),
     }
     if medical:
         base.update({
@@ -70,6 +71,7 @@ def tracer_acces_medical(session):
 def instantane(medical=False, acteur=None):
     etat.recharger()
     decouverts = etat.postes_decouverts()
+    _conduites = db.conduites(etat.conn)
 
     return {
         "ts": time.time(),
@@ -77,7 +79,8 @@ def instantane(medical=False, acteur=None):
         "equipage": [
             membre_json(
                 c,
-                medical and c.nom == acteur
+                medical and c.nom == acteur,
+                _conduites.get(c.nom)
             )
             for c in sorted(
                 etat.equipage,
@@ -163,6 +166,7 @@ async def demarrer_services():
     asyncio.get_running_loop().run_in_executor(None, llm.prechauffer)
     if visage.disponible():
         camera.flux.demarrer()
+        camera.flux.armer_surveillance(etat.conn)
 
 
 @app.on_event("shutdown")
@@ -367,6 +371,23 @@ def api_etat():
     )
 
 
+@app.get("/api/surveillance")
+def api_surveillance(limite: int = 30):
+    """Fil des incidents et etat de la detection comportementale."""
+    etat_cam = camera.flux.etat()
+    return {
+        "incidents": db.incidents(etat.conn, limite=limite),
+        "seuil": db.SEUIL_CONDUITE,
+        "demi_vie_h": db.DEMI_VIE_INCIDENT_S / 3600,
+        "surveillance": etat_cam.get("surveillance"),
+        "auteur": etat_cam.get("auteur"),
+        "detections": etat_cam.get("detections"),
+        "conduites": sorted(
+            ({"nom": n, "conduite": round(v, 3)} for n, v in db.conduites(etat.conn).items()),
+            key=lambda x: x["conduite"]),
+    }
+
+
 @app.get("/api/journal")
 def api_journal(limite: int = 40):
     return {"entrees": db.journal(etat.conn, limite)}
@@ -457,6 +478,9 @@ def api_membre(nom: str):
             "pente_h": round(tendance.pente_h, 4), "r2": round(tendance.r2, 3),
             "fiable": tendance.fiable, "projection_6h": round(tendance.projection(6), 3),
         },
+        "conduite": round(db.conduite(etat.conn, nom), 3),
+        "serie_conduite": db.serie_conduite(etat.conn, nom, 24),
+        "incidents": db.incidents(etat.conn, nom, limite=12),
         "contacts": [{"crew": a, "minutes": round(s / 60)}
                      for a, s in db.contacts(etat.conn, nom, time.time() - 86400)][:8],
         "medical": medical,
@@ -467,7 +491,10 @@ def api_membre(nom: str):
 def api_contacts(nom: str, heures: int = 24):
     depuis = time.time() - heures * 3600
     return {"nom": nom, "heures": heures,
-            "contacts": [{"crew": a, "minutes": round(s / 60)}
+            "conduite": round(db.conduite(etat.conn, nom), 3),
+        "serie_conduite": db.serie_conduite(etat.conn, nom, 24),
+        "incidents": db.incidents(etat.conn, nom, limite=12),
+        "contacts": [{"crew": a, "minutes": round(s / 60)}
                          for a, s in db.contacts(etat.conn, nom, depuis)]}
 
 

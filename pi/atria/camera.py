@@ -13,9 +13,13 @@ import time
 
 import cv2
 
-from . import db, visage
+from . import db, surveillance, visage
 
 PERIODE_VEILLE_S = 1.0
+PERIODE_SURVEILLANCE_S = 1.0
+"""Cadence quand seule la surveillance a besoin de la camera. Detecter un visage coute
+peu, mais le faire cinq fois par seconde en continu porte le SoC au-dela de sa consigne :
+une image par seconde suffit a attraper un geste tenu devant l'objectif."""
 PERIODE_REPOS_S = 0.20
 PERIODE_CONTROLE_S = 0.08
 """Deux cadences. SFace coute environ 100 ms par image : le calculer en continu
@@ -47,6 +51,13 @@ class Flux:
         self.erreur = None
         self.verification = None
         self.spectateurs = 0
+        self.surveillance = None
+        self.derniere_detection = []
+        self.auteur_vu = None
+        self.auteur_vu_le = 0.0
+        self.gabarits = {}
+        self.gabarits_le = 0.0
+        self._thermique_le = 0.0
 
     # ---------- cycle de vie ----------
 
@@ -71,6 +82,37 @@ class Flux:
                 "score": 0.0, "accords": 0, "expire": time.time() + DELAI_VERIFICATION_S,
                 "affichage": 0.0, "motif": "présentez votre visage",
             }
+
+    def armer_surveillance(self, conn):
+        """La surveillance a besoin d'une connexion a la base : elle vient de l'API."""
+        self.surveillance = surveillance.Surveillance(conn)
+
+    def _identifier(self, img, boite):
+        """Qui est devant l'objectif. Un incident non attribue ne sert a rien.
+
+        Les gabarits sont relus toutes les deux minutes : un enrolement en cours doit etre
+        pris en compte sans redemarrer le service.
+        """
+        s = self.surveillance
+        if s is None or boite is None:
+            return None
+        maintenant = time.time()
+        if maintenant - self.gabarits_le > 120:
+            self.gabarits_le = maintenant
+            self.gabarits = {nom: db.gabarits(s.conn, nom)
+                             for nom, _ in db.membres_enroles(s.conn)}
+        if not self.gabarits:
+            return None
+        try:
+            empreinte = visage.empreinte(img, boite)
+        except Exception:
+            return None
+        meilleur, score = None, 0.0
+        for nom, gabarits in self.gabarits.items():
+            v = visage.comparer(empreinte, gabarits)
+            if v > score:
+                meilleur, score = nom, v
+        return meilleur if score >= visage.SEUIL_COSINUS else None
 
     def regarder(self, delta):
         """Compte les flux MJPEG ouverts. Sans spectateur ni controle, la boucle dort.
@@ -143,12 +185,19 @@ class Flux:
                 controle = self.verification is not None
                 regarde = self.spectateurs > 0
 
+            if self.surveillance is not None and time.time() - self._thermique_le > 20:
+                self._thermique_le = time.time()
+                self.surveillance.verifier_thermique()
+
             ok, img = capture.read()
             if not ok:
                 time.sleep(0.2)
                 continue
 
-            if not controle and not regarde:
+            surveille = (self.surveillance is not None
+                         and self.surveillance.active
+                         and not self.surveillance.en_pause)
+            if not controle and not regarde and not surveille:
                 time.sleep(PERIODE_VEILLE_S)
                 continue
 
@@ -156,7 +205,12 @@ class Flux:
                 self._traiter(img)
             except Exception as exc:
                 self.erreur = str(exc)[:80]
-            time.sleep(PERIODE_CONTROLE_S if controle else PERIODE_REPOS_S)
+            if controle:
+                time.sleep(PERIODE_CONTROLE_S)
+            elif regarde:
+                time.sleep(PERIODE_REPOS_S)
+            else:
+                time.sleep(PERIODE_SURVEILLANCE_S)
 
         capture.release()
 
@@ -170,6 +224,10 @@ class Flux:
         actif = v is not None and v["etat"] == "en_cours"
         empreinte = visage.empreinte(img, boite) if (actif and boite is not None) else None
         couleur, legende = GRIS, "aucun visage"
+
+        if (self.surveillance is not None and boite is not None
+                and self.surveillance.doit_analyser()):
+            self._surveiller(brute, boite)
 
         if actif:
             couleur, legende = self._juger(v, empreinte, boite)
@@ -192,6 +250,22 @@ class Flux:
             self.empreinte = empreinte
             self.image_brute = brute
             self.boite = boite
+
+    def _surveiller(self, brute, boite):
+        """Analyse comportementale, attribuee a la personne reconnue."""
+        maintenant = time.time()
+        if maintenant - self.auteur_vu_le > 10:
+            self.auteur_vu = self._identifier(brute, boite)
+            self.auteur_vu_le = maintenant
+        try:
+            rgb = cv2.cvtColor(brute, cv2.COLOR_BGR2RGB)
+            trouves = self.surveillance.traiter(rgb, self.auteur_vu)
+        except Exception as exc:
+            self.erreur = str(exc)[:80]
+            return
+        if trouves:
+            with self.verrou:
+                self.derniere_detection = trouves
 
     def _juger(self, v, empreinte, boite):
         with self.verrou:
@@ -244,6 +318,10 @@ class Flux:
                 "actif": self.actif, "erreur": self.erreur,
                 "visage": self.visage_present, "surface": self.surface,
                 "spectateurs": self.spectateurs,
+                "auteur": self.auteur_vu,
+                "detections": self.derniere_detection,
+                "surveillance": None if self.surveillance is None
+                                else self.surveillance.etat(),
                 "age": round(time.time() - self.ts, 2) if self.ts else None,
             }
 

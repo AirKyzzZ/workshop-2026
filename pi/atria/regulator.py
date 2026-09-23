@@ -75,6 +75,19 @@ def affecter(etat, nom, nom_poste, auteur="capitaine"):
                        acteur=auteur, sujet=membre.nom, donnees={"poste": poste.nom})
         return Reponse(parole, "REFUSE", f"{membre.nom} sans qualification {poste.competence}", False)
 
+    conduite = db.conduite(etat.conn, membre.nom)
+    if conduite < db.SEUIL_CONDUITE:
+        parole = (f"Negatif. Conduite de {membre.nom}: {conduite:.2f}. "
+                  f"Seuil requis: {db.SEUIL_CONDUITE:.2f}. "
+                  f"Comportement releve par la surveillance de bord.")
+        db.journaliser(etat.conn, "refus",
+                       f"conduite {conduite:.2f} sous le seuil {db.SEUIL_CONDUITE:.2f}",
+                       acteur=auteur, sujet=membre.nom,
+                       donnees={"poste": poste.nom, "conduite": round(conduite, 3),
+                                "motif": "conduite"})
+        return Reponse(parole, "ORDRE REFUSE",
+                       f"conduite {conduite:.2f} < {db.SEUIL_CONDUITE:.2f} requis", False)
+
     if membre.cognitive < poste.seuil:
         remplacants = sorted(
             (c for c in etat.equipage
