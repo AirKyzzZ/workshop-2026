@@ -1,7 +1,7 @@
 import time
 from dataclasses import dataclass
 
-from . import db, predict
+from . import db, predict, social
 
 
 @dataclass
@@ -87,6 +87,23 @@ def affecter(etat, nom, nom_poste, auteur="capitaine"):
                                 "motif": "conduite"})
         return Reponse(parole, "ORDRE REFUSE",
                        f"conduite {conduite:.2f} < {db.SEUIL_CONDUITE:.2f} requis", False)
+
+    if poste.criticite == "vital":
+        detail_confiance = social.confiances(etat.conn).get(membre.nom)
+        if detail_confiance and detail_confiance["sous_seuil"]:
+            parole = (f"Negatif. Poste vital. Confiance de {membre.nom}: "
+                      f"{detail_confiance['confiance']:.2f}, seuil {social.SEUIL_CONFIANCE:.2f}. "
+                      f"Conduite {detail_confiance['conduite']:.2f}, "
+                      f"appui de l equipage {detail_confiance['appui']:.2f}.")
+            db.journaliser(etat.conn, "refus",
+                           f"confiance {detail_confiance['confiance']:.2f} sous le seuil "
+                           f"{social.SEUIL_CONFIANCE:.2f} pour un poste vital",
+                           acteur=auteur, sujet=membre.nom,
+                           donnees={"poste": poste.nom, "motif": "confiance",
+                                    **detail_confiance})
+            return Reponse(parole, "ORDRE REFUSE",
+                           f"confiance {detail_confiance['confiance']:.2f} < "
+                           f"{social.SEUIL_CONFIANCE:.2f} requis sur poste vital", False)
 
     if membre.cognitive < poste.seuil:
         remplacants = sorted(

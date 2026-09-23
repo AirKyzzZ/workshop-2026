@@ -116,6 +116,28 @@ CREATE TABLE IF NOT EXISTS gabarit (
   cree_le      REAL NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS confinement (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  genre        TEXT NOT NULL,
+  cible        TEXT NOT NULL,
+  etat         TEXT NOT NULL,
+  motif        TEXT NOT NULL,
+  risque       REAL,
+  auteur       TEXT NOT NULL,
+  ouvert       REAL NOT NULL,
+  ferme        REAL,
+  donnees      TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_confinement_ouvert ON confinement(ouvert DESC);
+
+CREATE TABLE IF NOT EXISTS ecran (
+  compartiment TEXT PRIMARY KEY REFERENCES compartiment(nom),
+  haut         TEXT NOT NULL DEFAULT '',
+  bas          TEXT NOT NULL DEFAULT '',
+  ts           REAL NOT NULL,
+  applique     REAL
+);
 CREATE INDEX IF NOT EXISTS idx_gabarit_crew ON gabarit(crew);
 CREATE INDEX IF NOT EXISTS idx_journal_ts ON journal(ts DESC);
 CREATE INDEX IF NOT EXISTS idx_ambiance_ts ON ambiance(compartiment, ts DESC);
@@ -125,13 +147,15 @@ CREATE INDEX IF NOT EXISTS idx_presence_comp ON presence(compartiment, entree DE
 """
 
 TYPES_JOURNAL = ("refus", "derogation", "affectation", "alerte", "crise",
-                 "identification", "systeme", "question", "biometrie", "conduite")
+                 "identification", "systeme", "question", "biometrie", "conduite",
+                 "confinement")
 
 
 COLONNES_AJOUTEES = (
     ("ambiance", "temp_c", "REAL"),
     ("ambiance", "humidite", "REAL"),
     ("ambiance", "mq2_brut", "INTEGER"),
+    ("ecran", "applique", "REAL"),
 )
 
 
@@ -385,3 +409,27 @@ def serie_conduite(conn, crew, heures=24, pas=30):
                        for l in lignes if l["ts"] <= t)
         points.append({"ts": t, "valeur": round(max(0.0, min(1.0, 1.0 - penalite)), 3)})
     return points
+
+
+def poser_ecran(conn, compartiment, haut="", bas=""):
+    """Consigne d'affichage pour l'ecran d'un compartiment.
+
+    L'API decide, le terminal ecrit sur le port serie : deux processus distincts, donc la
+    consigne transite par la base plutot que par un appel direct.
+    """
+    conn.execute(
+        "INSERT INTO ecran (compartiment, haut, bas, ts) VALUES (?,?,?,?)"
+        " ON CONFLICT(compartiment) DO UPDATE SET haut = ?, bas = ?, ts = ?",
+        (compartiment, haut[:16], bas[:16], time.time(), haut[:16], bas[:16], time.time()))
+    conn.commit()
+
+
+def confirmer_ecran(conn, compartiment):
+    """Acquittement de la carte : la consigne est bien sur l'ecran du compartiment."""
+    conn.execute("UPDATE ecran SET applique = ? WHERE compartiment = ?",
+                 (time.time(), compartiment))
+    conn.commit()
+
+
+def ecrans(conn):
+    return {r["compartiment"]: dict(r) for r in conn.execute("SELECT * FROM ecran")}

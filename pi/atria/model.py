@@ -151,9 +151,11 @@ class Etat:
         if amb is None:
             return None
         self.conn.execute(
-            "INSERT OR REPLACE INTO ambiance (compartiment, ts, co2, bruit_db, fumee)"
-            " VALUES (?,?,?,?,?)",
-            (compartiment, time.time(), amb.co2, amb.bruit_db, 1 if actif else 0))
+            "INSERT OR REPLACE INTO ambiance"
+            " (compartiment, ts, co2, bruit_db, fumee, temp_c, humidite)"
+            " VALUES (?,?,?,?,?,?,?)",
+            (compartiment, time.time(), amb.co2, amb.bruit_db, 1 if actif else 0,
+             amb.temp_c, amb.humidite))
         self.conn.commit()
         self.recharger()
         return self.compartiment(compartiment)

@@ -35,6 +35,23 @@ ROUGE = (95, 112, 244)
 AMBRE = (60, 163, 232)
 GRIS = (150, 145, 145)
 
+SEUIL_MOUVEMENT = 3.2
+"""Difference moyenne entre deux vignettes 64x48 au-dela de laquelle il se passe quelque
+chose devant l'objectif. Conditionner l'analyse a un visage etait une erreur : un geste se
+fait main levee, souvent devant la tete, et le detecteur de visage ne voit alors plus
+rien. Une difference d'images coute une milliseconde et ne rate pas ce cas."""
+
+TTL_MAIN_S = 6.0
+"""Une main vue recemment garde l'analyse ouverte meme sans visage : c'est ce qui permet
+de continuer a lire un geste fait devant la tete, sans faire tourner MediaPipe en
+permanence sur une piece vide."""
+
+TTL_AUTEUR_S = 45.0
+"""Duree pendant laquelle la derniere personne reconnue reste l'auteur presume.
+
+Un geste se fait souvent main devant le visage, et le detecteur perd alors la tete. Sans
+ce report, l'incident devient anonyme au moment precis ou il compte."""
+
 
 class Flux:
     def __init__(self):
@@ -58,6 +75,8 @@ class Flux:
         self.gabarits = {}
         self.gabarits_le = 0.0
         self._thermique_le = 0.0
+        self._main_vue_le = 0.0
+        self._vignette = None
         self.echecs = 0
         self.chemin = None
 
@@ -247,19 +266,26 @@ class Flux:
         empreinte = visage.empreinte(img, boite) if (actif and boite is not None) else None
         couleur, legende = GRIS, "aucun visage"
 
-        if (self.surveillance is not None and boite is not None
-                and self.surveillance.doit_analyser()):
+        # Une main levee devant l'objectif cache souvent la tete, et c'est exactement
+        # l'instant a ne pas manquer : l'analyse reste donc ouverte quelques secondes
+        # apres la derniere main vue, meme si plus aucun visage n'est detecte.
+        occupe = (boite is not None
+                  or time.time() - self._main_vue_le < TTL_MAIN_S
+                  or self._mouvement(brute))
+        if self.surveillance is not None and occupe and self.surveillance.doit_analyser():
             self._surveiller(brute, boite)
 
         if actif:
             couleur, legende = self._juger(v, empreinte, boite)
         elif boite is not None:
-            couleur, legende = AMBRE, "visage détecté"
+            couleur, legende = AMBRE, (f"{self.auteur_vu} reconnu" if self.auteur_vu
+                                       else "visage détecté")
 
         if boite is not None:
             self._annoter(img, boite, couleur, legende)
-        else:
-            self._bandeau(img, legende, couleur)
+        self._annoter_gestes(img)
+        if boite is None:
+            self._bandeau(img, legende if actif else self._legende_veille(), couleur)
 
         ok, tampon = cv2.imencode(".jpg", img,
                                   [int(cv2.IMWRITE_JPEG_QUALITY), QUALITE_JPEG])
@@ -273,21 +299,70 @@ class Flux:
             self.image_brute = brute
             self.boite = boite
 
+    def _mouvement(self, img):
+        """Vrai si l'image a sensiblement change depuis la precedente."""
+        vignette = cv2.cvtColor(cv2.resize(img, (64, 48)), cv2.COLOR_BGR2GRAY)
+        precedente, self._vignette = self._vignette, vignette
+        if precedente is None:
+            return False
+        return float(cv2.absdiff(vignette, precedente).mean()) >= SEUIL_MOUVEMENT
+
     def _surveiller(self, brute, boite):
         """Analyse comportementale, attribuee a la personne reconnue."""
         maintenant = time.time()
-        if maintenant - self.auteur_vu_le > 10:
-            self.auteur_vu = self._identifier(brute, boite)
-            self.auteur_vu_le = maintenant
+        if boite is not None and maintenant - self.auteur_vu_le > 10:
+            trouve = self._identifier(brute, boite)
+            if trouve:
+                self.auteur_vu = trouve
+                self.auteur_vu_le = maintenant
+        elif self.auteur_vu and maintenant - self.auteur_vu_le > TTL_AUTEUR_S:
+            self.auteur_vu = None
         try:
             rgb = cv2.cvtColor(brute, cv2.COLOR_BGR2RGB)
             trouves = self.surveillance.traiter(rgb, self.auteur_vu)
         except Exception as exc:
             self.erreur = str(exc)[:80]
             return
+        if self.surveillance.observation.get("mains"):
+            self._main_vue_le = maintenant
         if trouves:
             with self.verrou:
                 self.derniere_detection = trouves
+
+    def _legende_veille(self):
+        o = self.surveillance.observation if self.surveillance else {}
+        if o.get("mains"):
+            return f"main suivie · {self.auteur_vu or 'auteur inconnu'}"
+        return "aucun visage"
+
+    def _annoter_gestes(self, img):
+        """Dessine ce que le modele de mains vient de lire.
+
+        Sans ce trace, la video ne montre rien de la detection : le geste est reconnu,
+        enregistre et note au journal, mais l'ecran affiche encore « aucun visage ».
+        """
+        if self.surveillance is None:
+            return
+        o = self.surveillance.observation or {}
+        h, l = img.shape[:2]
+        for i, cadre in enumerate(o.get("boites") or []):
+            geste = (o.get("gestes") or ["aucun"])[i] if i < len(o.get("gestes") or []) else "aucun"
+            reconnu = geste != "aucun"
+            couleur = ROUGE if reconnu else AMBRE
+            x, y = int(cadre[0] * l), int(cadre[1] * h)
+            largeur, hauteur = int(cadre[2] * l), int(cadre[3] * h)
+            marge = 12
+            x, y = max(0, x - marge), max(0, y - marge)
+            largeur, hauteur = largeur + 2 * marge, hauteur + 2 * marge
+            cv2.rectangle(img, (x, y), (x + largeur, y + hauteur), couleur, 2)
+
+            doigts = (o.get("doigts") or [""])[i] if i < len(o.get("doigts") or []) else ""
+            texte = (f"{geste.replace('_', ' ')} · {self.auteur_vu or 'non attribué'}"
+                     if reconnu else f"main · {doigts}")
+            larg_texte = min(l - x, 9 * len(texte) + 14)
+            cv2.rectangle(img, (x, max(0, y - 22)), (x + larg_texte, y), couleur, -1)
+            cv2.putText(img, texte, (x + 6, max(14, y - 6)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (20, 20, 20), 1, cv2.LINE_AA)
 
     def _juger(self, v, empreinte, boite):
         with self.verrou:

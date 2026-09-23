@@ -12,6 +12,8 @@ d'abord entre gens qui se fréquentent, ce que les arêtes d'affinité décriven
 
 import time
 
+from . import db
+
 FENETRE_S = 7 * 86400.0
 """Une semaine. Assez pour qu'un lien se dessine, assez court pour qu'il puisse changer."""
 
@@ -265,3 +267,63 @@ def contagion_mentale(conn, etat):
             })
     sorties.sort(key=lambda x: -(x["projete"] - x["stress"]))
     return sorties
+
+
+SEUIL_CONFIANCE = 0.55
+"""En dessous, ATRIA refuse un poste vital. La conduite dit si quelqu'un se tient
+correctement maintenant ; la confiance dit si l'equipage peut compter sur lui demain."""
+
+POIDS_CONFIANCE = {"conduite": 0.45, "regularite": 0.25, "appui": 0.30}
+
+
+def _regularite(conn, crew, heures=168):
+    """Predictibilite de la capacite : un membre en dents de scie inspire moins confiance.
+
+    Ce n'est pas la meme chose qu'une capacite basse. Quelqu'un de constamment moyen est
+    plus sur a bord que quelqu'un d'excellent un jour sur deux, parce qu'on peut le
+    planifier.
+    """
+    depuis = time.time() - heures * 3600
+    valeurs = [r["cognitive"] for r in conn.execute(
+        "SELECT cognitive FROM capacite WHERE crew = ? AND ts >= ?", (crew, depuis))]
+    if len(valeurs) < 4:
+        return None
+    moyenne = sum(valeurs) / len(valeurs)
+    ecart = (sum((v - moyenne) ** 2 for v in valeurs) / len(valeurs)) ** 0.5
+    return max(0.0, min(1.0, 1.0 - ecart / 0.20))
+
+
+def _appui(noeud):
+    """Ce que l'equipage renvoie a quelqu'un : des affinites, des hostilites, ou rien."""
+    if noeud["liens"] == 0:
+        return 0.35
+    brut = (noeud["amical"] - 1.5 * noeud["hostile"]) / 4.0
+    return max(0.0, min(1.0, 0.5 + brut))
+
+
+def confiances(conn, g=None):
+    """Confiance de tout l'equipage, entre 0 et 1, avec le detail de ce qui la compose."""
+    g = g or graphe(conn)
+    scores = db.conduites(conn)
+    sorties = {}
+    for n in g["noeuds"]:
+        conduite = scores.get(n["nom"], 1.0)
+        regularite = _regularite(conn, n["nom"])
+        appui = _appui(n)
+        parts = {"conduite": conduite, "appui": appui}
+        if regularite is not None:
+            parts["regularite"] = regularite
+        poids = sum(POIDS_CONFIANCE[k] for k in parts)
+        valeur = sum(POIDS_CONFIANCE[k] * v for k, v in parts.items()) / poids
+        sorties[n["nom"]] = {
+            "confiance": round(valeur, 3),
+            "conduite": round(conduite, 3),
+            "regularite": None if regularite is None else round(regularite, 3),
+            "appui": round(appui, 3),
+            "sous_seuil": valeur < SEUIL_CONFIANCE,
+        }
+    return sorties
+
+
+def confiance(conn, crew):
+    return confiances(conn).get(crew, {}).get("confiance", 1.0)

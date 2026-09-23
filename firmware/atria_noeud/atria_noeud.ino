@@ -8,8 +8,10 @@
 //   READY noeud=<compartiment>
 //   AMBIANCE <compartiment> <tempX10> <humX10>
 // Le Pi peut repondre :
-//   NOM <compartiment>   change le compartiment annonce
-//   PING                 -> PONG
+//   NOM <compartiment>       change le compartiment annonce
+//   ECRAN <haut>|<bas>       affiche un message, prioritaire sur la mesure
+//   ECRAN                    efface le message et rend l'ecran a la mesure
+//   PING                     -> PONG
 
 #include <DHT.h>
 #include <LiquidCrystal.h>
@@ -32,15 +34,37 @@ LiquidCrystal ecran(8, 9, 4, 5, 6, 7);
 DHT climat(DHT_PIN, DHT22);
 
 char compartiment[16] = "reacteur";
+char messageHaut[17] = "";
+char messageBas[17] = "";
+bool message = false;
 unsigned long prochaineMesure = 0;
 unsigned long prochaineAnnonce = 0;
 int tempX10 = -9999;
 int humX10 = -9999;
-char ligne[24];
+char ligne[48];
 uint8_t longueur = 0;
 
+void poserMessage(char *texte) {
+  message = texte && *texte;
+  messageHaut[0] = messageBas[0] = 0;
+  if (!message) return;
+  char *coupure = strchr(texte, '|');
+  if (coupure) *coupure = 0;
+  strncpy(messageHaut, texte, 16);
+  messageHaut[16] = 0;
+  if (coupure) {
+    strncpy(messageBas, coupure + 1, 16);
+    messageBas[16] = 0;
+  }
+}
+
 void traiter(char *cmd) {
-  if (!strncmp(cmd, "NOM ", 4)) {
+  if (!strncmp(cmd, "ECRAN", 5)) {
+    poserMessage(cmd[5] == ' ' ? cmd + 6 : (char *)"");
+    afficher();
+    Serial.print(F("ECRAN "));
+    Serial.println(message ? messageHaut : "-");
+  } else if (!strncmp(cmd, "NOM ", 4)) {
     strncpy(compartiment, cmd + 4, sizeof(compartiment) - 1);
     compartiment[sizeof(compartiment) - 1] = 0;
     Serial.print(F("READY noeud="));
@@ -65,11 +89,25 @@ void lireSerie() {
   }
 }
 
-void afficher() {
-  ecran.setCursor(0, 0);
+void remplir(const char *texte, bool majuscules) {
+  uint8_t n = strlen(texte);
   for (uint8_t i = 0; i < 16; i++) {
-    ecran.print(i < strlen(compartiment) ? (char)toupper(compartiment[i]) : ' ');
+    char c = i < n ? texte[i] : ' ';
+    ecran.print(majuscules ? (char)toupper(c) : c);
   }
+}
+
+void afficher() {
+  if (message) {
+    ecran.setCursor(0, 0);
+    remplir(messageHaut, false);
+    ecran.setCursor(0, 1);
+    remplir(messageBas, false);
+    return;
+  }
+
+  ecran.setCursor(0, 0);
+  remplir(compartiment, true);
 
   ecran.setCursor(0, 1);
   if (!sonde_ok) {

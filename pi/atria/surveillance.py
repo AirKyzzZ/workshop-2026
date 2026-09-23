@@ -20,8 +20,12 @@ VISAGE = os.path.join(MODELES, "face_landmarker.task")
 MAIN = os.path.join(MODELES, "hand_landmarker.task")
 
 PERIODE_S = 1.0
-TEMP_MAX_C = 72.0
-TEMP_REPRISE_C = 66.0
+TEMP_MAX_C = 78.0
+TEMP_REPRISE_C = 73.0
+"""Le SoC de cette carte tourne deja pres de 69 °C au repos, refroidissement passif
+compris. Une consigne a 72 °C suspend donc la surveillance avant meme qu'elle n'analyse
+quoi que ce soit. Le Pi 5 commence a reduire ses frequences a 80 °C : 78 laisse de la
+marge sans jamais entrer dans cette zone."""
 REPOS_INCIDENT_S = 6.0
 """Un même geste tenu devant l'objectif ne doit compter qu'une fois."""
 
@@ -34,12 +38,27 @@ GRAVITES = {
     "insulte": 0.40,
 }
 
+RATIO_DOIGT = 1.55
+"""Doigt tendu : le bout est environ deux fois plus loin de sa base que ne l'est
+l'articulation intermediaire. Replie, il revient vers cette base et le rapport tombe sous
+un. Le seuil se place entre les deux."""
+
+RATIO_POUCE = 1.35
+
 SEUIL_HOSTILITE = 0.55
 """Combinaison sourcils baissés, yeux plissés et bouche crispée."""
 
 
 def disponible():
     return os.path.exists(VISAGE) and os.path.exists(MAIN)
+
+
+def _boite(points):
+    """Cadre normalise [x, y, largeur, hauteur] autour des 21 points d'une main."""
+    xs = [p.x for p in points]
+    ys = [p.y for p in points]
+    return [round(min(xs), 4), round(min(ys), 4),
+            round(max(xs) - min(xs), 4), round(max(ys) - min(ys), 4)]
 
 
 def temperature_soc():
@@ -99,16 +118,33 @@ class Analyse:
 
         mains = self.main.detect(paquet)
         gestes = []
+        doigts = []
+        boites = []
+        mesures = []
         for points in mains.hand_landmarks:
-            geste = self._geste(points)
+            geste, tendus, ratios = self._geste(points)
             gestes.append(geste[0] if geste else "aucun")
+            doigts.append("".join(n[0].upper() if t else n[0]
+                                  for n, t in tendus.items()))
+            mesures.append({n: round(r, 2) for n, r in ratios.items()})
+            boites.append(_boite(points))
             if geste:
                 trouves.append(geste)
 
         observation = {"visages": len(visages.face_blendshapes),
                        "hostilite": round(hostilite, 3),
-                       "mains": len(mains.hand_landmarks), "gestes": gestes}
+                       "mains": len(mains.hand_landmarks), "gestes": gestes,
+                       "doigts": doigts, "boites": boites, "ratios": mesures,
+                       "expressions": self._expressions(visages)}
         return trouves, observation
+
+    @staticmethod
+    def _expressions(visages):
+        """Les cinq coefficients d'expression les plus actifs, pour l'affichage."""
+        if not visages.face_blendshapes:
+            return []
+        tries = sorted(visages.face_blendshapes[0], key=lambda c: -c.score)[:5]
+        return [{"nom": c.category_name, "score": round(c.score, 3)} for c in tries]
 
     @staticmethod
     def _hostilite(blendshapes):
@@ -132,29 +168,39 @@ class Analyse:
     def _geste(points):
         """Reconnaît trois gestes à la géométrie des 21 points de la main.
 
-        Un doigt est tendu quand son extrémité est plus loin du poignet que son
-        articulation intermédiaire. Le repère MediaPipe est normalisé, donc la mesure
-        tient quelle que soit la distance à l'objectif.
+        L'extension se mesure depuis l'articulation de base du doigt, en trois dimensions,
+        et non depuis le poignet. La distance au poignet depend de l'orientation de la
+        main : main de trois quarts, un majeur replie reste loin du poignet et un index
+        plie passe pour tendu, ce qui faisait lire un index la ou il y avait un majeur.
+        Rapportee a sa propre base, l'extension d'un doigt ne depend plus de l'angle.
+
+        Rend (geste, ratios d'extension). Les ratios servent au reglage en direct.
         """
         def dist(a, b):
-            return ((a.x - b.x) ** 2 + (a.y - b.y) ** 2) ** 0.5
+            return ((a.x - b.x) ** 2 + (a.y - b.y) ** 2
+                    + (getattr(a, "z", 0.0) - getattr(b, "z", 0.0)) ** 2) ** 0.5
 
-        poignet = points[0]
         bouts = {"pouce": 4, "index": 8, "majeur": 12, "annulaire": 16, "auriculaire": 20}
-        tendus = {}
+        ratios = {}
         for nom, bout in bouts.items():
-            articulation = bout - 2
-            tendus[nom] = dist(points[bout], poignet) > dist(points[articulation], poignet) * 1.12
+            base = points[bout - 3]
+            milieu = points[bout - 2]
+            reference = dist(milieu, base)
+            ratios[nom] = dist(points[bout], base) / reference if reference else 0.0
 
-        replies = sum(1 for n, t in tendus.items() if n != "pouce" and not t)
+        tendus = {nom: r >= (RATIO_POUCE if nom == "pouce" else RATIO_DOIGT)
+                  for nom, r in ratios.items()}
+        autres = [n for n in bouts if n != "pouce"]
+        replies = sum(1 for n in autres if not tendus[n])
 
+        geste = None
         if tendus["majeur"] and replies == 3:
-            return ("doigt_honneur", 1.0)
-        if replies == 4 and not tendus["pouce"]:
-            return ("poing_ferme", 1.0)
-        if tendus["pouce"] and replies == 4 and points[4].y > poignet.y:
-            return ("pouce_baisse", 1.0)
-        return None
+            geste = ("doigt_honneur", 1.0)
+        elif replies == 4 and not tendus["pouce"]:
+            geste = ("poing_ferme", 1.0)
+        elif tendus["pouce"] and replies == 4 and points[4].y > points[0].y:
+            geste = ("pouce_baisse", 1.0)
+        return geste, tendus, ratios
 
 
 class Surveillance:

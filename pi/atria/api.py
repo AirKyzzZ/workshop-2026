@@ -6,10 +6,11 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import camera, db, llm, model, predict, regulator, social, visage
+from . import camera, confinement, db, llm, model, predict, regulator, social, visage
 
 WEB = os.path.join(os.path.dirname(__file__), "web")
 PERIODE_PUSH = 3.0
+PERIODE_SURETE = 5.0
 
 app = FastAPI(title="ATRIA", docs_url=None, redoc_url=None)
 etat = model.Etat()
@@ -161,9 +162,28 @@ def refus_biometrie(requete, action, sujet=None):
     return {"erreur": "reserve au capitaine identifie"}
 
 
+async def boucle_surete():
+    """Contient les incendies et ouvre les propositions d'isolement.
+
+    Le scellement automatique vit ici plutot que dans une route : une decision qui ferme
+    une cloison ne doit pas dependre de quelqu'un qui rafraichit une page.
+    """
+    while True:
+        try:
+            etat.recharger()
+            confinement.appliquer_feu(etat)
+            confinement.surveiller_menaces(etat.conn, etat)
+        except Exception as exc:
+            db.journaliser(etat.conn, "systeme",
+                           f"boucle de surete interrompue : {str(exc)[:120]}",
+                           acteur="atria")
+        await asyncio.sleep(PERIODE_SURETE)
+
+
 @app.on_event("startup")
 async def demarrer_services():
     asyncio.get_running_loop().run_in_executor(None, llm.prechauffer)
+    asyncio.create_task(boucle_surete())
     if visage.disponible():
         camera.flux.demarrer()
         camera.flux.armer_surveillance(etat.conn)
@@ -379,11 +399,71 @@ def api_social():
     g["conflits"] = social.conflits_probables(etat.conn, limite=6)
     g["contagion_mentale"] = social.contagion_mentale(etat.conn, etat)
     conduites = db.conduites(etat.conn)
+    confiances = social.confiances(etat.conn, g)
     capacites = {c.nom: c.cognitive for c in etat.equipage}
     for n in g["noeuds"]:
         n["conduite"] = round(conduites.get(n["nom"], 1.0), 3)
         n["cognitive"] = round(capacites.get(n["nom"], 0.0), 3)
+        n.update(confiances.get(n["nom"], {}))
+    g["seuil_confiance"] = social.SEUIL_CONFIANCE
     return g
+
+
+@app.get("/api/surete")
+def api_surete():
+    """Etat du confinement : incendies, risques comportementaux, dossiers ouverts."""
+    etat.recharger()
+    g = social.graphe(etat.conn)
+    return {
+        "feu": confinement.evaluer_feu(etat),
+        "menaces": confinement.risque_menace(etat.conn, etat, g),
+        "dossiers": confinement.actifs(etat.conn),
+        "historique": confinement.historique(etat.conn, limite=12),
+        "seuils": {"menace": confinement.SEUIL_MENACE,
+                   "alerte": confinement.SEUIL_ALERTE_MENACE,
+                   "feu_temp_c": confinement.SEUIL_FEU_TEMP_C},
+        "capitaine": db.session(etat.conn)["capitaine"],
+    }
+
+
+@app.post("/api/surete/decision")
+def api_surete_decision(corps: dict, requete: Request):
+    """Tranche un dossier de confinement. Reserve au capitaine identifie.
+
+    Une proposition d'isolement prive quelqu'un de sa liberte de mouvement a bord. La
+    garde est donc la meme que pour la biometrie : le capitaine, ou le terminal de bord.
+    """
+    refus = refus_biometrie(requete, "decision de confinement", corps.get("id"))
+    if refus:
+        return refus
+    session = db.session(etat.conn)
+    resultat = confinement.decider(etat.conn, int(corps["id"]), corps["decision"],
+                                   session["acteur"] or "capitaine", corps.get("motif"))
+    etat.recharger()
+    return resultat
+
+
+@app.post("/api/surete/simulation")
+def api_surete_simulation(corps: dict, requete: Request):
+    """Force la fumee dans un compartiment, pour repeter le scenario sans source reelle.
+
+    Le MQ2 de la passerelle declenche le meme chemin en vrai. Cette route existe pour
+    repeter, et chaque appel est journalise comme simulation pour qu'aucune trace de
+    demonstration ne puisse passer pour une mesure.
+    """
+    refus = refus_biometrie(requete, "simulation de combustion", corps.get("compartiment"))
+    if refus:
+        return refus
+    nom = corps["compartiment"]
+    actif = bool(corps.get("actif", True))
+    if etat.declencher_fumee(nom, actif) is None:
+        return {"erreur": f"compartiment {nom} inconnu"}
+    db.journaliser(etat.conn, "systeme",
+                   f"simulation de combustion {'activee' if actif else 'levee'} dans {nom}",
+                   acteur=db.session(etat.conn)["acteur"] or "capitaine", sujet=nom,
+                   donnees={"simulation": True})
+    return {"compartiment": nom, "fumee": actif,
+            "actions": confinement.appliquer_feu(etat)}
 
 
 @app.get("/api/exposition/{nom}")

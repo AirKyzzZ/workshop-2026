@@ -199,6 +199,7 @@ main[data-page="vaisseau"] { grid-template-columns: minmax(0, 1fr); }
 main[data-page="visage"] { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 main[data-page="compartiment"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 main[data-page="social"] { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+main[data-page="surete"] { grid-template-columns: minmax(0, 1000px); justify-content: center; }
 
 /* ---------- panneaux ---------- */
 
@@ -487,4 +488,47 @@ h3 {
 .legende-graphe .isole {
   width: 11px; height: 11px; background: none; border-radius: 50%;
   border: 1px dashed var(--attention);
+}
+
+
+/* ---------- surete ---------- */
+
+.pile-surete { display: contents; }
+
+.grille-feu {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: calc(var(--u) * 2); margin-bottom: calc(var(--u) * 2);
+}
+.carte-feu, .carte-menace {
+  padding: calc(var(--u) * 2); border: 1px solid var(--trait-fort);
+  border-left-width: 3px; border-radius: var(--rayon); background: var(--surface);
+}
+.carte-menace + .carte-menace { margin-top: calc(var(--u) * 1.5); }
+.carte-feu.urgent, .carte-menace.urgent { border-left-color: var(--critique); }
+.carte-feu.scelle { border-left-color: var(--attention); }
+
+.carte-entete {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--u); margin-bottom: var(--u);
+}
+.carte-entete strong, .nom-menace { font-size: 15px; color: var(--encre-forte); }
+.nom-menace { border: 0; }
+.nom-menace:hover { border-bottom: 1px solid currentColor; }
+.etiquette-niveau {
+  font-family: Martian; font-size: 9px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--critique);
+}
+
+.carte-menace .jauge {
+  display: block; width: 100%; height: 4px; background: var(--trait);
+  border-radius: 2px; margin-bottom: var(--u);
+}
+.carte-menace .jauge i { display: block; height: 100%; border-radius: 2px; }
+.carte-menace .val { font-family: Martian; font-size: 13px; }
+
+.motifs { margin: 0 0 var(--u); padding-left: 16px; font-size: 12.5px; color: var(--encre); }
+.motifs li { margin-bottom: 3px; }
+
+.rangee-actions {
+  display: flex; flex-wrap: wrap; gap: var(--u); margin-top: calc(var(--u) * 1.5);
 }

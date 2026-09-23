@@ -176,6 +176,8 @@ export async function vueSocial(hote) {
       clip.appendChild(svgEl("circle", { cx: 0, cy: 0, r }));
       defs.appendChild(clip);
 
+      g.appendChild(svgEl("circle", { cx: 0, cy: 0, r: r + 5, fill: "transparent" }));
+
       if (n.isolement >= 0.8) {
         g.appendChild(svgEl("circle", {
           cx: 0, cy: 0, r: r + 6, fill: "none", stroke: "var(--attention)",

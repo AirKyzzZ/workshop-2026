@@ -4,6 +4,7 @@ import { vueCompartiment, vueVaisseau } from "./vue-vaisseau.js";
 import { vueEquipage, vueMembre } from "./vue-equipage.js";
 import { vueJournal } from "./vue-journal.js";
 import { vueSocial } from "./vue-social.js";
+import { vueSurete } from "./vue-surete.js";
 import { vueConsole } from "./vue-console.js";
 import { fluxCamera, libererFlux, vueVisage } from "./vue-visage.js";
 
@@ -12,6 +13,7 @@ const ONGLETS = [
   { route: "#/vaisseau", libelle: "Vaisseau" },
   { route: "#/equipage", libelle: "Équipage" },
   { route: "#/social", libelle: "Social" },
+  { route: "#/surete", libelle: "Sûreté" },
   { route: "#/journal", libelle: "Journal" },
   { route: "#/atria", libelle: "Console" },
   { route: "#/visage", libelle: "Visage" },
@@ -187,6 +189,7 @@ async function peindre() {
     else if (section === "equipage" && cible) await vueMembre(vue, cible);
     else if (section === "equipage") vueEquipage(vue, etat);
     else if (section === "social") await vueSocial(vue);
+    else if (section === "surete") minuteur = await vueSurete(vue, session);
     else if (section === "journal") minuteur = await vueJournal(vue);
     else if (section === "atria") await vueConsole(vue);
     else if (section === "visage") minuteur = await vueVisage(vue, session);
