@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import camera, db, llm, model, predict, regulator, visage
+from . import camera, db, llm, model, predict, regulator, social, visage
 
 WEB = os.path.join(os.path.dirname(__file__), "web")
 PERIODE_PUSH = 3.0
@@ -369,6 +369,27 @@ def api_etat():
         medical,
         session["acteur"]
     )
+
+
+@app.get("/api/social")
+def api_social():
+    """Graphe social complet : noeuds, liens, conflits probables."""
+    g = social.graphe(etat.conn)
+    etat.recharger()
+    g["conflits"] = social.conflits_probables(etat.conn, limite=6)
+    g["contagion_mentale"] = social.contagion_mentale(etat.conn, etat)
+    conduites = db.conduites(etat.conn)
+    capacites = {c.nom: c.cognitive for c in etat.equipage}
+    for n in g["noeuds"]:
+        n["conduite"] = round(conduites.get(n["nom"], 1.0), 3)
+        n["cognitive"] = round(capacites.get(n["nom"], 0.0), 3)
+    return g
+
+
+@app.get("/api/exposition/{nom}")
+def api_exposition(nom: str, heures: int = 24):
+    """Chaine d'exposition autour d'un membre, pour le tracage d'une contamination."""
+    return social.exposition(etat.conn, nom, heures)
 
 
 @app.get("/api/surveillance")

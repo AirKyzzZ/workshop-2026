@@ -198,6 +198,7 @@ main[data-page="equipage"], main[data-page="journal"], main[data-page="atria"] {
 main[data-page="vaisseau"] { grid-template-columns: minmax(0, 1fr); }
 main[data-page="visage"] { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 main[data-page="compartiment"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+main[data-page="social"] { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
 
 /* ---------- panneaux ---------- */
 
@@ -453,4 +454,37 @@ h3 {
   header { flex-wrap: wrap; gap: calc(var(--u) * 1.5); }
   nav { order: 3; width: 100%; overflow-x: auto; }
   .verrou h1 { font-size: 54px; }
+}
+
+/* ---------- graphe social ---------- */
+
+.graphe {
+  margin-top: var(--u);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  overflow: hidden;
+}
+.graphe-svg { display: block; width: 100%; height: auto; max-height: 64vh; touch-action: none; }
+.graphe-nom {
+  font-family: Martian; font-size: 9px; fill: var(--sourdine);
+  pointer-events: none; user-select: none;
+}
+.noeud { cursor: grab; transition: opacity .15s ease; }
+.noeud:hover .graphe-nom { fill: var(--encre-forte); }
+.noeud.saisi { cursor: grabbing; }
+.noeud image { pointer-events: none; }
+
+.legende-graphe {
+  display: flex; flex-wrap: wrap; gap: calc(var(--u) * 2);
+  margin-top: calc(var(--u) * 1.5); font-size: 11px; color: var(--sourdine);
+}
+.legende-graphe .cle { display: inline-flex; align-items: center; gap: 7px; }
+.legende-graphe i { display: block; width: 18px; height: 2px; border-radius: 2px; }
+.legende-graphe .amical { background: var(--nominal); }
+.legende-graphe .hostile { background: var(--critique); }
+.legende-graphe .neutre { background: var(--trait-fort); }
+.legende-graphe .isole {
+  width: 11px; height: 11px; background: none; border-radius: 50%;
+  border: 1px dashed var(--attention);
 }

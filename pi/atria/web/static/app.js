@@ -3,6 +3,7 @@ import { vueBord } from "./vue-bord.js";
 import { vueCompartiment, vueVaisseau } from "./vue-vaisseau.js";
 import { vueEquipage, vueMembre } from "./vue-equipage.js";
 import { vueJournal } from "./vue-journal.js";
+import { vueSocial } from "./vue-social.js";
 import { vueConsole } from "./vue-console.js";
 import { fluxCamera, libererFlux, vueVisage } from "./vue-visage.js";
 
@@ -10,6 +11,7 @@ const ONGLETS = [
   { route: "#/", libelle: "Bord" },
   { route: "#/vaisseau", libelle: "Vaisseau" },
   { route: "#/equipage", libelle: "Équipage" },
+  { route: "#/social", libelle: "Social" },
   { route: "#/journal", libelle: "Journal" },
   { route: "#/atria", libelle: "Console" },
   { route: "#/visage", libelle: "Visage" },
@@ -164,7 +166,7 @@ async function verifierSession() {
 
 /* ---------- routeur ---------- */
 
-async function router() {
+async function peindre() {
   if (!session.acteur) return;
   if (minuteur) { clearInterval(minuteur); minuteur = null; }
 
@@ -184,6 +186,7 @@ async function router() {
     else if (section === "compartiment") await vueCompartiment(vue, etat, cible);
     else if (section === "equipage" && cible) await vueMembre(vue, cible);
     else if (section === "equipage") vueEquipage(vue, etat);
+    else if (section === "social") await vueSocial(vue);
     else if (section === "journal") minuteur = await vueJournal(vue);
     else if (section === "atria") await vueConsole(vue);
     else if (section === "visage") minuteur = await vueVisage(vue, session);
@@ -191,6 +194,14 @@ async function router() {
   } catch (erreur) {
     vue.appendChild(el("div", "vide", `Impossible d'afficher cette vue : ${erreur.message}`));
   }
+}
+
+// Deux appels concurrents vident et remplissent la vue en meme temps, et la page se
+// dessine en double. Le routeur se serialise donc sur le rendu precedent.
+let rendu = Promise.resolve();
+function router() {
+  rendu = rendu.then(peindre, peindre);
+  return rendu;
 }
 
 window.addEventListener("hashchange", router);
