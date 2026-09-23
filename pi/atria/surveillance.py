@@ -82,26 +82,33 @@ class Analyse:
             self.erreur = str(exc)[:120]
 
     def analyser(self, img_rgb):
-        """Rend la liste des détections d'une image : [(type, force), ...]."""
+        """Rend (détections, observation). L'observation sert au diagnostic en direct."""
         self._charger()
         if self.erreur:
-            return []
+            return [], {}
 
         paquet = self._mp.Image(image_format=self._mp.ImageFormat.SRGB, data=img_rgb)
         trouves = []
 
         visages = self.visage.detect(paquet)
+        hostilite = 0.0
         if visages.face_blendshapes:
-            force = self._hostilite(visages.face_blendshapes[0])
-            if force >= SEUIL_HOSTILITE:
-                trouves.append(("hostilite", force))
+            hostilite = self._hostilite(visages.face_blendshapes[0])
+            if hostilite >= SEUIL_HOSTILITE:
+                trouves.append(("hostilite", hostilite))
 
         mains = self.main.detect(paquet)
+        gestes = []
         for points in mains.hand_landmarks:
             geste = self._geste(points)
+            gestes.append(geste[0] if geste else "aucun")
             if geste:
                 trouves.append(geste)
-        return trouves
+
+        observation = {"visages": len(visages.face_blendshapes),
+                       "hostilite": round(hostilite, 3),
+                       "mains": len(mains.hand_landmarks), "gestes": gestes}
+        return trouves, observation
 
     @staticmethod
     def _hostilite(blendshapes):
@@ -162,6 +169,7 @@ class Surveillance:
         self.derniers = {}
         self.dernier_passage = 0.0
         self.compteur = 0
+        self.observation = {}
 
     def doit_analyser(self, maintenant=None):
         maintenant = maintenant or time.time()
@@ -192,7 +200,7 @@ class Surveillance:
         if not self.verifier_thermique():
             return []
 
-        trouves = self.analyse.analyser(img_rgb)
+        trouves, self.observation = self.analyse.analyser(img_rgb)
         retenus = []
         for type_, force in trouves:
             cle = (auteur or "inconnu", type_)
@@ -214,4 +222,7 @@ class Surveillance:
     def etat(self):
         return {"active": self.active, "en_pause": self.en_pause,
                 "motif_pause": self.motif_pause, "incidents": self.compteur,
-                "modeles": disponible(), "erreur": self.analyse.erreur}
+                "modeles": disponible(), "erreur": self.analyse.erreur,
+                "observation": self.observation,
+                "vu_il_y_a": round(time.time() - self.dernier_passage, 1)
+                             if self.dernier_passage else None}

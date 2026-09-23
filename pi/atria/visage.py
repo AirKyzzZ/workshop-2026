@@ -6,6 +6,7 @@ l'empreinte de 128 réels est écrite en base, et on ne remonte pas d'un gabarit
 visage. C'est ce qui rend la biométrie compatible avec la promesse du cahier des charges.
 """
 
+import glob
 import os
 
 import cv2
@@ -15,9 +16,30 @@ MODELES = os.path.expanduser("~/atria/models/visage")
 DETECTEUR = os.path.join(MODELES, "yunet.onnx")
 ENCODEUR = os.path.join(MODELES, "sface.onnx")
 
-CAMERA = 0
+BY_ID = "/dev/v4l/by-id/"
+SIGNATURE_CAMERA = "046d_0825"
+"""Identifiant USB de la Logitech C270."""
+
 LARGEUR = 640
 HAUTEUR = 480
+
+
+def resoudre_camera(signature=SIGNATURE_CAMERA, defaut="/dev/video0"):
+    """Chemin stable de la camera, par signature USB plutot que par index.
+
+    Un debranchement suffit a faire passer la webcam de /dev/video0 a /dev/video1, et
+    l'index code en dur laisse alors la surveillance aveugle sans rien signaler. Le
+    premier index d'un peripherique UVC est celui qui capture.
+    """
+    for chemin in sorted(glob.glob(BY_ID + "*")):
+        if signature in chemin and chemin.endswith("index0"):
+            return os.path.realpath(chemin)
+    for chemin in sorted(glob.glob("/dev/video[0-9]")):
+        return chemin
+    return defaut
+
+
+CAMERA = None
 
 SEUIL_COSINUS = 0.363
 """Seuil recommandé par OpenCV pour SFace. Au-dessus, même personne."""
@@ -45,7 +67,7 @@ def disponible():
 
 class Camera:
     def __enter__(self):
-        self.flux = cv2.VideoCapture(CAMERA, cv2.CAP_V4L2)
+        self.flux = cv2.VideoCapture(resoudre_camera(), cv2.CAP_V4L2)
         self.flux.set(cv2.CAP_PROP_FRAME_WIDTH, LARGEUR)
         self.flux.set(cv2.CAP_PROP_FRAME_HEIGHT, HAUTEUR)
         self.flux.set(cv2.CAP_PROP_BUFFERSIZE, 1)

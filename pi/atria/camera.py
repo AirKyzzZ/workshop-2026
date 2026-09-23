@@ -58,6 +58,8 @@ class Flux:
         self.gabarits = {}
         self.gabarits_le = 0.0
         self._thermique_le = 0.0
+        self.echecs = 0
+        self.chemin = None
 
     # ---------- cycle de vie ----------
 
@@ -170,15 +172,9 @@ class Flux:
     # ---------- boucle ----------
 
     def _boucle(self):
-        capture = cv2.VideoCapture(visage.CAMERA, cv2.CAP_V4L2)
-        capture.set(cv2.CAP_PROP_FRAME_WIDTH, visage.LARGEUR)
-        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, visage.HAUTEUR)
-        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        if not capture.isOpened():
-            self.erreur = "caméra indisponible"
-            self.actif = False
+        capture = self._ouvrir_capture()
+        if capture is None:
             return
-        self.erreur = None
 
         while self.actif:
             with self.verrou:
@@ -191,8 +187,19 @@ class Flux:
 
             ok, img = capture.read()
             if not ok:
+                # Un debranchement ne doit pas laisser la surveillance aveugle pour de
+                # bon : on relache et on retente, la camera peut revenir sur un autre
+                # index.
+                self.echecs += 1
+                if self.echecs > 25:
+                    capture.release()
+                    time.sleep(2.0)
+                    capture = self._ouvrir_capture()
+                    if capture is None:
+                        return
                 time.sleep(0.2)
                 continue
+            self.echecs = 0
 
             surveille = (self.surveillance is not None
                          and self.surveillance.active
@@ -213,6 +220,21 @@ class Flux:
                 time.sleep(PERIODE_SURVEILLANCE_S)
 
         capture.release()
+
+    def _ouvrir_capture(self):
+        chemin = visage.resoudre_camera()
+        capture = cv2.VideoCapture(chemin, cv2.CAP_V4L2)
+        capture.set(cv2.CAP_PROP_FRAME_WIDTH, visage.LARGEUR)
+        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, visage.HAUTEUR)
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        if not capture.isOpened():
+            self.erreur = f"caméra indisponible sur {chemin}"
+            self.actif = False
+            return None
+        self.erreur = None
+        self.chemin = chemin
+        self.echecs = 0
+        return capture
 
     def _traiter(self, img):
         brute = img.copy()
@@ -317,7 +339,7 @@ class Flux:
             return {
                 "actif": self.actif, "erreur": self.erreur,
                 "visage": self.visage_present, "surface": self.surface,
-                "spectateurs": self.spectateurs,
+                "spectateurs": self.spectateurs, "chemin": self.chemin,
                 "auteur": self.auteur_vu,
                 "detections": self.derniere_detection,
                 "surveillance": None if self.surveillance is None
