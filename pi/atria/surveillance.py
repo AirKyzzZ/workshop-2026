@@ -48,7 +48,22 @@ RATIO_POUCE = 1.35
 FENETRE_FATIGUE_S = 60.0
 PERIODE_FATIGUE_S = 15.0
 ECHANTILLONS_FATIGUE_MIN = 8
-SEUIL_PAUPIERE = 0.45
+FENETRE_BASE_S = 600.0
+FERMETURE_RELATIVE = 0.55
+ECHANTILLONS_BASE_MIN = 40
+"""Le coefficient de clignement ne repose pas au meme niveau d'un visage a l'autre ni d'un
+eclairage a l'autre : mesure avec un seuil absolu, un oeil grand ouvert a donne PERCLOS
+1.00 sur trois releves consecutifs. La reference se prend donc sur la personne elle-meme,
+au bas de sa propre distribution.
+
+Cette reference se calcule sur dix minutes et non sur la fenetre de mesure. Calibrer sur
+la minute en cours produirait l'erreur inverse : quelqu'un qui garde les yeux clos pendant
+toute la fenetre verrait sa base descendre avec lui, et serait declare parfaitement
+eveille. Personne ne garde les yeux fermes dix minutes devant un detecteur de visage, donc
+le bas de la distribution longue est bien l'oeil ouvert.
+
+Tant qu'il n'y a pas assez d'echantillons pour etablir cette base, aucun releve n'est
+emis : une mesure fausse vaut moins que pas de mesure."""
 SEUIL_BAILLEMENT = 0.50
 """Mesure de somnolence inspiree du PERCLOS, la metrique de reference en automobile :
 la part du temps ou les paupieres restent closes sur une fenetre glissante.
@@ -242,6 +257,7 @@ class Surveillance:
         self.compteur = 0
         self.observation = {}
         self.fenetres = {}
+        self.bases = {}
         self.dernier_bilan = {}
         self.fatigue = {}
 
@@ -304,13 +320,25 @@ class Surveillance:
         while fenetre and fenetre[0][0] < limite:
             fenetre.pop(0)
 
+        longue = self.bases.setdefault(auteur, [])
+        longue.append((maintenant, paupieres[0]))
+        seuil = maintenant - FENETRE_BASE_S
+        while longue and longue[0][0] < seuil:
+            longue.pop(0)
+
         if maintenant - self.dernier_bilan.get(auteur, 0.0) < PERIODE_FATIGUE_S:
             return None
         if len(fenetre) < ECHANTILLONS_FATIGUE_MIN:
             return None
         self.dernier_bilan[auteur] = maintenant
 
-        fermes = sum(1 for _, f, _, _ in fenetre if f >= SEUIL_PAUPIERE)
+        if len(longue) < ECHANTILLONS_BASE_MIN:
+            return None
+        reference = sorted(f for _, f in longue)
+        base = reference[len(reference) // 5]
+        amplitude = max(0.15, 1.0 - base)
+        fermes = sum(1 for _, f, _, _ in fenetre
+                     if (f - base) / amplitude >= FERMETURE_RELATIVE)
         perclos = fermes / len(fenetre)
         plissement = sum(p for _, _, _, p in fenetre) / len(fenetre)
 
@@ -329,7 +357,7 @@ class Surveillance:
                           + 0.10 * plissement)
         return {"perclos": round(perclos, 3), "baillements": baillements,
                 "plissement": round(plissement, 3), "indice": round(indice, 3),
-                "echantillons": len(fenetre)}
+                "echantillons": len(fenetre), "base": round(base, 3)}
 
     def suivre_fatigue(self, auteur):
         """Ecrit un point de capacite quand la fenetre de somnolence est complete."""

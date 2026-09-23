@@ -1,5 +1,6 @@
 import { courbe } from "./charts.js";
 import { panneauAffectation } from "./vue-affectation.js";
+import { blocBriefing } from "./vue-briefing.js";
 import { bloc, couleur, el, json, paire, rangee } from "./ui.js";
 
 function resume(hote, etat) {
@@ -152,6 +153,7 @@ export async function vueBord(hote, etat, session) {
     await monEtat(hote, etat, session);
   }
   resume(hote, etat);
+  await blocBriefing(hote);
   alertes(hote, etat);
   previsions(hote, etat);
   if (session.capitaine) {

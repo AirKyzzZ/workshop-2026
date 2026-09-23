@@ -6,8 +6,8 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import (camera, confinement, db, ecoute, llm, model, predict, regulator,
-               social, visage)
+from . import (briefing, camera, confinement, db, ecoute, llm, model, predict,
+               regulator, social, visage)
 
 from . import surveillance as surveillance_mod
 
@@ -420,6 +420,13 @@ def api_social():
         n.update(confiances.get(n["nom"], {}))
     g["seuil_confiance"] = social.SEUIL_CONFIANCE
     return g
+
+
+@app.get("/api/briefing")
+def api_briefing():
+    """Briefing de quart : les mesures de chaque sous-systeme posees cote a cote."""
+    etat.recharger()
+    return briefing.rediger(etat)
 
 
 @app.get("/api/perception")

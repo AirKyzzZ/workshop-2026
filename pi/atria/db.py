@@ -462,6 +462,7 @@ def ecrans(conn):
     return {r["compartiment"]: dict(r) for r in conn.execute("SELECT * FROM ecran")}
 
 
+REFERENCE_SANS_HISTORIQUE = 1.0
 PENALITE_FATIGUE = 0.45
 """Part de la capacite de reference qu'une fatigue maximale retire."""
 
@@ -482,7 +483,10 @@ def reference_capacite(conn, crew):
         " AND (source IS NULL OR source = 'seed') ORDER BY ts DESC LIMIT 48",
         (crew,))]
     if not lignes:
-        return None
+        # Sans historique, on part de la pleine capacite et on ne retranche que ce qui a
+        # ete mesure. Rendre None revenait a ne rien observer du tout chez quelqu'un qui
+        # n'a pas encore de releve, c'est-a-dire exactement celui qu'on vient d'enroler.
+        return REFERENCE_SANS_HISTORIQUE
     lignes.sort()
     milieu = len(lignes) // 2
     return (lignes[milieu] if len(lignes) % 2
@@ -503,7 +507,8 @@ def enregistrer_fatigue(conn, crew, perclos, baillements, plissement, indice, ec
 
     reference = reference_capacite(conn, crew)
     cognitive = None
-    if reference is not None:
+    if reference is not None and conn.execute(
+            "SELECT 1 FROM crew WHERE nom = ?", (crew,)).fetchone():
         cognitive = max(0.0, min(1.0, reference * (1.0 - PENALITE_FATIGUE * indice)))
         conn.execute(
             "INSERT OR REPLACE INTO capacite (crew, ts, cognitive, fatigue, source)"

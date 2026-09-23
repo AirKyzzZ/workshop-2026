@@ -585,3 +585,16 @@ h3 {
 .mesure-barre .mesure {
   font-family: Martian; font-size: 10px; text-align: right; color: var(--encre);
 }
+
+
+/* ---------- briefing ---------- */
+
+.briefing-texte {
+  font-size: 14.5px; line-height: 1.65; color: var(--encre-forte);
+  padding-left: calc(var(--u) * 1.5); border-left: 2px solid var(--trait-fort);
+}
+.briefing-constats {
+  margin: calc(var(--u) * 2) 0 0; padding-left: 16px;
+  font-size: 12px; color: var(--sourdine); line-height: 1.6;
+}
+.briefing-constats li { margin-bottom: 2px; }
