@@ -45,6 +45,19 @@ un. Le seuil se place entre les deux."""
 
 RATIO_POUCE = 1.35
 
+FENETRE_FATIGUE_S = 60.0
+PERIODE_FATIGUE_S = 15.0
+ECHANTILLONS_FATIGUE_MIN = 8
+SEUIL_PAUPIERE = 0.45
+SEUIL_BAILLEMENT = 0.50
+"""Mesure de somnolence inspiree du PERCLOS, la metrique de reference en automobile :
+la part du temps ou les paupieres restent closes sur une fenetre glissante.
+
+Une precision honnete sur ce que cette cadence permet : a une image par seconde, un
+clignement de 150 ms passe entre deux mesures, donc la frequence de clignement n'est pas
+mesurable ici. Ce qui l'est, et qui signe la somnolence, ce sont les fermetures qui durent
+et les baillements, tous deux longs de plusieurs secondes."""
+
 SEUIL_HOSTILITE = 0.55
 """Combinaison sourcils baissés, yeux plissés et bouche crispée."""
 
@@ -111,10 +124,12 @@ class Analyse:
 
         visages = self.visage.detect(paquet)
         hostilite = 0.0
+        paupieres = None
         if visages.face_blendshapes:
             hostilite = self._hostilite(visages.face_blendshapes[0])
             if hostilite >= SEUIL_HOSTILITE:
                 trouves.append(("hostilite", hostilite))
+            paupieres = self._paupieres(visages.face_blendshapes[0])
 
         mains = self.main.detect(paquet)
         gestes = []
@@ -133,10 +148,20 @@ class Analyse:
 
         observation = {"visages": len(visages.face_blendshapes),
                        "hostilite": round(hostilite, 3),
+                       "paupieres": None if paupieres is None
+                                    else [round(x, 3) for x in paupieres],
                        "mains": len(mains.hand_landmarks), "gestes": gestes,
                        "doigts": doigts, "boites": boites, "ratios": mesures,
                        "expressions": self._expressions(visages)}
         return trouves, observation
+
+    @staticmethod
+    def _paupieres(blendshapes):
+        """Fermeture moyenne des paupieres, bouche ouverte, plissement des yeux."""
+        v = {c.category_name: c.score for c in blendshapes}
+        fermeture = (v.get("eyeBlinkLeft", 0.0) + v.get("eyeBlinkRight", 0.0)) / 2
+        plissement = (v.get("eyeSquintLeft", 0.0) + v.get("eyeSquintRight", 0.0)) / 2
+        return fermeture, v.get("jawOpen", 0.0), plissement
 
     @staticmethod
     def _expressions(visages):
@@ -216,6 +241,9 @@ class Surveillance:
         self.dernier_passage = 0.0
         self.compteur = 0
         self.observation = {}
+        self.fenetres = {}
+        self.dernier_bilan = {}
+        self.fatigue = {}
 
     def doit_analyser(self, maintenant=None):
         maintenant = maintenant or time.time()
@@ -247,6 +275,7 @@ class Surveillance:
             return []
 
         trouves, self.observation = self.analyse.analyser(img_rgb)
+        self.suivre_fatigue(auteur)
         retenus = []
         for type_, force in trouves:
             cle = (auteur or "inconnu", type_)
@@ -265,10 +294,70 @@ class Surveillance:
                             "gravite": round(gravite, 3), "auteur": auteur})
         return retenus
 
+    def _accumuler(self, auteur, paupieres, maintenant):
+        """Empile les mesures de paupieres et rend un bilan quand la fenetre est pleine."""
+        if not auteur or paupieres is None:
+            return None
+        fenetre = self.fenetres.setdefault(auteur, [])
+        fenetre.append((maintenant, *paupieres))
+        limite = maintenant - FENETRE_FATIGUE_S
+        while fenetre and fenetre[0][0] < limite:
+            fenetre.pop(0)
+
+        if maintenant - self.dernier_bilan.get(auteur, 0.0) < PERIODE_FATIGUE_S:
+            return None
+        if len(fenetre) < ECHANTILLONS_FATIGUE_MIN:
+            return None
+        self.dernier_bilan[auteur] = maintenant
+
+        fermes = sum(1 for _, f, _, _ in fenetre if f >= SEUIL_PAUPIERE)
+        perclos = fermes / len(fenetre)
+        plissement = sum(p for _, _, _, p in fenetre) / len(fenetre)
+
+        # Un baillement dure plusieurs secondes : on compte les episodes, pas les images,
+        # sinon une seule bouche ouverte longtemps vaudrait dix baillements.
+        baillements = 0
+        ouvert = False
+        for _, _, machoire, _ in fenetre:
+            if machoire >= SEUIL_BAILLEMENT and not ouvert:
+                baillements += 1
+                ouvert = True
+            elif machoire < SEUIL_BAILLEMENT:
+                ouvert = False
+
+        indice = min(1.0, 0.65 * perclos + 0.25 * min(1.0, baillements / 3.0)
+                          + 0.10 * plissement)
+        return {"perclos": round(perclos, 3), "baillements": baillements,
+                "plissement": round(plissement, 3), "indice": round(indice, 3),
+                "echantillons": len(fenetre)}
+
+    def suivre_fatigue(self, auteur):
+        """Ecrit un point de capacite quand la fenetre de somnolence est complete."""
+        from . import db
+
+        bilan = self._accumuler(auteur, self.observation.get("paupieres"),
+                                self.dernier_passage)
+        if bilan is None:
+            return None
+        cognitive = db.enregistrer_fatigue(
+            self.conn, auteur, bilan["perclos"], bilan["baillements"],
+            bilan["plissement"], bilan["indice"], bilan["echantillons"])
+        bilan["cognitive"] = None if cognitive is None else round(cognitive, 3)
+        self.fatigue[auteur] = bilan
+        if bilan["indice"] >= 0.5 and cognitive is not None:
+            db.journaliser(self.conn, "alerte",
+                           f"somnolence observee, capacite ramenee a {cognitive:.2f}",
+                           acteur="atria", sujet=auteur,
+                           donnees={"perclos": bilan["perclos"],
+                                    "baillements": bilan["baillements"],
+                                    "indice": bilan["indice"]})
+        return bilan
+
     def etat(self):
         return {"active": self.active, "en_pause": self.en_pause,
                 "motif_pause": self.motif_pause, "incidents": self.compteur,
                 "modeles": disponible(), "erreur": self.analyse.erreur,
                 "observation": self.observation,
+                "fatigue": self.fatigue,
                 "vu_il_y_a": round(time.time() - self.dernier_passage, 1)
                              if self.dernier_passage else None}

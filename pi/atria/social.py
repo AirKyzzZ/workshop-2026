@@ -327,3 +327,44 @@ def confiances(conn, g=None):
 
 def confiance(conn, crew):
     return confiances(conn).get(crew, {}).get("confiance", 1.0)
+
+
+def contagion_physique(conn, heures=12):
+    """Qui a ete expose aux symptomes recents, par compartiment puis de proche en proche.
+
+    Le graphe de co-presence sert ici tel quel : un symptome entendu dans un compartiment
+    contamine d'abord ceux qui y etaient, puis ceux qui ont ensuite partage un lieu avec
+    eux. Le second rang est le plus utile, parce que c'est celui qu'on ne voit pas venir.
+    """
+    sorties = []
+    vus = set()
+    for s in db.symptomes(conn, heures=heures):
+        cle = (s["compartiment"], s["type"])
+        if cle in vus:
+            continue
+        vus.add(cle)
+
+        presents = db.occupants(conn, s["compartiment"])
+        passes = [r["crew"] for r in conn.execute(
+            "SELECT DISTINCT crew FROM presence WHERE compartiment = ?"
+            " AND COALESCE(sortie, ?) >= ?",
+            (s["compartiment"], time.time(), s["ts"] - 3600))]
+        foyer = sorted(set(presents) | set(passes))
+
+        rang2 = {}
+        for nom in foyer:
+            for voisin in exposition(conn, nom, heures=heures)["rang1"]:
+                if voisin["nom"] not in foyer:
+                    rang2[voisin["nom"]] = max(rang2.get(voisin["nom"], 0),
+                                               voisin["minutes"])
+
+        sorties.append({
+            "compartiment": s["compartiment"],
+            "type": s["type"],
+            "ts": s["ts"],
+            "source": s["source"],
+            "foyer": foyer,
+            "rang2": sorted(({"nom": n, "minutes": m} for n, m in rang2.items()),
+                            key=lambda x: -x["minutes"])[:8],
+        })
+    return sorties

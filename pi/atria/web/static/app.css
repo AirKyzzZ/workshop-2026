@@ -200,6 +200,7 @@ main[data-page="visage"] { grid-template-columns: repeat(auto-fit, minmax(320px,
 main[data-page="compartiment"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 main[data-page="social"] { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
 main[data-page="surete"] { grid-template-columns: minmax(0, 1000px); justify-content: center; }
+main[data-page="perception"] { grid-template-columns: minmax(0, 1fr); }
 
 /* ---------- panneaux ---------- */
 
@@ -531,4 +532,56 @@ h3 {
 
 .rangee-actions {
   display: flex; flex-wrap: wrap; gap: var(--u); margin-top: calc(var(--u) * 1.5);
+}
+
+
+/* ---------- perception ---------- */
+
+.duo-perception {
+  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: calc(var(--u) * 4);
+}
+.duo-perception .camera { max-width: none; }
+.grille-modeles {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: calc(var(--u) * 2); align-content: start;
+}
+@media (max-width: 1000px) {
+  .duo-perception { grid-template-columns: minmax(0, 1fr); }
+  .duo-perception .camera { max-width: 480px; }
+}
+.pile-perception {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: calc(var(--u) * 4) calc(var(--u) * 5); margin-top: calc(var(--u) * 2);
+}
+
+.carte-modele {
+  padding: calc(var(--u) * 2); border: 1px solid var(--trait);
+  border-radius: var(--rayon); background: var(--surface); min-width: 0;
+}
+.carte-modele strong { font-size: 13.5px; color: var(--encre-forte); }
+.role-modele {
+  font-size: 11px; color: var(--faible); margin-bottom: calc(var(--u) * 1.5);
+}
+.pastille {
+  font-family: Martian; font-size: 9px; letter-spacing: .06em;
+  padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+  max-width: 55%; overflow: hidden; text-overflow: ellipsis;
+}
+.pastille.vive { background: var(--nominal); color: var(--fond); }
+.pastille.morte { background: var(--trait); color: var(--faible); }
+
+.mesure-barre {
+  display: grid; grid-template-columns: 1fr 64px 34px; align-items: center;
+  gap: var(--u); font-size: 10.5px; color: var(--sourdine); padding: 2px 0;
+}
+.mesure-barre .etiquette {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mesure-barre .piste {
+  height: 4px; background: var(--trait); border-radius: 2px; overflow: hidden;
+}
+.mesure-barre .piste i { display: block; height: 100%; border-radius: 2px; }
+.mesure-barre .mesure {
+  font-family: Martian; font-size: 10px; text-align: right; color: var(--encre);
 }

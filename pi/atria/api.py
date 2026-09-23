@@ -6,9 +6,16 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import camera, confinement, db, llm, model, predict, regulator, social, visage
+from . import (camera, confinement, db, ecoute, llm, model, predict, regulator,
+               social, visage)
+
+from . import surveillance as surveillance_mod
 
 WEB = os.path.join(os.path.dirname(__file__), "web")
+
+
+def surveillance_temp():
+    return surveillance_mod.temperature_soc()
 PERIODE_PUSH = 3.0
 PERIODE_SURETE = 5.0
 
@@ -187,11 +194,17 @@ async def demarrer_services():
     if visage.disponible():
         camera.flux.demarrer()
         camera.flux.armer_surveillance(etat.conn)
+    if ecoute.disponible():
+        # Le micro ne sait pas qui parle : il emprunte a la camera la derniere identite
+        # reconnue, et laisse l'evenement non attribue quand il n'y en a pas.
+        ecoute.demarrer(etat.conn, identite=lambda: camera.flux.auteur_vu)
 
 
 @app.on_event("shutdown")
 async def arreter_services():
     camera.flux.arreter()
+    if ecoute.ecoute is not None:
+        ecoute.ecoute.arreter()
 
 
 SPECTATEURS_MAX = 3
@@ -407,6 +420,27 @@ def api_social():
         n.update(confiances.get(n["nom"], {}))
     g["seuil_confiance"] = social.SEUIL_CONFIANCE
     return g
+
+
+@app.get("/api/perception")
+def api_perception():
+    """Tout ce que les modeles voient et entendent a l'instant, avec leurs latences."""
+    return {
+        "camera": camera.flux.etat(),
+        "ecoute": None if ecoute.ecoute is None else ecoute.ecoute.etat(),
+        "temperature_c": surveillance_temp(),
+        "seuils": {
+            "cosinus": visage.SEUIL_COSINUS,
+            "hostilite": surveillance_mod.SEUIL_HOSTILITE,
+            "ratio_doigt": surveillance_mod.RATIO_DOIGT,
+            "temp_max_c": surveillance_mod.TEMP_MAX_C,
+            "temp_reprise_c": surveillance_mod.TEMP_REPRISE_C,
+            "classe_audio": ecoute.SEUIL_CLASSE,
+        },
+        "fatigues": db.fatigues(etat.conn, limite=8),
+        "symptomes": db.symptomes(etat.conn),
+        "contagion": social.contagion_physique(etat.conn),
+    }
 
 
 @app.get("/api/surete")

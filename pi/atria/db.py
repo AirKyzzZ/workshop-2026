@@ -2,6 +2,7 @@ import json
 import os
 import sqlite3
 import time
+import unicodedata
 
 CHEMIN = os.path.expanduser("~/atria/data/atria.db")
 
@@ -131,6 +132,31 @@ CREATE TABLE IF NOT EXISTS confinement (
 
 CREATE INDEX IF NOT EXISTS idx_confinement_ouvert ON confinement(ouvert DESC);
 
+CREATE TABLE IF NOT EXISTS fatigue (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  crew         TEXT NOT NULL REFERENCES crew(nom),
+  ts           REAL NOT NULL,
+  perclos      REAL NOT NULL,
+  baillements  INTEGER NOT NULL DEFAULT 0,
+  plissement   REAL NOT NULL DEFAULT 0,
+  indice       REAL NOT NULL,
+  echantillons INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_fatigue_crew ON fatigue(crew, ts DESC);
+
+CREATE TABLE IF NOT EXISTS symptome (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  compartiment TEXT NOT NULL REFERENCES compartiment(nom),
+  crew         TEXT REFERENCES crew(nom),
+  ts           REAL NOT NULL,
+  type         TEXT NOT NULL,
+  source       TEXT NOT NULL,
+  score        REAL
+);
+
+CREATE INDEX IF NOT EXISTS idx_symptome_ts ON symptome(ts DESC);
+
 CREATE TABLE IF NOT EXISTS ecran (
   compartiment TEXT PRIMARY KEY REFERENCES compartiment(nom),
   haut         TEXT NOT NULL DEFAULT '',
@@ -156,6 +182,7 @@ COLONNES_AJOUTEES = (
     ("ambiance", "humidite", "REAL"),
     ("ambiance", "mq2_brut", "INTEGER"),
     ("ecran", "applique", "REAL"),
+    ("capacite", "source", "TEXT"),
 )
 
 
@@ -433,3 +460,101 @@ def confirmer_ecran(conn, compartiment):
 
 def ecrans(conn):
     return {r["compartiment"]: dict(r) for r in conn.execute("SELECT * FROM ecran")}
+
+
+PENALITE_FATIGUE = 0.45
+"""Part de la capacite de reference qu'une fatigue maximale retire."""
+
+
+def reference_capacite(conn, crew):
+    """Capacite de base du membre, hors observations camera.
+
+    La penalite s'applique a cette reference et non au dernier releve : sinon chaque
+    observation se retranche de la precedente et la capacite s'effondre toute seule.
+
+    La reference se prend sur les derniers releves disponibles sans fenetre temporelle.
+    Borner a vingt-quatre heures paraissait plus propre, mais un jeu de donnees plus vieux
+    que la fenetre ne rendait plus aucune reference, et la fatigue observee restait alors
+    sans effet sur la capacite.
+    """
+    lignes = [r["cognitive"] for r in conn.execute(
+        "SELECT cognitive FROM capacite WHERE crew = ?"
+        " AND (source IS NULL OR source = 'seed') ORDER BY ts DESC LIMIT 48",
+        (crew,))]
+    if not lignes:
+        return None
+    lignes.sort()
+    milieu = len(lignes) // 2
+    return (lignes[milieu] if len(lignes) % 2
+            else (lignes[milieu - 1] + lignes[milieu]) / 2)
+
+
+def enregistrer_fatigue(conn, crew, perclos, baillements, plissement, indice, echantillons):
+    """Ecrit l'observation et le point de capacite qui en decoule.
+
+    Le point passe par la meme table que le reste : la tendance, les previsions et le
+    refus d'affectation continuent de fonctionner sans rien savoir de la camera.
+    """
+    maintenant = time.time()
+    conn.execute(
+        "INSERT INTO fatigue (crew, ts, perclos, baillements, plissement, indice,"
+        " echantillons) VALUES (?,?,?,?,?,?,?)",
+        (crew, maintenant, perclos, baillements, plissement, indice, echantillons))
+
+    reference = reference_capacite(conn, crew)
+    cognitive = None
+    if reference is not None:
+        cognitive = max(0.0, min(1.0, reference * (1.0 - PENALITE_FATIGUE * indice)))
+        conn.execute(
+            "INSERT OR REPLACE INTO capacite (crew, ts, cognitive, fatigue, source)"
+            " VALUES (?,?,?,?,?)",
+            (crew, maintenant, cognitive, indice, "camera"))
+    conn.commit()
+    return cognitive
+
+
+def fatigues(conn, crew=None, limite=30, heures=6):
+    depuis = time.time() - heures * 3600
+    if crew:
+        lignes = conn.execute(
+            "SELECT * FROM fatigue WHERE crew = ? AND ts >= ? ORDER BY ts DESC LIMIT ?",
+            (crew, depuis, limite))
+    else:
+        lignes = conn.execute(
+            "SELECT * FROM fatigue WHERE ts >= ? ORDER BY ts DESC LIMIT ?",
+            (depuis, limite))
+    return [dict(l) for l in lignes]
+
+
+def resoudre(conn, annonce):
+    """Nom de compartiment tel qu'il existe en base, accents et casse mis de cote."""
+    cible = _plat(annonce)
+    for ligne in conn.execute("SELECT nom FROM compartiment"):
+        if _plat(ligne["nom"]) == cible:
+            return ligne["nom"]
+    return None
+
+
+def _plat(texte):
+    return "".join(c for c in unicodedata.normalize("NFD", texte)
+                   if unicodedata.category(c) != "Mn").lower()
+
+
+def enregistrer_symptome(conn, compartiment, type_, source, score, crew=None):
+    """Un signe clinique entendu ou vu, rattache au lieu plutot qu'a une personne.
+
+    Un micro ne sait pas qui a tousse. C'est le compartiment qui contamine, et le graphe
+    de co-presence sait deja qui s'y trouvait : rattacher au lieu perd moins d'information
+    que de nommer quelqu'un au hasard.
+    """
+    conn.execute(
+        "INSERT INTO symptome (compartiment, crew, ts, type, source, score)"
+        " VALUES (?,?,?,?,?,?)",
+        (compartiment, crew, time.time(), type_, source, score))
+    conn.commit()
+
+
+def symptomes(conn, heures=12, limite=40):
+    return [dict(l) for l in conn.execute(
+        "SELECT * FROM symptome WHERE ts >= ? ORDER BY ts DESC LIMIT ?",
+        (time.time() - heures * 3600, limite))]
