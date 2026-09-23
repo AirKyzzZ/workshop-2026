@@ -35,6 +35,39 @@ export async function vuePerception(hote) {
     "Cinq modèles tournent sur la carte, sans réseau. Voici ce qu'ils lisent, à l'instant."));
   hote.appendChild(entete);
 
+  const commandes = el("div", "commandes-modules");
+  hote.appendChild(commandes);
+
+  async function basculer(nom, actif, minutes) {
+    await fetch("/api/modules", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nom, actif, minutes }),
+    });
+    peindre();
+  }
+
+  function peindreModules(liste, duree) {
+    commandes.replaceChildren();
+    const intro = el("p", "intro",
+      `Les modèles coûteux s'arment pour ${duree} minutes et se désarment seuls. `
+      + "La carte n'a pas de refroidissement actif : son budget thermique se dépense, "
+      + "il ne se reconstitue pas.");
+    commandes.appendChild(intro);
+    const rangee = el("div", "rangee-modules");
+    for (const m of liste) {
+      const b = el("button", "module" + (m.actif ? " arme" : ""));
+      b.type = "button";
+      b.appendChild(el("strong", null, m.libelle));
+      b.appendChild(el("small", null, m.detail));
+      b.appendChild(el("span", "cout", m.actif
+        ? `armé · ${Math.ceil((m.reste_s || 0) / 60)} min`
+        : `coût ${m.cout}`));
+      b.addEventListener("click", () => basculer(m.nom, !m.actif, duree));
+      rangee.appendChild(b);
+    }
+    commandes.appendChild(rangee);
+  }
+
   const duo = el("div", "duo-perception");
   const flux = bloc("Caméra de la passerelle", "détections incrustées");
   fluxCamera(flux.corps);
@@ -58,6 +91,7 @@ export async function vuePerception(hote) {
     const s = c.surveillance || {};
     const o = s.observation || {};
     const e = d.ecoute || {};
+    peindreModules(d.modules || [], 5);
     zone.replaceChildren();
 
     const yunet = carteModele("YuNet", "détection de visage, ONNX",

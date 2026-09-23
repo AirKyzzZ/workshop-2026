@@ -141,7 +141,9 @@ def reformuler(question, faits, interdits=()):
     `interdits` porte les noms d'équipage absents du relevé : les citer reviendrait à
     attribuer une mesure au mauvais membre.
     """
-    if not ACTIF:
+    from . import modules
+
+    if not ACTIF or not modules.actif("modele"):
         return None
     releve = rendre(faits) if isinstance(faits, dict) else str(faits)
 

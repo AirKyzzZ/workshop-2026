@@ -24,7 +24,7 @@ import subprocess
 import threading
 import time
 
-from . import db
+from . import db, modules
 
 MODELE = os.path.expanduser("~/atria/models/mediapipe/yamnet.tflite")
 PERIPHERIQUE = os.environ.get("ATRIA_MICRO", "plughw:0,0")
@@ -168,6 +168,11 @@ class Ecoute:
                 time.sleep(1)
                 continue
 
+            if not modules.actif("ecoute"):
+                self.classes = []
+                time.sleep(1.0)
+                continue
+
             echantillons = np.frombuffer(brut, dtype=np.int16).astype(np.float32) / 32768.0
             self.niveau = round(float(np.sqrt((echantillons ** 2).mean())), 4)
             self._suivre_fond()
@@ -194,7 +199,7 @@ class Ecoute:
         langage est parti en depassement de delai. YAMNet, qui coute quatorze
         millisecondes, sait deja dire s'il y a de la parole : il sert de portier.
         """
-        if self.niveau < NIVEAU_PAROLE_MIN:
+        if not modules.actif("transcription") or self.niveau < NIVEAU_PAROLE_MIN:
             return False
         return any(c["nom"] in CLASSES_PAROLE and c["score"] >= SEUIL_PAROLE
                    for c in self.classes)
@@ -316,6 +321,7 @@ class Ecoute:
             "transcrit_il_y_a": (round(time.time() - self.transcrit_le, 1)
                                  if self.transcrit_le else None),
             "vosk": self._vosk is not None,
+            "arme": modules.actif("ecoute"),
             "parle": self._parle(),
             "lexique": len(LEXIQUE),
             "vu_il_y_a": round(time.time() - self.vu_le, 1) if self.vu_le else None,

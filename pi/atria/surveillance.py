@@ -262,8 +262,10 @@ class Surveillance:
         self.fatigue = {}
 
     def doit_analyser(self, maintenant=None):
+        from . import modules
+
         maintenant = maintenant or time.time()
-        if not self.active or not disponible():
+        if not self.active or not modules.actif("surveillance") or not disponible():
             return False
         return maintenant - self.dernier_passage >= PERIODE_S
 
@@ -382,7 +384,10 @@ class Surveillance:
         return bilan
 
     def etat(self):
-        return {"active": self.active, "en_pause": self.en_pause,
+        from . import modules
+
+        return {"active": self.active, "arme": modules.actif("surveillance"),
+                "en_pause": self.en_pause,
                 "motif_pause": self.motif_pause, "incidents": self.compteur,
                 "modeles": disponible(), "erreur": self.analyse.erreur,
                 "observation": self.observation,

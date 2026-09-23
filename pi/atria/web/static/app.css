@@ -598,3 +598,28 @@ h3 {
   font-size: 12px; color: var(--sourdine); line-height: 1.6;
 }
 .briefing-constats li { margin-bottom: 2px; }
+
+
+/* ---------- modules a la demande ---------- */
+
+.commandes-modules { margin-bottom: calc(var(--u) * 3); }
+.rangee-modules {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--u);
+}
+.module {
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  padding: calc(var(--u) * 1.5); border: 1px solid var(--trait);
+  border-left-width: 3px; border-radius: var(--rayon);
+  background: var(--surface); color: var(--encre); cursor: pointer;
+  font-family: inherit;
+}
+.module:hover { border-color: var(--trait-fort); }
+.module strong { font-size: 12.5px; color: var(--encre-forte); }
+.module small { font-size: 10.5px; color: var(--faible); line-height: 1.4; }
+.module .cout {
+  font-family: Martian; font-size: 9px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--faible); margin-top: 2px;
+}
+.module.arme { border-left-color: var(--nominal); }
+.module.arme .cout { color: var(--nominal); }

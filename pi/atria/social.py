@@ -108,7 +108,27 @@ def frictions(conn, depuis=None):
     return compte
 
 
+FRAICHEUR_GRAPHE_S = 30.0
+"""Le graphe repose sur deux jointures de sept jours de presences. La boucle de surete le
+reconstruisait toutes les cinq secondes pour un resultat qui bouge a l'echelle de l'heure,
+et le SoC n'a pas la marge thermique pour ce genre de gaspillage."""
+
+_graphe_cache = {"ts": 0.0, "valeur": None}
+
+
 def graphe(conn, depuis=None):
+    """Rend les nœuds et les arêtes du graphe social, avec un cache de trente secondes."""
+    if depuis is None and _graphe_cache["valeur"] is not None \
+            and time.time() - _graphe_cache["ts"] < FRAICHEUR_GRAPHE_S:
+        return _graphe_cache["valeur"]
+    resultat = _graphe(conn, depuis)
+    if depuis is None:
+        _graphe_cache["valeur"] = resultat
+        _graphe_cache["ts"] = time.time()
+    return resultat
+
+
+def _graphe(conn, depuis=None):
     """Rend les nœuds et les arêtes du graphe social.
 
     Le lien va de -1, franchement hostile, à +1, franchement amical. Il part du temps
@@ -229,14 +249,14 @@ def exposition(conn, source, heures=24):
     }
 
 
-def contagion_mentale(conn, etat):
+def contagion_mentale(conn, etat, g=None):
     """Stress attendu de chacun, propagé le long des arêtes amicales.
 
     L'humeur se transmet d'abord entre gens qui se fréquentent. Un membre entouré de
     collègues sous tension est plus exposé que son propre relevé ne le montre, et c'est
     précisément ce qu'on veut voir venir.
     """
-    g = graphe(conn)
+    g = g or graphe(conn)
     stress = {c.nom: getattr(c, "stress", None) for c in etat.equipage}
     stress = {n: v for n, v in stress.items() if v is not None}
     if not stress:
@@ -335,10 +355,25 @@ def contagion_physique(conn, heures=12):
     Le graphe de co-presence sert ici tel quel : un symptome entendu dans un compartiment
     contamine d'abord ceux qui y etaient, puis ceux qui ont ensuite partage un lieu avec
     eux. Le second rang est le plus utile, parce que c'est celui qu'on ne voit pas venir.
+
+    Les co-presences se calculent une seule fois pour tous les foyers. Les recalculer par
+    membre revenait a rejouer une jointure lourde autant de fois qu'il y avait de monde
+    dans la piece, sur une route que le dashboard sonde chaque seconde.
     """
+    symptomes = db.symptomes(conn, heures=heures)
+    if not symptomes:
+        return []
+
+    partage, _ = co_presences(conn, time.time() - heures * 3600)
+    voisins = {}
+    for (a, b), secondes in partage.items():
+        voisins.setdefault(a, {})[b] = secondes
+        voisins.setdefault(b, {})[a] = secondes
+
     sorties = []
     vus = set()
-    for s in db.symptomes(conn, heures=heures):
+    maintenant = time.time()
+    for s in symptomes:
         cle = (s["compartiment"], s["type"])
         if cle in vus:
             continue
@@ -348,15 +383,14 @@ def contagion_physique(conn, heures=12):
         passes = [r["crew"] for r in conn.execute(
             "SELECT DISTINCT crew FROM presence WHERE compartiment = ?"
             " AND COALESCE(sortie, ?) >= ?",
-            (s["compartiment"], time.time(), s["ts"] - 3600))]
+            (s["compartiment"], maintenant, s["ts"] - 3600))]
         foyer = sorted(set(presents) | set(passes))
 
         rang2 = {}
         for nom in foyer:
-            for voisin in exposition(conn, nom, heures=heures)["rang1"]:
-                if voisin["nom"] not in foyer:
-                    rang2[voisin["nom"]] = max(rang2.get(voisin["nom"], 0),
-                                               voisin["minutes"])
+            for suivant, secondes in voisins.get(nom, {}).items():
+                if suivant not in foyer:
+                    rang2[suivant] = max(rang2.get(suivant, 0.0), secondes)
 
         sorties.append({
             "compartiment": s["compartiment"],
@@ -364,7 +398,8 @@ def contagion_physique(conn, heures=12):
             "ts": s["ts"],
             "source": s["source"],
             "foyer": foyer,
-            "rang2": sorted(({"nom": n, "minutes": m} for n, m in rang2.items()),
+            "rang2": sorted(({"nom": n, "minutes": round(v / 60)}
+                             for n, v in rang2.items()),
                             key=lambda x: -x["minutes"])[:8],
         })
     return sorties

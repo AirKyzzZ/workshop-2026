@@ -6,8 +6,8 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import (briefing, camera, confinement, db, ecoute, llm, model, predict,
-               regulator, social, visage)
+from . import (briefing, camera, confinement, db, demo, ecoute, llm, model,
+               modules, predict, regulator, social, visage)
 
 from . import surveillance as surveillance_mod
 
@@ -422,11 +422,71 @@ def api_social():
     return g
 
 
+@app.get("/api/modules")
+def api_modules():
+    return {"modules": modules.tous(), "duree_defaut_min": modules.DUREE_DEFAUT_MIN,
+            "temperature_c": surveillance_temp()}
+
+
+@app.post("/api/modules")
+def api_modules_armer(corps: dict, requete: Request):
+    """Arme ou desarme un module couteux. Il se desarme seul a l'echeance."""
+    refus = refus_biometrie(requete, "armement de module", corps.get("nom"))
+    if refus:
+        return refus
+    nom = corps.get("nom")
+    if corps.get("actif"):
+        resultat = modules.armer(nom, int(corps.get("minutes") or modules.DUREE_DEFAUT_MIN))
+    else:
+        resultat = modules.desarmer(nom)
+    if resultat is None:
+        return {"erreur": f"module inconnu : {nom}"}
+    db.journaliser(etat.conn, "systeme",
+                   f"module {nom} " + ("arme" if resultat["actif"] else "desarme"),
+                   acteur=db.session(etat.conn)["acteur"] or "capitaine")
+    return resultat
+
+
+@app.post("/api/demo/preparer")
+def api_demo_preparer(requete: Request):
+    """Remet le bord dans l'etat de depart d'une demonstration. Reserve au capitaine."""
+    refus = refus_biometrie(requete, "remise en scene du bord")
+    if refus:
+        return refus
+    resultat = demo.preparer(etat)
+    briefing._cache = None
+    _contagion_cache["ts"] = 0.0
+    return resultat
+
+
 @app.get("/api/briefing")
 def api_briefing():
     """Briefing de quart : les mesures de chaque sous-systeme posees cote a cote."""
     etat.recharger()
     return briefing.rediger(etat)
+
+
+@app.post("/api/briefing")
+def api_briefing_rafraichir():
+    """Force un nouveau briefing sans attendre l'expiration du cache."""
+    etat.recharger()
+    return briefing.rediger(etat, force=True)
+
+
+_contagion_cache = {"ts": 0.0, "valeur": []}
+FRAICHEUR_CONTAGION_S = 20.0
+
+
+def contagion_cachee():
+    """La page de perception se rafraichit chaque seconde, la chaine de contact non.
+
+    Sans ce cache, une jointure de co-presences sur sept jours etait rejouee a chaque
+    sondage du dashboard, pour un resultat qui ne bouge qu'a l'arrivee d'un symptome.
+    """
+    if time.time() - _contagion_cache["ts"] > FRAICHEUR_CONTAGION_S:
+        _contagion_cache["valeur"] = social.contagion_physique(etat.conn)
+        _contagion_cache["ts"] = time.time()
+    return _contagion_cache["valeur"]
 
 
 @app.get("/api/perception")
@@ -444,9 +504,10 @@ def api_perception():
             "temp_reprise_c": surveillance_mod.TEMP_REPRISE_C,
             "classe_audio": ecoute.SEUIL_CLASSE,
         },
+        "modules": modules.tous(),
         "fatigues": db.fatigues(etat.conn, limite=8),
         "symptomes": db.symptomes(etat.conn),
-        "contagion": social.contagion_physique(etat.conn),
+        "contagion": contagion_cachee(),
     }
 
 

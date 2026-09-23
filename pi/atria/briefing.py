@@ -31,6 +31,13 @@ Règles absolues :
 
 SEUIL_CAPACITE_BASSE = 0.50
 
+FRAICHEUR_S = 60.0
+"""Un briefing de quart ne change pas toutes les trois secondes, mais la vue de bord se
+redessine a chaque push. Sans ce cache, le graphe social etait reconstruit trois fois par
+briefing et jusqu'a vingt fois par minute, pour un texte identique."""
+
+_cache = None
+
 
 def _postes(etat):
     decouverts = etat.postes_decouverts()
@@ -83,8 +90,7 @@ def _conduite(conn):
     return "Conduite relevée sur 24 heures : " + " ; ".join(lignes) + "."
 
 
-def _social(conn, etat):
-    g = social.graphe(conn)
+def _social(conn, etat, g):
     lignes = []
 
     hostiles = [l for l in g["liens"] if l["nature"] == "hostile"]
@@ -122,8 +128,8 @@ def _contagion(conn):
     return texte + "."
 
 
-def _mental(conn, etat):
-    propagations = social.contagion_mentale(conn, etat)
+def _mental(conn, etat, g):
+    propagations = social.contagion_mentale(conn, etat, g)
     if not propagations:
         return None
     c = propagations[0]
@@ -165,27 +171,37 @@ def constats(etat):
         texte = producteur(conn)
         if texte:
             lignes.append(texte)
-    lignes.extend(_social(conn, etat))
-    texte = _mental(conn, etat)
+    g = social.graphe(conn)
+    lignes.extend(_social(conn, etat, g))
+    texte = _mental(conn, etat, g)
     if texte:
         lignes.append(texte)
     return lignes
 
 
-def rediger(etat):
+def rediger(etat, force=False):
     """Rend le briefing, reformulé par le modèle local quand il passe les gardes."""
+    global _cache
+
+    if not force and _cache and time.time() - _cache["ts"] < FRAICHEUR_S:
+        return _cache
+
     lignes = constats(etat)
     brut = " ".join(lignes)
+
+    from . import modules
 
     rendu, rejet = None, None
     if not llm.ACTIF:
         rejet = "modèle éteint"
+    elif not modules.actif("modele"):
+        rejet = "module de langage non armé"
     elif not llm.disponible():
         rejet = "modèle injoignable"
     else:
         rendu, rejet = _reformuler(brut)
 
-    return {
+    _cache = {
         "ts": time.time(),
         "constats": lignes,
         "texte": rendu or brut,
@@ -193,6 +209,7 @@ def rediger(etat):
         "rejet": rejet,
         "modele_actif": llm.ACTIF,
     }
+    return _cache
 
 
 def _reformuler(brut):
