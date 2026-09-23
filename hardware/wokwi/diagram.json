@@ -237,7 +237,7 @@
       "top": 596,
       "left": 760,
       "attrs": {
-        "text": "DHT22 réacteur  A0",
+        "text": "DHT22 réacteur  A1",
         "fontSize": "13"
       }
     },
@@ -482,7 +482,7 @@
     ],
     [
       "dht2:SDA",
-      "noeud:A0",
+      "noeud:A1",
       "green",
       [
         "v-30"

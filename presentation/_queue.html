@@ -1,0 +1,91 @@
+<script>
+/* ===========================================
+   CONTRÔLEUR DE PRÉSENTATION
+   Navigation clavier, tactile, molette, pastilles, progression.
+   =========================================== */
+class Presentation {
+    constructor() {
+        this.ecrans = [...document.querySelectorAll('.slide')];
+        this.courant = 0;
+        this.observer();
+        this.clavier();
+        this.tactile();
+        this.pastilles();
+        this.progression();
+    }
+
+    /* Révèle les contenus quand un écran entre dans la fenêtre. */
+    observer() {
+        const io = new IntersectionObserver((entrees) => {
+            for (const e of entrees) {
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    this.courant = this.ecrans.indexOf(e.target);
+                    this.majChrome();
+                }
+            }
+        }, { threshold: 0.35 });
+        this.ecrans.forEach((s) => io.observe(s));
+        this.ecrans[0].classList.add('visible');
+    }
+
+    aller(i) {
+        const cible = Math.max(0, Math.min(this.ecrans.length - 1, i));
+        this.ecrans[cible].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    clavier() {
+        document.addEventListener('keydown', (e) => {
+            const suivant = ['ArrowRight', 'ArrowDown', ' ', 'PageDown'];
+            const precedent = ['ArrowLeft', 'ArrowUp', 'PageUp'];
+            if (suivant.includes(e.key)) { e.preventDefault(); this.aller(this.courant + 1); }
+            else if (precedent.includes(e.key)) { e.preventDefault(); this.aller(this.courant - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); this.aller(0); }
+            else if (e.key === 'End') { e.preventDefault(); this.aller(this.ecrans.length - 1); }
+            // A saute directement aux annexes, pour les questions du jury.
+            else if (e.key === 'a' || e.key === 'A') {
+                e.preventDefault();
+                this.aller(this.ecrans.findIndex((s) => s.classList.contains('ecran-annexe')));
+            }
+        });
+    }
+
+    tactile() {
+        let depart = null;
+        document.addEventListener('touchstart', (e) => { depart = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (depart === null) return;
+            const delta = depart - e.changedTouches[0].clientY;
+            if (Math.abs(delta) > 60) this.aller(this.courant + (delta > 0 ? 1 : -1));
+            depart = null;
+        }, { passive: true });
+    }
+
+    pastilles() {
+        const nav = document.getElementById('navDots');
+        this.ecrans.forEach((s, i) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.setAttribute('aria-label', `Écran ${i + 1}`);
+            if (s.classList.contains('ecran-annexe')) b.classList.add('annexe');
+            b.addEventListener('click', () => this.aller(i));
+            nav.appendChild(b);
+        });
+        this.pastillesRef = [...nav.children];
+    }
+
+    progression() {
+        this.barre = document.getElementById('progression');
+    }
+
+    majChrome() {
+        const ratio = (this.courant + 1) / this.ecrans.length;
+        this.barre.style.width = `${ratio * 100}%`;
+        this.pastillesRef.forEach((b, i) => b.classList.toggle('actif', i === this.courant));
+    }
+}
+
+new Presentation();
+</script>
+</body>
+</html>

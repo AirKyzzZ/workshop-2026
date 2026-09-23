@@ -14,7 +14,8 @@
 #include <DHT.h>
 #include <LiquidCrystal.h>
 
-const uint8_t DHT_PIN = A0;
+const uint8_t DHT_PIN = A1;
+const uint8_t RETRO = 10;
 const unsigned long MESURE_MS = 2000;
 const unsigned long ANNONCE_MS = 1000;
 
@@ -88,6 +89,10 @@ void setup() {
   Serial.begin(115200);
   ecran.begin(16, 2);
   ecran.print(F("ATRIA"));
+
+  // Retroeclairage du LCD : sans cette ligne l'ecran reste noir meme bien cable.
+  pinMode(RETRO, OUTPUT);
+  digitalWrite(RETRO, HIGH);
 
   pinMode(DHT_PIN, INPUT);
   delay(50);

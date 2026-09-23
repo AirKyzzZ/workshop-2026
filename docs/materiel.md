@@ -53,51 +53,37 @@ Le Mega 2560 est branché en USB au Pi et vu comme `/dev/ttyACM1`, chemin stable
 
 | Broche | Composant | État |
 |---|---|---|
-| `A0` | DHT22 réacteur, 5 V | **câblage à reprendre**, voir ci-dessous |
-| `D8` `D9` | LCD `RS` et `E` | câblé |
+| `A1` | DHT22 réacteur, 5 V | validé, remonte au dashboard |
+| `D8` `D9` | LCD `RS` et `E` | câblé, **écran encore éteint** |
 | `D4` `D5` `D6` `D7` | LCD `D4`..`D7` | câblé |
+| `D10` | rétroéclairage LCD | piloté au niveau haut par le firmware |
 
-### Le DHT22 du réacteur est mal câblé
+### Deux pièges au câblage du nœud
 
-Symptôme : la carte redémarrait toutes les 0,9 s, sans jamais atteindre sa première
-mesure. Le diagnostic a été fait en bisectant le firmware, série seule puis série plus
-capteur :
+Le DHT22 du réacteur a coûté deux diagnostics successifs, tous deux instructifs.
 
-| Étape | Résultat |
-|---|---|
-| Série seule | stable, compteur qui monte sans interruption |
-| Série + DHT22 | redémarrage en boucle dès `climat.begin()` |
+**Le fil de données n'était pas sur la bonne broche.** La carte redémarrait toutes les
+0,9 s sans jamais atteindre sa première mesure. En bisectant le firmware, série seule puis
+série plus capteur, le redémarrage apparaissait dès `climat.begin()`. Une sonde passive,
+qui lit les broches sans jamais les piloter, a donné la réponse : la broche visée restait
+figée à 4,64 V pendant que toutes les autres dérivaient librement. Une broche stable est
+une broche reliée à quelque chose, et 4,64 V au lieu de 5,00 V trahit une liaison basse
+impédance vers le 5 V. Le fil arrivait sur `VCC` au lieu de `DATA`.
 
-Une sonde passive, qui lit les broches sans jamais les piloter, donne la réponse :
+Le firmware ne tombe plus dans la boucle : il lit la broche au démarrage et refuse de
+toucher au capteur si le niveau de repos est douteux, en annonçant `sonde=CABLAGE` et en
+affichant `CABLAGE SONDE !` sur l'écran.
 
-```
-A0=945 (4,62 V)   A1=715 (3,49 V)   A2=570 (2,79 V)   A3=468 (2,29 V)
-```
+**Le nom du compartiment perdait son accent.** Une fois le câblage repris, la carte
+annonçait de vraies mesures, `AMBIANCE reacteur 256 530`, et pourtant rien n'arrivait en
+base. La carte émet en ASCII sur le port série, donc `reacteur`, alors que la table
+`compartiment` contient `réacteur`. L'insertion violait la clé étrangère, et la capture
+d'erreur du nœud ne couvrait que les défauts série : **le fil mourait en silence** pendant
+que la carte continuait d'émettre dans le vide.
 
-`A1` à `A3` flottent, c'est normal pour des broches libres. **`A0` est bloqué à 4,62 V**,
-alors qu'une ligne `DATA` de DHT22 au repos, tirée au niveau haut, doit lire près de
-1023 counts soit 5,00 V. Les 7 % de chute trahissent un courant qui passe dans la ligne.
-L'hypothèse la plus probable est que **`VCC` et `DATA` sont inversés** sur le module : la
-broche `A0` alimente le capteur au lieu de le lire, et dès que la bibliothèque active son
-pull-up la carte s'effondre.
-
-À vérifier dans cet ordre : l'orientation du module, puis que `VCC` va bien au 5 V et
-`GND` à la masse, et enfin que `DATA` arrive seul sur `A0`.
-
-Le firmware ne tombe plus dans la boucle. Il lit la broche au démarrage et refuse de
-toucher au capteur si le niveau de repos est douteux :
-
-```
-READY noeud=reacteur sonde=CABLAGE repos=945
-```
-
-L'écran affiche alors `CABLAGE SONDE !` en clair, et la carte continue d'annoncer son
-compartiment normalement. Une fois le câblage repris, le niveau de repos passera
-au-dessus de 1000 et la sonde s'activera toute seule au redémarrage suivant.
-
-La découverte est automatique : `pi/atria/noeud.py` scrute `/dev/serial/by-id` toutes les
-quinze secondes et ouvre toute carte dont la signature n'est pas celle de la passerelle.
-Tant que la sonde n'est pas câblée, la carte annonce `-9999`, que le Pi ignore.
+`noeud.py` résout désormais le nom annoncé contre la base en ignorant les accents, et
+attrape toute exception de traitement pour qu'un défaut soit signalé au lieu de tuer le
+fil.
 
 ## Flasher une carte
 

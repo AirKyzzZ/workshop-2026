@@ -8,6 +8,7 @@ Séparer les deux rôles permet d'en ajouter un par compartiment sans toucher au
 import glob
 import threading
 import time
+import unicodedata
 
 import serial
 
@@ -19,6 +20,25 @@ SIGNATURE_NOEUD = ("CH340", "1a86", "0042", "USB2.0-Ser")
 
 PERIODE_ECRITURE_S = 20.0
 DELAI_RECONNEXION_S = 5.0
+
+
+def _sans_accent(texte):
+    return "".join(c for c in unicodedata.normalize("NFD", texte)
+                   if unicodedata.category(c) != "Mn").lower()
+
+
+def resoudre_compartiment(conn, annonce):
+    """Rend le nom du compartiment tel qu'il existe en base.
+
+    Une carte annonce son compartiment en ASCII sur le port serie, donc « reacteur »
+    quand la base contient « reacteur » accentue. Sans cette resolution, l'insertion viole
+    la cle etrangere et le fil du noeud meurt en silence.
+    """
+    cible = _sans_accent(annonce)
+    for ligne in conn.execute("SELECT nom FROM compartiment"):
+        if _sans_accent(ligne["nom"]) == cible:
+            return ligne["nom"]
+    return None
 
 
 def ports_disponibles(exclure=()):
@@ -43,6 +63,8 @@ class Noeud:
         self.humidite = None
         self.vu_le = 0.0
         self.connecte = False
+        self.inconnu = None
+        self.erreur = None
         self._serie = None
         self._prochaine_ecriture = 0.0
         self._stop = threading.Event()
@@ -67,7 +89,12 @@ class Noeud:
                     self._ouvrir()
                 ligne = self._serie.readline().decode("ascii", "ignore").strip()
                 if ligne:
-                    self._traiter(ligne)
+                    try:
+                        self._traiter(ligne)
+                    except Exception as exc:
+                        # Un defaut de traitement ne doit jamais tuer le fil : la carte
+                        # continuerait d'emettre dans le vide sans que rien ne le signale.
+                        self.erreur = str(exc)[:80]
             except (serial.SerialException, OSError):
                 self.connecte = False
                 if self._serie is not None:
@@ -86,12 +113,17 @@ class Noeud:
         if morceaux[0] != "AMBIANCE" or len(morceaux) < 4:
             return
 
-        nom = self.compartiment or morceaux[1]
+        annonce = self.compartiment or morceaux[1]
         try:
             tempX10, humX10 = int(morceaux[2]), int(morceaux[3])
         except ValueError:
             return
         if tempX10 == -9999:
+            return
+
+        nom = resoudre_compartiment(self.conn, annonce)
+        if nom is None:
+            self.inconnu = annonce
             return
 
         self.compartiment = nom
@@ -111,7 +143,8 @@ class Noeud:
     def etat(self):
         return {"port": self.port, "compartiment": self.compartiment,
                 "connecte": self.connecte, "temp_c": self.temp_c,
-                "humidite": self.humidite,
+                "humidite": self.humidite, "inconnu": self.inconnu,
+                "erreur": self.erreur,
                 "age": round(time.time() - self.vu_le, 1) if self.vu_le else None}
 
     def fermer(self):
