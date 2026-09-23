@@ -261,6 +261,63 @@
         "text": "LCD1602  D8 D9 D4 D5 D6 D7",
         "fontSize": "13"
       }
+    },
+    {
+      "type": "wokwi-heart-beat-sensor",
+      "id": "pouls",
+      "top": 620,
+      "left": 960,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tpouls",
+      "top": 596,
+      "left": 960,
+      "attrs": {
+        "text": "capteur de pouls à doigt  A0  ·  câblé, pas encore lu par le firmware",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tusb",
+      "top": 120,
+      "left": 300,
+      "attrs": {
+        "text": "sur les ports USB du Pi 5",
+        "fontSize": "15"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tcam",
+      "top": 150,
+      "left": 300,
+      "attrs": {
+        "text": "caméra Logitech C270  ·  YuNet, SFace, MediaPipe visage et mains",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tmic",
+      "top": 176,
+      "left": 300,
+      "attrs": {
+        "text": "micro HyperX QuadCast  ·  YAMNet 521 classes, transcription Vosk",
+        "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tser",
+      "top": 202,
+      "left": 300,
+      "attrs": {
+        "text": "Mega ADK et Mega 2560  ·  liaison série 115200 bauds",
+        "fontSize": "13"
+      }
     }
   ],
   "connections": [
@@ -550,6 +607,30 @@
       "magenta",
       [
         "v48"
+      ]
+    ],
+    [
+      "pouls:VCC",
+      "noeud:5V.2",
+      "red",
+      [
+        "v-52"
+      ]
+    ],
+    [
+      "pouls:GND",
+      "noeud:GND.3",
+      "black",
+      [
+        "v-56"
+      ]
+    ],
+    [
+      "pouls:OUT",
+      "noeud:A0",
+      "green",
+      [
+        "v-60"
       ]
     ]
   ],
