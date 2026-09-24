@@ -1,51 +1,43 @@
 # Soutenance
 
-`soutenance.html` est le support projeté. Un seul fichier, tout est dedans sauf l'image du
-schéma et les polices, chargées depuis Google Fonts. Il s'ouvre dans n'importe quel
-navigateur, sans rien installer.
+Le support projeté est le deck Canva : **https://canva.link/cjtfjl4627vtnaz**
 
-## Naviguer
-
-| Touche | Effet |
-|---|---|
-| `→` `↓` `espace` | écran suivant |
-| `←` `↑` | écran précédent |
-| `A` | saute directement aux annexes |
-| `Début` `Fin` | premier et dernier écran |
-
-La molette et le balayage tactile fonctionnent aussi. Les pastilles à droite permettent
-d'aller n'importe où d'un clic ; les pastilles creuses sont les annexes.
+`soutenance.pdf` en est l'export du 24 septembre. C'est le filet de sécurité : s'il n'y a
+pas de réseau dans la salle, ou si Canva rame, on projette le PDF et rien ne change pour
+le jury.
 
 ## Découpage
 
-Seize écrans projetés, en trois blocs de parole, plus quatre annexes qui ne sont pas
+Sept slides projetées, 5 minutes, plus trois slides de réserve qui ne sont jamais
 projetées d'office.
 
-| | Qui | Écrans | Durée visée |
+| | Slide | Qui | Durée |
 |---|---|---|---|
-| Contexte et matériel | Melih | 01 à 05 | 00:00 → 03:20 |
-| Montage et intégration | Alexandre | 06 à 10 | 03:20 → 06:40 |
-| Logiciel, IA et démonstration | Maxime | 11 à 15 | 06:40 → 09:30 |
-| Clôture | à trois | 16 | 09:30 → 10:00 |
+| 1 | ATRIA, ouverture | Melih | 20 s |
+| 2 | On mesure tout, sauf les gens | Melih | 40 s |
+| 3 | Tout tient dans le creux de la main | Alexandre | 40 s |
+| 4 | Démonstration, quatre scènes | Maxime | 2 min 30 |
+| 5 | Chaque variable gagne sa place | Maxime | 45 s |
+| 6 | Elle ferme des cloisons, pas des gens | à trois | 40 s |
+| 7 | Clôture | à trois | 25 s |
 
-Le bandeau du haut indique en permanence qui parle et où on en est dans les trois blocs.
+Le fil de navigation en haut de chaque slide (`Problème · Système · Démo · Autorité`) dit
+en permanence où on en est.
 
-## L'écran 14 est le filet de sécurité
+## Les slides de réserve
 
-C'est la démonstration du refus d'ordre, avec les chiffres exacts de la machine. Si la
-carte tombe ou si le réseau lâche pendant la démonstration en direct, il suffit de rester
-sur cet écran et de commenter : le jury voit la même chose, en figé.
+Slides 8, 9 et 10, pour les questions du jury : d'où vient le graphe social, quels sont
+les sept modèles et lequel on a vraiment entraîné, et les trois échecs qu'on assume. En
+mode présentation Canva on y accède en tapant le numéro de la slide puis Entrée.
 
-## Les annexes
+## Les fichiers autour
 
-Accessibles par `A` ou par les pastilles creuses. Elles servent aux questions du jury, pas
-à la présentation : ce qui n'a pas marché, les mesures d'alimentation et thermiques,
-l'architecture logicielle, et le détail de la prédiction.
+`canva.md` est le contenu slide par slide, rédigé avant la construction du deck. Il sert
+de référence pour le texte, pas de source de vérité : le deck a évolué depuis.
 
-## Exporter en PDF
+`soutenance.html` est la version HTML autonome, antérieure au passage sur Canva. Elle
+n'est plus le support projeté. Elle reste là parce qu'elle s'ouvre sans réseau et sans
+compte, ce qui en fait un troisième recours.
 
-```bash
-bash ~/.claude/skills/frontend-slides/scripts/export-pdf.sh presentation/soutenance.html
-```
-
-Les animations sont remplacées par leur état final, la mise en page ne bouge pas.
+`montage-complet.png` est le schéma de câblage qui figure sur la slide 3. Il est généré
+depuis `hardware/wokwi/diagram.json`.

@@ -3,6 +3,10 @@
 5 minutes d'oral, 5 minutes de questions. Sept slides projetées, quatre gardées en
 réserve pour les questions.
 
+> Le deck est construit : https://canva.link/cjtfjl4627vtnaz, export PDF dans
+> `soutenance.pdf`. Ce fichier est le brouillon qui a servi à l'écrire. Le texte
+> réellement projeté est celui du deck, qui a bougé depuis.
+
 ## Choisir le template
 
 Cherche **« dark tech presentation »** ou **« space startup pitch »** dans Canva. Trois
