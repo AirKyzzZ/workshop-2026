@@ -79,6 +79,17 @@ export async function vueVisage(hote, session) {
   async function peindreListe() {
     const d = await json("/api/visage/enroles");
     liste.replaceChildren();
+    // Les routes biometriques sont reservees au capitaine : sans cette garde, la vue
+    // lisait une liste absente et se cassait au lieu d'expliquer le refus.
+    if (d.erreur || !d.membres) {
+      liste.appendChild(el("div", "vide",
+        d.erreur === "reserve au capitaine identifie"
+          ? "L'enrôlement facial est réservé au capitaine identifié. "
+            + "Un gabarit vaut une clé : qui peut en déposer un peut se faire passer "
+            + "pour n'importe qui."
+          : d.erreur || "Liste indisponible."));
+      return;
+    }
     if (!d.membres.length) {
       liste.appendChild(el("div", "vide", "Personne n'est enrôlé. Le badge suffit encore."));
       return;

@@ -21,6 +21,14 @@ PERIODE_SURVEILLANCE_S = 1.0
 peu, mais le faire cinq fois par seconde en continu porte le SoC au-dela de sa consigne :
 une image par seconde suffit a attraper un geste tenu devant l'objectif."""
 PERIODE_REPOS_S = 0.20
+PERIODE_VISAGE_S = 0.5
+"""Cadence de la detection de visage quand personne ne se fait verifier.
+
+Le detecteur tournait sur chaque image, donc cinq fois par seconde des qu'un spectateur
+ouvrait le flux video : a lui seul il consommait un quart de coeur et le SoC montait a
+81 °C, ou le garde thermique suspendait la surveillance. Or le cadre d'un visage ne bouge
+pas en deux cents millisecondes. Deux mesures par seconde suffisent pour l'incrustation,
+et le controle d'acces garde sa pleine cadence."""
 PERIODE_CONTROLE_S = 0.08
 """Deux cadences. SFace coute environ 100 ms par image : le calculer en continu
 consomme un coeur entier et fait monter le SoC au-dela de sa consigne thermique.
@@ -34,12 +42,6 @@ VERT = (88, 214, 75)
 ROUGE = (95, 112, 244)
 AMBRE = (60, 163, 232)
 GRIS = (150, 145, 145)
-
-SEUIL_MOUVEMENT = 3.2
-"""Difference moyenne entre deux vignettes 64x48 au-dela de laquelle il se passe quelque
-chose devant l'objectif. Conditionner l'analyse a un visage etait une erreur : un geste se
-fait main levee, souvent devant la tete, et le detecteur de visage ne voit alors plus
-rien. Une difference d'images coute une milliseconde et ne rate pas ce cas."""
 
 TTL_MAIN_S = 6.0
 """Une main vue recemment garde l'analyse ouverte meme sans visage : c'est ce qui permet
@@ -77,6 +79,9 @@ class Flux:
         self._thermique_le = 0.0
         self._main_vue_le = 0.0
         self._vignette = None
+        self._visage_le = 0.0
+        self.mouvement = 0.0
+        self.occupe = False
         self.echecs = 0
         self.chemin = None
 
@@ -257,7 +262,19 @@ class Flux:
 
     def _traiter(self, img):
         brute = img.copy()
-        boite = visage.plus_grand_visage(img)
+
+        with self.verrou:
+            controle = self.verification is not None
+
+        # Pendant une verification, chaque image compte. Le reste du temps, le cadre du
+        # visage est reutilise entre deux detections.
+        maintenant = time.time()
+        if controle or maintenant - self._visage_le >= PERIODE_VISAGE_S:
+            self._visage_le = maintenant
+            boite = visage.plus_grand_visage(img)
+            self.boite_gardee = boite
+        else:
+            boite = getattr(self, "boite_gardee", None)
 
         with self.verrou:
             v = self.verification
@@ -266,13 +283,17 @@ class Flux:
         empreinte = visage.empreinte(img, boite) if (actif and boite is not None) else None
         couleur, legende = GRIS, "aucun visage"
 
-        # Une main levee devant l'objectif cache souvent la tete, et c'est exactement
-        # l'instant a ne pas manquer : l'analyse reste donc ouverte quelques secondes
-        # apres la derniere main vue, meme si plus aucun visage n'est detecte.
-        occupe = (boite is not None
-                  or time.time() - self._main_vue_le < TTL_MAIN_S
-                  or self._mouvement(brute))
-        if self.surveillance is not None and occupe and self.surveillance.doit_analyser():
+        # L'analyse tourne des que le module est arme, sans condition d'entree.
+        #
+        # Une porte de mouvement gardait auparavant MediaPipe au repos quand rien ne
+        # bougeait. Elle economisait quelques watts et coutait la fiabilite : mesuree
+        # devant quelqu'un qui gesticulait, la difference d'images plafonnait a 2.02 pour
+        # un seuil de 3.2, donc le geste n'etait jamais analyse. Le detecteur de visage ne
+        # tournant plus qu'a deux images par seconde, le budget thermique n'a plus besoin
+        # de cette economie, et le garde thermique reste le vrai filet.
+        self.mouvement = round(self._difference(brute), 2)
+        self.occupe = True
+        if self.surveillance is not None and self.surveillance.doit_analyser():
             self._surveiller(brute, boite)
 
         if actif:
@@ -299,13 +320,13 @@ class Flux:
             self.image_brute = brute
             self.boite = boite
 
-    def _mouvement(self, img):
-        """Vrai si l'image a sensiblement change depuis la precedente."""
+    def _difference(self, img):
+        """Ecart moyen avec l'image precedente. Sert au diagnostic, plus a decider."""
         vignette = cv2.cvtColor(cv2.resize(img, (64, 48)), cv2.COLOR_BGR2GRAY)
         precedente, self._vignette = self._vignette, vignette
         if precedente is None:
-            return False
-        return float(cv2.absdiff(vignette, precedente).mean()) >= SEUIL_MOUVEMENT
+            return 0.0
+        return float(cv2.absdiff(vignette, precedente).mean())
 
     def _surveiller(self, brute, boite):
         """Analyse comportementale, attribuee a la personne reconnue."""
@@ -419,6 +440,8 @@ class Flux:
                 "detections": self.derniere_detection,
                 "surveillance": None if self.surveillance is None
                                 else self.surveillance.etat(),
+                "mouvement": self.mouvement,
+                "occupe": self.occupe,
                 "age": round(time.time() - self.ts, 2) if self.ts else None,
             }
 

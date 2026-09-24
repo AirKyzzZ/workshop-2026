@@ -18,6 +18,17 @@ import time
 
 DUREE_DEFAUT_MIN = 5
 
+PERMANENTS = ("surveillance", "modele")
+"""Armes au demarrage et sans echeance.
+
+La surveillance comportementale est la fonction centrale du bord, pas une option de
+demonstration : la laisser desarmee par defaut revient a ce que rien ne soit jamais
+analyse tant que personne n'a clique. Le budget thermique qui justifiait de l'eteindre
+n'existe plus, la carte tient cinquante degres en pleine charge.
+
+L'ecoute et la transcription restent a la demande : elles ne servent qu'a des moments
+precis, et le micro capte toute la salle."""
+
 DEFINITIONS = {
     "surveillance": {
         "libelle": "Surveillance comportementale",
@@ -41,13 +52,15 @@ DEFINITIONS = {
     },
 }
 
-_etats = {nom: {"actif": False, "expire": None} for nom in DEFINITIONS}
+_etats = {nom: {"actif": nom in PERMANENTS, "expire": None} for nom in DEFINITIONS}
 
 
 def armer(nom, minutes=DUREE_DEFAUT_MIN):
+    """Arme un module. `minutes` a None l'arme sans echeance."""
     if nom not in _etats:
         return None
-    _etats[nom] = {"actif": True, "expire": time.time() + minutes * 60}
+    _etats[nom] = {"actif": True,
+                   "expire": None if minutes is None else time.time() + minutes * 60}
     return etat(nom)
 
 
