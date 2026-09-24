@@ -368,6 +368,21 @@ p strong { color: var(--encre); font-weight: 600; }
 
 .ecran-titre .slide-content { justify-content: center; gap: var(--content-gap); }
 .ecran-annexe .bloc-bandeau .marque { color: var(--attention); }
+
+/* === ÉCRANS COURTS ===
+   Un vidéoprojecteur de salle est souvent en 1366x768 ou 1280x720. Sur ces hauteurs,
+   le schéma de montage et le tableau d'ablation débordaient de quelques dizaines de
+   pixels, ce qui coupe la dernière ligne sans prévenir. On resserre plutôt que de
+   retirer du contenu : les valeurs de clamp suffisent en largeur, pas en hauteur. */
+@media (max-height: 860px) {
+    .schema img { max-height: 40vh; }
+    .stats { gap: clamp(.8rem, 2vw, 1.6rem); }
+    .chiffre { font-size: clamp(1.4rem, 3.6vw, 2.6rem); }
+    .avant-apres td { padding-block: .28em; }
+    .citation { padding: .6em .9em; }
+    h2 { margin-bottom: .1em; }
+}
+
 </style>
 </head>
 <body>

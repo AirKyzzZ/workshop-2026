@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATRIA — Soutenance</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600&family=Martian+Mono:wght@300;400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   JETONS DE MARQUE ATRIA
+   Repris de brand/tokens.css, palette validée WCAG AA.
+   =========================================== */
+:root {
+    --fond:        #121111;
+    --surface:     #1D1B1B;
+    --surface-2:   #2A2828;
+    --trait:       #2A2828;
+    --trait-fort:  #393838;
+    --encre:       #EEEDED;
+    --encre-forte: #FFFFFF;
+    --sourdine:    #918D8D;
+    --faible:      #6D6969;
+    --nominal:     #4BD694;
+    --attention:   #E8A33C;
+    --critique:    #F4705F;
+
+    --display: 'Teko', 'Arial Narrow', sans-serif;
+    --mono:    'Martian Mono', ui-monospace, monospace;
+    --corps:   'Inter', system-ui, sans-serif;
+
+    --title-size:    clamp(2.4rem, 7vw, 6.5rem);
+    --h2-size:       clamp(1.6rem, 4.4vw, 3.6rem);
+    --h3-size:       clamp(1rem, 2.2vw, 1.6rem);
+    --body-size:     clamp(0.82rem, 1.35vw, 1.15rem);
+    --small-size:    clamp(0.68rem, 1vw, 0.9rem);
+    --mono-size:     clamp(0.62rem, 0.9vw, 0.82rem);
+    --chiffre-size:  clamp(1.8rem, 5vw, 4rem);
+
+    --slide-padding: clamp(1.4rem, 4.5vw, 5rem);
+    --content-gap:   clamp(0.6rem, 2vw, 2rem);
+    --element-gap:   clamp(0.3rem, 1vw, 1rem);
+
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration: 0.75s;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* === BASE VIEWPORT (obligatoire, ne pas alléger) === */
+html, body { height: 100%; overflow-x: hidden; }
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+
+body {
+    background: var(--fond);
+    color: var(--encre);
+    font-family: var(--corps);
+    -webkit-font-smoothing: antialiased;
+}
+
+.slide {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.slide-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-height: 100%;
+    overflow: hidden;
+    padding: var(--slide-padding);
+}
+
+.card, .container, .content-box { max-width: min(92vw, 1180px); max-height: min(80vh, 720px); }
+.feature-list, .bullet-list { gap: clamp(0.4rem, 1vh, 1rem); }
+.feature-list li, .bullet-list li { font-size: var(--body-size); line-height: 1.45; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: clamp(0.5rem, 1.5vw, 1rem); }
+img, .image-container { max-width: 100%; max-height: min(50vh, 400px); object-fit: contain; }
+
+@media (max-height: 700px) {
+    :root {
+        --slide-padding: clamp(0.9rem, 3vw, 2.4rem);
+        --content-gap: clamp(0.4rem, 1.5vw, 1rem);
+        --title-size: clamp(1.8rem, 5.5vw, 3.6rem);
+        --h2-size: clamp(1.3rem, 3.4vw, 2.4rem);
+        --chiffre-size: clamp(1.4rem, 4vw, 2.6rem);
+    }
+}
+@media (max-height: 600px) {
+    :root {
+        --slide-padding: clamp(0.6rem, 2.5vw, 1.6rem);
+        --content-gap: clamp(0.3rem, 1vw, 0.75rem);
+        --title-size: clamp(1.4rem, 4.5vw, 2.6rem);
+        --body-size: clamp(0.72rem, 1.2vw, 0.95rem);
+    }
+    .nav-dots, .indice-clavier, .decorative { display: none; }
+}
+@media (max-height: 500px) {
+    :root {
+        --slide-padding: clamp(0.5rem, 2vw, 1rem);
+        --title-size: clamp(1.1rem, 3.5vw, 1.7rem);
+        --h2-size: clamp(0.95rem, 2.5vw, 1.3rem);
+        --body-size: clamp(0.66rem, 1vw, 0.85rem);
+    }
+}
+@media (max-width: 600px) {
+    :root { --title-size: clamp(1.6rem, 8vw, 3rem); }
+    .grid { grid-template-columns: 1fr; }
+    .bloc-bandeau .bandeau-droite { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+    html { scroll-behavior: auto; }
+}
+
+/* ===========================================
+   ATMOSPHÈRE — grille de console, très discrète
+   =========================================== */
+.slide::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--trait) 1px, transparent 1px),
+        linear-gradient(90deg, var(--trait) 1px, transparent 1px);
+    background-size: clamp(40px, 5vw, 72px) clamp(40px, 5vw, 72px);
+    opacity: .28;
+    pointer-events: none;
+}
+.slide::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 42%, transparent 35%, rgba(0,0,0,.55) 100%);
+    pointer-events: none;
+}
+.slide-content, .bloc-bandeau, .numero { position: relative; z-index: 2; }
+
+/* ===========================================
+   TYPOGRAPHIE
+   =========================================== */
+.titre-geant {
+    font-family: var(--display);
+    font-size: var(--title-size);
+    font-weight: 600;
+    line-height: .88;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    color: var(--encre-forte);
+}
+h2 {
+    font-family: var(--display);
+    font-size: var(--h2-size);
+    font-weight: 600;
+    line-height: .95;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    color: var(--encre-forte);
+}
+h3 {
+    font-family: var(--corps);
+    font-size: var(--h3-size);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--encre);
+}
+p { font-size: var(--body-size); line-height: 1.6; color: var(--sourdine); max-width: 62ch; }
+p strong { color: var(--encre); font-weight: 600; }
+.lead { font-size: clamp(1rem, 2vw, 1.5rem); line-height: 1.5; color: var(--encre); max-width: 40ch; }
+
+.etiquette {
+    font-family: var(--mono);
+    font-size: var(--mono-size);
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--faible);
+}
+.mono { font-family: var(--mono); font-size: var(--small-size); color: var(--sourdine); }
+.nominal { color: var(--nominal); }
+.attention { color: var(--attention); }
+.critique { color: var(--critique); }
+
+/* ===========================================
+   BANDEAU DE BLOC — qui parle, où on en est
+   =========================================== */
+.bloc-bandeau {
+    display: flex;
+    align-items: center;
+    gap: clamp(.6rem, 2vw, 1.4rem);
+    padding: clamp(.7rem, 1.6vw, 1.1rem) var(--slide-padding);
+    border-bottom: 1px solid var(--trait);
+    flex: none;
+}
+.bloc-bandeau .marque {
+    font-family: var(--display);
+    font-size: clamp(1.1rem, 1.9vw, 1.6rem);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    color: var(--encre-forte);
+}
+.bloc-bandeau .jalons { display: flex; gap: 5px; margin-left: auto; }
+.jalon { width: clamp(22px, 3vw, 40px); height: 3px; background: var(--trait-fort); border-radius: 2px; }
+.jalon.actif { background: var(--nominal); }
+.bandeau-droite {
+    font-family: var(--mono);
+    font-size: var(--mono-size);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--faible);
+}
+
+.numero {
+    position: absolute;
+    bottom: clamp(.7rem, 1.6vw, 1.4rem);
+    right: var(--slide-padding);
+    font-family: var(--mono);
+    font-size: var(--mono-size);
+    color: var(--faible);
+    letter-spacing: .1em;
+}
+
+/* ===========================================
+   COMPOSANTS
+   =========================================== */
+.regle { height: 1px; background: var(--trait-fort); border: 0; margin: var(--element-gap) 0; }
+
+.duo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(1rem, 3vw, 3.5rem);
+    align-items: center;
+}
+@media (max-width: 820px) { .duo { grid-template-columns: 1fr; } }
+
+.chiffre {
+    font-family: var(--mono);
+    font-size: var(--chiffre-size);
+    font-weight: 300;
+    line-height: 1;
+    color: var(--encre-forte);
+    font-variant-numeric: tabular-nums;
+}
+.chiffre-bloc { display: flex; flex-direction: column; gap: 6px; }
+.chiffre-bloc .etiquette { color: var(--faible); }
+.chiffre-bloc .note { font-size: var(--small-size); color: var(--faible); }
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(120px, 15vw, 190px), 1fr));
+    gap: clamp(.8rem, 2.2vw, 2.2rem);
+}
+
+.liste { list-style: none; display: flex; flex-direction: column; gap: clamp(.45rem, 1.3vh, 1.05rem); }
+.liste li {
+    font-size: var(--body-size);
+    line-height: 1.45;
+    color: var(--sourdine);
+    padding-left: 1.5em;
+    position: relative;
+}
+.liste li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: .62em;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--trait-fort);
+}
+.liste li.ok::before { background: var(--nominal); }
+.liste li.att::before { background: var(--attention); }
+.liste li.hs::before { background: var(--critique); }
+.liste li b { color: var(--encre); font-weight: 600; }
+
+.fiche {
+    background: var(--surface);
+    border: 1px solid var(--trait-fort);
+    border-left-width: 3px;
+    border-radius: 4px;
+    padding: clamp(.9rem, 2.2vw, 1.8rem);
+}
+.fiche.refus { border-left-color: var(--critique); }
+.fiche.accord { border-left-color: var(--nominal); }
+.fiche .titre-fiche {
+    font-family: var(--mono);
+    font-size: var(--mono-size);
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin-bottom: .7em;
+}
+.fiche.refus .titre-fiche { color: var(--critique); }
+.fiche.accord .titre-fiche { color: var(--nominal); }
+.fiche .parole { font-size: clamp(.92rem, 1.7vw, 1.3rem); line-height: 1.55; color: var(--encre); }
+.fiche .detail { font-family: var(--mono); font-size: var(--mono-size); color: var(--faible); margin-top: .8em; line-height: 1.7; }
+
+.cartes { display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(150px, 19vw, 250px), 1fr)); gap: clamp(.6rem, 1.6vw, 1.2rem); }
+.carte {
+    background: var(--surface);
+    border: 1px solid var(--trait);
+    border-radius: 4px;
+    padding: clamp(.7rem, 1.7vw, 1.2rem);
+    display: flex; flex-direction: column; gap: .35em;
+}
+.carte .h { font-family: var(--corps); font-weight: 600; font-size: var(--body-size); color: var(--encre); }
+.carte .d { font-size: var(--small-size); color: var(--faible); line-height: 1.45; }
+
+.avant-apres { display: grid; grid-template-columns: auto 1fr 1fr; gap: clamp(.5rem, 1.6vw, 1.4rem) clamp(1rem, 3vw, 2.4rem); align-items: baseline; }
+.avant-apres .tete { font-family: var(--mono); font-size: var(--mono-size); letter-spacing: .14em; text-transform: uppercase; color: var(--faible); }
+.avant-apres .lib { font-size: var(--small-size); color: var(--sourdine); }
+.avant-apres .val { font-family: var(--mono); font-size: clamp(.85rem, 1.6vw, 1.25rem); font-variant-numeric: tabular-nums; }
+
+.citation {
+    font-family: var(--display);
+    font-size: clamp(1.8rem, 5vw, 4.2rem);
+    font-weight: 500;
+    line-height: 1.02;
+    text-transform: uppercase;
+    letter-spacing: .01em;
+    color: var(--encre-forte);
+    max-width: 22ch;
+}
+
+.schema { border: 1px solid var(--trait-fort); border-radius: 4px; background: var(--surface); padding: 4px; }
+.schema img { display: block; width: 100%; max-height: min(66vh, 640px); }
+
+/* ===========================================
+   ANIMATIONS — un seul moment orchestré par écran
+   =========================================== */
+.reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity var(--duration) var(--ease), transform var(--duration) var(--ease);
+}
+.slide.visible .reveal { opacity: 1; transform: translateY(0); }
+.slide.visible .reveal:nth-child(1) { transition-delay: .05s; }
+.slide.visible .reveal:nth-child(2) { transition-delay: .15s; }
+.slide.visible .reveal:nth-child(3) { transition-delay: .25s; }
+.slide.visible .reveal:nth-child(4) { transition-delay: .35s; }
+.slide.visible .reveal:nth-child(5) { transition-delay: .45s; }
+.slide.visible .reveal:nth-child(6) { transition-delay: .55s; }
+
+.pulsation { width: 9px; height: 9px; border-radius: 50%; background: var(--nominal); display: inline-block; animation: battement 2.4s ease-in-out infinite; }
+@keyframes battement { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+/* ===========================================
+   CHROME — progression, pastilles, aide
+   =========================================== */
+.progression { position: fixed; top: 0; left: 0; height: 2px; background: var(--nominal); z-index: 100; transition: width .2s linear; }
+.nav-dots { position: fixed; right: clamp(.5rem, 1.4vw, 1.1rem); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 7px; z-index: 100; }
+.nav-dots button { width: 7px; height: 7px; border-radius: 50%; border: 0; padding: 0; background: var(--trait-fort); cursor: pointer; transition: background .25s, transform .25s; }
+.nav-dots button.actif { background: var(--nominal); transform: scale(1.5); }
+.nav-dots button.annexe { border: 1px solid var(--trait-fort); background: transparent; }
+.indice-clavier { position: fixed; bottom: clamp(.7rem, 1.6vw, 1.4rem); left: var(--slide-padding); font-family: var(--mono); font-size: var(--mono-size); color: var(--faible); z-index: 100; letter-spacing: .08em; opacity: .5; }
+
+.ecran-titre .slide-content { justify-content: center; gap: var(--content-gap); }
+.ecran-annexe .bloc-bandeau .marque { color: var(--attention); }
+</style>
+</head>
+<body>
+
+<div class="progression" id="progression"></div>
+<nav class="nav-dots" id="navDots"></nav>
+<div class="indice-clavier">← → pour naviguer</div>
+
+<!-- ============================================================
+     BLOC 1 — MELIH · contexte et matériel · 00:00 → 03:20
+     ============================================================ -->
+
+<!-- 01 · TITRE
+     Note orateur : laisser 3 secondes de silence après la thèse.
+     Ne pas expliquer tout de suite. -->
+<section class="slide ecran-titre">
+    <div class="slide-content">
+        <div class="etiquette reveal">Workshop national EPSI 2026 · Horizon 2080 · Groupe G2</div>
+        <h1 class="titre-geant reveal" style="margin-top:.2em">ATRIA</h1>
+        <hr class="regle reveal">
+        <p class="lead reveal" style="font-size:clamp(1.05rem,2.3vw,1.8rem);max-width:30ch">
+            Le système de survie le plus fragile d'un vaisseau, c'est son équipage.
+        </p>
+        <div class="mono reveal" style="margin-top:1.4em">
+            <span class="pulsation"></span>&nbsp; Alexandre · Melih · Maxime
+        </div>
+    </div>
+    <div class="numero">01</div>
+</section>
+
+<!-- 02 · L'ASYMÉTRIE
+     C'est l'argument central. Le laisser respirer. -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Melih · le problème</span>
+        <div class="jalons"><i class="jalon actif"></i><i class="jalon"></i><i class="jalon"></i></div>
+    </div>
+    <div class="slide-content">
+        <div class="duo">
+            <div class="reveal">
+                <div class="etiquette" style="margin-bottom:.8em">Ce qu'un vaisseau surveille bien</div>
+                <ul class="liste">
+                    <li class="ok">Oxygène — <b>capteurs, alarmes, redondance</b></li>
+                    <li class="ok">Énergie — <b>seuils, coupures automatiques</b></li>
+                    <li class="ok">Eau — <b>recyclage mesuré en continu</b></li>
+                </ul>
+            </div>
+            <div class="reveal">
+                <div class="etiquette" style="margin-bottom:.8em">Ce qu'il surveille mal</div>
+                <ul class="liste">
+                    <li class="hs">L'équipage — <b>un questionnaire</b></li>
+                </ul>
+                <p style="margin-top:1.4em">
+                    Sur une mission de plusieurs décennies, sans retour possible et sans
+                    assistance depuis la Terre, c'est le seul sous-système critique qu'on
+                    laisse s'auto-déclarer.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="numero">02</div>
+</section>
+
+<!-- 03 · LE RETOURNEMENT -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Melih · la proposition</span>
+        <div class="jalons"><i class="jalon actif"></i><i class="jalon"></i><i class="jalon"></i></div>
+    </div>
+    <div class="slide-content">
+        <p class="citation reveal">On traite l'équipage comme ce qu'il est : un système de survie critique.</p>
+        <hr class="regle reveal" style="margin:1.4em 0;max-width:20ch">
+        <p class="reveal">
+            Monitoring continu, régulation active, tolérance aux pannes. ATRIA mesure la
+            santé physique et mentale de l'équipage et arbitre les affectations aux postes,
+            <strong>entièrement hors ligne</strong>, sur une carte embarquée.
+        </p>
+    </div>
+    <div class="numero">03</div>
+</section>
+
+<!-- 04 · LE MODÈLE
+     Expliquer la capacité cognitive simplement : un nombre entre 0 et 1. -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Melih · le modèle</span>
+        <div class="jalons"><i class="jalon actif"></i><i class="jalon"></i><i class="jalon"></i></div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">Une capacité, des seuils</h2>
+        <p class="reveal" style="margin-top:.7em">
+            Chaque membre porte une <strong>capacité cognitive</strong> entre 0 et 1, déduite
+            de ses constantes, de son sommeil et de sa dette sociale. Chaque poste du vaisseau
+            exige un seuil minimal. Le régulateur compare, et tranche.
+        </p>
+        <div class="stats reveal" style="margin-top:1.6em">
+            <div class="chiffre-bloc"><span class="etiquette">Chirurgie</span><span class="chiffre">0.70</span><span class="note">seuil requis</span></div>
+            <div class="chiffre-bloc"><span class="etiquette">Propulsion</span><span class="chiffre">0.65</span><span class="note">seuil requis</span></div>
+            <div class="chiffre-bloc"><span class="etiquette">Navigation</span><span class="chiffre">0.60</span><span class="note">seuil requis</span></div>
+            <div class="chiffre-bloc"><span class="etiquette">Serre</span><span class="chiffre">0.40</span><span class="note">seuil requis</span></div>
+        </div>
+        <p class="mono reveal" style="margin-top:1.4em;color:var(--faible)">
+            200 à bord · 24 en service actif · 6 compartiments · 6 postes
+        </p>
+    </div>
+    <div class="numero">04</div>
+</section>
+
+<!-- 05 · LE MATÉRIEL
+     Melih conclut son bloc en passant la main sur le montage. -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Melih · le matériel</span>
+        <div class="jalons"><i class="jalon actif"></i><i class="jalon"></i><i class="jalon"></i></div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">Ce qu'il y a dans la boîte</h2>
+        <div class="cartes reveal" style="margin-top:1.2em">
+            <div class="carte"><span class="h">Raspberry Pi 5</span><span class="d">4 Go · le cerveau, la base, les modèles, la voix</span></div>
+            <div class="carte"><span class="h">Arduino Mega ADK</span><span class="d">passerelle capteurs, badges, buzzer</span></div>
+            <div class="carte"><span class="h">Mega 2560 + LCD</span><span class="d">nœud de compartiment, réacteur</span></div>
+            <div class="carte"><span class="h">PiTFT 2,8″</span><span class="d">terminal de bord, 320×240</span></div>
+            <div class="carte"><span class="h">RC522 · DHT22 · MQ-2</span><span class="d">badges, atmosphère, fumée et gaz</span></div>
+            <div class="carte"><span class="h">Logitech C270</span><span class="d">reconnaissance faciale et micro</span></div>
+        </div>
+        <p class="mono reveal" style="margin-top:1.3em;color:var(--faible)">
+            Aucun serveur, aucun cloud, aucune connexion requise à l'exécution.
+        </p>
+    </div>
+    <div class="numero">05</div>
+</section>
+
+<!-- ============================================================
+     BLOC 2 — ALEXANDRE · montage et intégration · 03:20 → 06:40
+     ============================================================ -->
+
+<!-- 06 · LA CONTRAINTE
+     Ouverture du bloc 2. Alexandre prend la main ici. -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Alexandre · la contrainte</span>
+        <div class="jalons"><i class="jalon"></i><i class="jalon actif"></i><i class="jalon"></i></div>
+    </div>
+    <div class="slide-content">
+        <p class="citation reveal" style="font-size:clamp(1.5rem,4vw,3.2rem);max-width:26ch">
+            Tout ce qui est livré tourne sur la carte.
+        </p>
+        <hr class="regle reveal" style="margin:1.3em 0;max-width:20ch">
+        <p class="reveal">
+            Les machines de développement servent à écrire le code et à entraîner le modèle.
+            Elles ne font pas partie du vaisseau et ne sont pas là le jour de la démonstration.
+            <strong>On débranche le réseau, tout continue.</strong>
+        </p>
+        <p class="mono reveal attention" style="margin-top:1.2em">
+            C'est la contrainte centrale du sujet, et c'est aussi ce qui rend la démonstration vérifiable.
+        </p>
+    </div>
+    <div class="numero">06</div>
+</section>
+
+<!-- 07 · LE MONTAGE
+     Image du schéma Wokwi versionné. -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Alexandre · le montage</span>
+        <div class="jalons"><i class="jalon"></i><i class="jalon actif"></i><i class="jalon"></i></div>
+    </div>
+    <div class="slide-content">
+        <div class="etiquette reveal">Schéma versionné · hardware/wokwi/</div>
+        <div class="schema reveal" style="margin-top:.7em">
+            <img src="montage-complet.png" alt="Montage complet d'ATRIA : Raspberry Pi, deux Arduino, plaque d'essai et capteurs">
+        </div>
+        <p class="mono reveal" style="margin-top:.7em;color:var(--faible)">
+            Deux rails séparés, 3,3 V et 5 V · aucune liaison directe entre les Arduino et le GPIO du Pi
+        </p>
+    </div>
+    <div class="numero">07</div>
+</section>
+
+<!-- 08 · LA CHAÎNE
+     Montrer un capteur de bout en bout. Le plus concret du bloc. -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Alexandre · la chaîne</span>
+        <div class="jalons"><i class="jalon"></i><i class="jalon actif"></i><i class="jalon"></i></div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">Du capteur à l'écran</h2>
+        <p class="reveal" style="margin-top:.6em">
+            Une mesure d'atmosphère traverse cinq étages avant d'apparaître sur le tableau de bord.
+            Aucune ne sort du vaisseau.
+        </p>
+        <div class="cartes reveal" style="margin-top:1.3em">
+            <div class="carte"><span class="h">1 · DHT22</span><span class="d">température et humidité, broche A3</span></div>
+            <div class="carte"><span class="h">2 · Mega ADK</span><span class="d">trame <span class="mono">SENSE</span> toutes les 250 ms</span></div>
+            <div class="carte"><span class="h">3 · USB série</span><span class="d">115200 bauds, adressé par son numéro de série</span></div>
+            <div class="carte"><span class="h">4 · SQLite</span><span class="d">historique, 24 h de courbes</span></div>
+            <div class="carte"><span class="h">5 · Dashboard</span><span class="d">WebSocket, plan du vaisseau, alertes</span></div>
+        </div>
+        <p class="mono reveal nominal" style="margin-top:1.2em">
+            Infirmerie · 27,6 °C · 36 % d'humidité · relevé il y a moins d'une minute
+        </p>
+    </div>
+    <div class="numero">08</div>
+</section>
+
+<!-- 09 · LE TERMINAL DE BORD -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Alexandre · le terminal</span>
+        <div class="jalons"><i class="jalon"></i><i class="jalon actif"></i><i class="jalon"></i></div>
+    </div>
+    <div class="slide-content">
+        <div class="duo">
+            <div class="reveal">
+                <h2>Une passerelle, pas un site web</h2>
+                <p style="margin-top:.7em">
+                    L'écran de bord est un framebuffer de 320 sur 240 pixels, dessiné directement
+                    par le Pi. On y navigue avec quatre boutons physiques et on s'y identifie
+                    en présentant un badge.
+                </p>
+            </div>
+            <div class="reveal">
+                <ul class="liste">
+                    <li class="ok">Badge NFC — <b>porte-clés équipage, carte commandement</b></li>
+                    <li class="ok">Quatre boutons — <b>haut, bas, valider, retour</b></li>
+                    <li class="ok">Buzzer — <b>accusé de réception, refus, alerte</b></li>
+                    <li class="hs">Tactile — <b>hors service, contourné</b></li>
+                </ul>
+                <p class="mono" style="margin-top:1.2em;color:var(--faible)">
+                    Le connecteur 40 broches est entièrement occupé par l'écran : tous les
+                    capteurs passent par les Arduino.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="numero">09</div>
+</section>
+
+<!-- 10 · CE QUI TOURNE SUR LA CARTE
+     Transition vers le bloc 3. -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Alexandre · l'embarqué</span>
+        <div class="jalons"><i class="jalon"></i><i class="jalon actif"></i><i class="jalon"></i></div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">1,1 Go de modèles, sur une carte SD</h2>
+        <div class="stats reveal" style="margin-top:1.5em">
+            <div class="chiffre-bloc"><span class="etiquette">Langage</span><span class="chiffre">941<span style="font-size:.4em"> Mo</span></span><span class="note">Qwen2.5 1,5 B, lecture seule</span></div>
+            <div class="chiffre-bloc"><span class="etiquette">Reconnaissance</span><span class="chiffre">66<span style="font-size:.4em"> Mo</span></span><span class="note">Vosk, français</span></div>
+            <div class="chiffre-bloc"><span class="etiquette">Synthèse</span><span class="chiffre">61<span style="font-size:.4em"> Mo</span></span><span class="note">Piper, voix française</span></div>
+            <div class="chiffre-bloc"><span class="etiquette">Visage</span><span class="chiffre">38<span style="font-size:.4em"> Mo</span></span><span class="note">YuNet + SFace, ONNX</span></div>
+        </div>
+        <p class="reveal" style="margin-top:1.5em">
+            Tout est téléchargé une fois, puis plus jamais. Le jour de la soutenance, la carte
+            peut être coupée d'Internet du début à la fin.
+        </p>
+    </div>
+    <div class="numero">10</div>
+</section>
+
+<!-- ============================================================
+     BLOC 3 — MAXIME · logiciel, IA et démonstration · 06:40 → 09:30
+     ============================================================ -->
+
+<!-- 11 · L'IA EN QUATRE BRIQUES
+     Ouverture du bloc 3. Maxime prend la main. -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Maxime · l'intelligence</span>
+        <div class="jalons"><i class="jalon"></i><i class="jalon"></i><i class="jalon actif"></i></div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">Quatre briques, un seul rôle chacune</h2>
+        <div class="cartes reveal" style="margin-top:1.2em">
+            <div class="carte"><span class="h">Le régulateur</span><span class="d">Déterministe. Compare capacité et seuil, et porte toujours son motif. C'est lui qui décide.</span></div>
+            <div class="carte"><span class="h">La prédiction</span><span class="d">Régression sur 24 h. Annonce qui passera sous son seuil, et dans combien de temps.</span></div>
+            <div class="carte"><span class="h">La voix</span><span class="d">Vosk en grammaire contrainte, Piper pour la réponse. Français, hors ligne.</span></div>
+            <div class="carte"><span class="h">Le modèle de langage</span><span class="d">Lecture seule. Il explique les données, il n'affecte personne et n'annule aucun refus.</span></div>
+        </div>
+        <p class="reveal attention" style="margin-top:1.4em">
+            <strong>Aucune décision n'est prise par un modèle statistique.</strong> Le régulateur
+            est du code que l'on peut lire, et chaque décision porte son motif au journal.
+        </p>
+    </div>
+    <div class="numero">11</div>
+</section>
+
+<!-- 12 · LES GARDE-FOUS -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Maxime · les garde-fous</span>
+        <div class="jalons"><i class="jalon"></i><i class="jalon"></i><i class="jalon actif"></i></div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">Ce que le modèle n'a pas le droit de faire</h2>
+        <p class="reveal" style="margin-top:.6em">
+            Un modèle de 1,5 milliard de paramètres se trompe. On ne lui fait donc pas confiance,
+            on le contraint : sa réponse est vérifiée avant d'être affichée.
+        </p>
+        <ul class="liste reveal" style="margin-top:1.3em">
+            <li class="ok">Chaque <b>chiffre</b> de sa réponse doit exister dans le relevé, sinon la réponse est jetée</li>
+            <li class="ok">Chaque <b>mot</b> doit appartenir au français ou au relevé, sinon la réponse est jetée</li>
+            <li class="ok">Aucun <b>lien de cause à effet</b> : le relevé ne dit jamais pourquoi</li>
+            <li class="ok">Aucun <b>nom</b> d'équipier, de poste ou de compartiment absent du relevé</li>
+        </ul>
+        <p class="mono reveal" style="margin-top:1.3em;color:var(--faible)">
+            Rejetée, la réponse retombe sur le texte déterministe de l'outil. Le dashboard
+            indique toujours laquelle des deux il affiche.
+        </p>
+    </div>
+    <div class="numero">12</div>
+</section>
+
+<!-- 13 · DOUBLE FACTEUR -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Maxime · l'identité</span>
+        <div class="jalons"><i class="jalon"></i><i class="jalon"></i><i class="jalon actif"></i></div>
+    </div>
+    <div class="slide-content">
+        <div class="duo">
+            <div class="reveal">
+                <h2>Le badge ne suffit pas</h2>
+                <p style="margin-top:.7em">
+                    Un badge se vole. Après l'avoir présenté, il faut montrer son visage : la
+                    caméra compare l'empreinte au gabarit enrôlé et exige trois images
+                    concordantes d'affilée.
+                </p>
+                <p class="mono nominal" style="margin-top:1.2em">
+                    similarité mesurée 0.837 · seuil 0.363
+                </p>
+            </div>
+            <div class="reveal">
+                <div class="etiquette" style="margin-bottom:.8em">Ce que la base contient</div>
+                <ul class="liste">
+                    <li class="ok">Une empreinte de <b>128 réels</b></li>
+                    <li class="hs">Aucune image, ni sur disque ni en base</li>
+                    <li class="hs">Aucun moyen de remonter d'un gabarit à un visage</li>
+                </ul>
+                <p style="margin-top:1.2em">
+                    La biométrie reste ainsi compatible avec la promesse du cahier des charges :
+                    rien ne sort du vaisseau, et rien de reconstituable n'y est conservé.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="numero">13</div>
+</section>
+
+<!-- 14 · LA DÉMONSTRATION — ÉCRAN DE REPLI
+     Les chiffres sont exactement ceux de la machine.
+     Si la démonstration live échoue, rester sur cet écran et commenter. -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Maxime · démonstration</span>
+        <div class="jalons"><i class="jalon"></i><i class="jalon"></i><i class="jalon actif"></i></div>
+    </div>
+    <div class="slide-content">
+        <div class="etiquette reveal">Le capitaine ordonne · affecter fournier au poste chirurgie</div>
+        <div class="fiche refus reveal" style="margin-top:1em">
+            <div class="titre-fiche">Ordre refusé</div>
+            <p class="parole">
+                Négatif. Capacité cognitive de fournier : <span class="critique">0.57</span>.
+                Seuil requis pour le poste chirurgie : <span class="nominal">0.70</span>.
+                6 heures de sommeil. Je recommande <span class="nominal">bernard</span>.
+            </p>
+            <div class="detail">
+                0.57 &lt; 0.70 requis · alternative bernard 0.95 · écrit au journal
+            </div>
+        </div>
+        <p class="reveal" style="margin-top:1.2em">
+            Ce n'est pas une erreur, c'est une réponse. Elle est <strong>motivée</strong>,
+            <strong>chiffrée</strong>, et elle propose une <strong>alternative</strong>.
+        </p>
+    </div>
+    <div class="numero">14</div>
+</section>
+
+<!-- 15 · L'AUTORITÉ
+     Le point de position du projet. Ne pas le bâcler. -->
+<section class="slide">
+    <div class="bloc-bandeau">
+        <span class="marque">Atria</span>
+        <span class="bandeau-droite">Maxime · l'autorité</span>
+        <div class="jalons"><i class="jalon"></i><i class="jalon"></i><i class="jalon actif"></i></div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">Refuser n'est pas commander</h2>
+        <p class="reveal" style="margin-top:.6em">
+            Le capitaine garde la main. S'il maintient son ordre, ATRIA s'exécute, mais la
+            dérogation est <strong>horodatée</strong>, <strong>attribuée</strong> et
+            <strong>journalisée</strong>.
+        </p>
+        <div class="fiche accord reveal" style="margin-top:1.2em">
+            <div class="titre-fiche">Dérogation enregistrée</div>
+            <div class="detail" style="margin-top:0;font-size:var(--small-size);line-height:2">
+                17:03:41 &nbsp; <span class="critique">REFUS</span> &nbsp;&nbsp; capacité 0.57 sous le seuil 0.70<br>
+                17:03:58 &nbsp; <span class="attention">DÉROGATION</span> &nbsp; dérogation du capitaine · acteur maxime · badge 19BD41B2
+            </div>
+        </div>
+        <p class="reveal attention" style="margin-top:1.2em">
+            Un système qui décide à la place des humains est un système qu'on débranche.
+            Celui-ci donne un avis argumenté et garde la trace de qui a tranché.
+        </p>
+    </div>
+    <div class="numero">15</div>
+</section>
+
+<!-- 16 · CLÔTURE — à trois -->
+<section class="slide ecran-titre">
+    <div class="slide-content">
+        <div class="etiquette reveal">Groupe G2 · Alexandre, Melih, Maxime</div>
+        <p class="citation reveal" style="margin-top:.5em;max-width:24ch">
+            Le système de survie le plus fragile d'un vaisseau, c'est son équipage.
+        </p>
+        <hr class="regle reveal" style="margin:1.5em 0;max-width:24ch">
+        <p class="lead reveal">
+            Alors on l'instrumente, on le régule, et on garde la trace de chaque décision.
+        </p>
+        <div class="mono reveal" style="margin-top:1.6em;color:var(--faible)">
+            github.com/AirKyzzZ/workshop-2026
+        </div>
+    </div>
+    <div class="numero">16</div>
+</section>
+
+<!-- ============================================================
+     ANNEXES — pour les questions du jury. Non projetées d'office.
+     ============================================================ -->
+
+<!-- A1 · CE QUI N'A PAS MARCHÉ -->
+<section class="slide ecran-annexe">
+    <div class="bloc-bandeau">
+        <span class="marque">Annexe</span>
+        <span class="bandeau-droite">questions · ce qui n'a pas marché</span>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">Ce qui n'a pas marché</h2>
+        <ul class="liste reveal" style="margin-top:1.2em">
+            <li class="hs"><b>AD8232, capteur ECG</b> — alimentation correcte mesurée à 3,33 V, électrodes neuves,
+                mais liaison intermittente. Mis de côté, le modèle de stress s'entraîne sur WESAD.</li>
+            <li class="hs"><b>Écran tactile</b> — le contrôleur STMPE610 renvoie un identifiant invalide.
+                Contourné par le badge et les quatre boutons, plus crédible pour un cockpit.</li>
+            <li class="att"><b>Modèle de langage</b> — sur « combustion : aucune », il a répondu que la fumée
+                pouvait être présente. Désactivé, puis réactivé derrière quatre garde-fous.</li>
+            <li class="att"><b>MQ-2</b> — alimenté et lu, mais jamais testé au gaz.</li>
+        </ul>
+    </div>
+</section>
+
+<!-- A2 · CE QU'ON A MESURÉ -->
+<section class="slide ecran-annexe">
+    <div class="bloc-bandeau">
+        <span class="marque">Annexe</span>
+        <span class="bandeau-droite">questions · les mesures</span>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">Deux pannes trouvées à la mesure</h2>
+        <p class="reveal" style="margin-top:.6em">
+            La carte s'éteignait en pleine démonstration. Ce n'était ni un bug ni un hasard.
+        </p>
+        <div class="avant-apres reveal" style="margin-top:1.4em">
+            <span class="tete"></span><span class="tete">Avant</span><span class="tete">Après</span>
+            <span class="lib">Rail 5 V sous charge</span><span class="val critique">4,66 V</span><span class="val nominal">5,11 V</span>
+            <span class="lib">Horloge ARM</span><span class="val critique">1000 MHz</span><span class="val nominal">2400 MHz</span>
+            <span class="lib">Température</span><span class="val critique">81,2 °C</span><span class="val nominal">66,4 °C</span>
+            <span class="lib">CPU du service au repos</span><span class="val critique">114 %</span><span class="val nominal">2,5 %</span>
+        </div>
+        <p class="reveal" style="margin-top:1.4em">
+            La première panne venait du bloc d'alimentation, diagnostiquée avec <span class="mono">vcgencmd</span>
+            et le registre de bridage. La seconde venait de notre propre code : la boucle caméra calculait
+            une empreinte faciale sur chaque image, pour personne.
+        </p>
+    </div>
+</section>
+
+<!-- A3 · ARCHITECTURE -->
+<section class="slide ecran-annexe">
+    <div class="bloc-bandeau">
+        <span class="marque">Annexe</span>
+        <span class="bandeau-droite">questions · architecture</span>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">Ce qui tourne, et où</h2>
+        <div class="cartes reveal" style="margin-top:1.2em">
+            <div class="carte"><span class="h">atria-terminal</span><span class="d">écran de bord, badges, boutons, ingestion des capteurs</span></div>
+            <div class="carte"><span class="h">atria-api</span><span class="d">dashboard, WebSocket, caméra, régulateur</span></div>
+            <div class="carte"><span class="h">atria-llm</span><span class="d">llama.cpp, 3 fils, accessible en local seulement</span></div>
+            <div class="carte"><span class="h">SQLite en WAL</span><span class="d">équipage, capacités, ambiance, présences, journal</span></div>
+            <div class="carte"><span class="h">Mega ADK</span><span class="d">badges, son, gaz, atmosphère, buzzer</span></div>
+            <div class="carte"><span class="h">Mega 2560</span><span class="d">nœud de compartiment, découverte automatique</span></div>
+        </div>
+        <p class="mono reveal" style="margin-top:1.4em;color:var(--faible)">
+            Le modèle de langage n'écoute que sur 127.0.0.1 : il est injoignable depuis le réseau du vaisseau.
+        </p>
+    </div>
+</section>
+
+<!-- A4 · LA PRÉDICTION -->
+<section class="slide ecran-annexe">
+    <div class="bloc-bandeau">
+        <span class="marque">Annexe</span>
+        <span class="bandeau-droite">questions · prédiction</span>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">Prévenir avant de constater</h2>
+        <p class="reveal" style="margin-top:.6em">
+            Une régression linéaire sur les 24 dernières heures donne une pente, un coefficient
+            de détermination, et une heure de franchissement.
+        </p>
+        <div class="fiche accord reveal" style="margin-top:1.3em;border-left-color:var(--attention)">
+            <div class="titre-fiche attention">Prévision active</div>
+            <p class="parole">
+                <span class="attention">reyes</span> passera sous le seuil propulsion
+                (<span class="nominal">0.65</span>) dans <span class="attention">3,9 h</span>.
+            </p>
+            <div class="detail">
+                actuel 0.69 · pente −0.0111 par heure · R² 0.989 · 48 points
+            </div>
+        </div>
+        <p class="reveal" style="margin-top:1.2em">
+            L'ajustement n'est retenu que si le R² dépasse un seuil de fiabilité. En dessous,
+            ATRIA dit qu'il ne sait pas plutôt que d'annoncer une dérive inventée.
+        </p>
+    </div>
+</section>
+
+<script>
+/* ===========================================
+   CONTRÔLEUR DE PRÉSENTATION
+   Navigation clavier, tactile, molette, pastilles, progression.
+   =========================================== */
+class Presentation {
+    constructor() {
+        this.ecrans = [...document.querySelectorAll('.slide')];
+        this.courant = 0;
+        this.observer();
+        this.clavier();
+        this.tactile();
+        this.pastilles();
+        this.progression();
+    }
+
+    /* Révèle les contenus quand un écran entre dans la fenêtre. */
+    observer() {
+        const io = new IntersectionObserver((entrees) => {
+            for (const e of entrees) {
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    this.courant = this.ecrans.indexOf(e.target);
+                    this.majChrome();
+                }
+            }
+        }, { threshold: 0.35 });
+        this.ecrans.forEach((s) => io.observe(s));
+        this.ecrans[0].classList.add('visible');
+    }
+
+    aller(i) {
+        const cible = Math.max(0, Math.min(this.ecrans.length - 1, i));
+        this.ecrans[cible].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    clavier() {
+        document.addEventListener('keydown', (e) => {
+            const suivant = ['ArrowRight', 'ArrowDown', ' ', 'PageDown'];
+            const precedent = ['ArrowLeft', 'ArrowUp', 'PageUp'];
+            if (suivant.includes(e.key)) { e.preventDefault(); this.aller(this.courant + 1); }
+            else if (precedent.includes(e.key)) { e.preventDefault(); this.aller(this.courant - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); this.aller(0); }
+            else if (e.key === 'End') { e.preventDefault(); this.aller(this.ecrans.length - 1); }
+            // A saute directement aux annexes, pour les questions du jury.
+            else if (e.key === 'a' || e.key === 'A') {
+                e.preventDefault();
+                this.aller(this.ecrans.findIndex((s) => s.classList.contains('ecran-annexe')));
+            }
+        });
+    }
+
+    tactile() {
+        let depart = null;
+        document.addEventListener('touchstart', (e) => { depart = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (depart === null) return;
+            const delta = depart - e.changedTouches[0].clientY;
+            if (Math.abs(delta) > 60) this.aller(this.courant + (delta > 0 ? 1 : -1));
+            depart = null;
+        }, { passive: true });
+    }
+
+    pastilles() {
+        const nav = document.getElementById('navDots');
+        this.ecrans.forEach((s, i) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.setAttribute('aria-label', `Écran ${i + 1}`);
+            if (s.classList.contains('ecran-annexe')) b.classList.add('annexe');
+            b.addEventListener('click', () => this.aller(i));
+            nav.appendChild(b);
+        });
+        this.pastillesRef = [...nav.children];
+    }
+
+    progression() {
+        this.barre = document.getElementById('progression');
+    }
+
+    majChrome() {
+        const ratio = (this.courant + 1) / this.ecrans.length;
+        this.barre.style.width = `${ratio * 100}%`;
+        this.pastillesRef.forEach((b, i) => b.classList.toggle('actif', i === this.courant));
+    }
+}
+
+new Presentation();
+</script>
+</body>
+</html>
