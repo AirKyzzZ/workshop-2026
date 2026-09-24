@@ -138,7 +138,7 @@ def temps_4_refus():
         return
     p = postes[0]
     info(f"tentative : moreau sur {p['nom']} (seuil {p['seuil']})")
-    r = poste("/api/affectation", {"crew": "moreau", "poste": p["nom"]})
+    r = poste("/api/affectation", {"nom": "moreau", "poste": p["nom"]})
     (ok if not r.get("accepte") else ko)(f"{r.get('titre')} · {r.get('parole')}")
 
 
