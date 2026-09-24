@@ -1,109 +1,247 @@
-import importlib
+"""Audit complet du bord : matériel, services, chaînes de mesure, routes du dashboard.
+
+    ssh atria 'cd ~/atria && ./.venv/bin/python audit.py'
+
+Chaque ligne est un constat vérifiable. Rien n'est réparé ici : on regarde.
+"""
+import json
 import os
-import shutil
 import subprocess
 import sys
+import time
+import urllib.error
+import urllib.request
+
+BASE = "http://127.0.0.1:8000"
+VERT, ROUGE, JAUNE, GRIS, GRAS, FIN = (
+    "\033[32m", "\033[31m", "\033[33m", "\033[90m", "\033[1m", "\033[0m")
+
+bilan = {"ok": 0, "alerte": 0, "echec": 0}
 
 
-def sh(cmd, defaut="?"):
-    try:
-        return subprocess.run(cmd, shell=True, capture_output=True, text=True,
-                              timeout=15).stdout.strip() or defaut
-    except Exception:
-        return defaut
+def ok(t):
+    bilan["ok"] += 1
+    print(f"  {VERT}✓{FIN} {t}")
+
+
+def alerte(t):
+    bilan["alerte"] += 1
+    print(f"  {JAUNE}!{FIN} {t}")
+
+
+def echec(t):
+    bilan["echec"] += 1
+    print(f"  {ROUGE}✗{FIN} {t}")
+
+
+def info(t):
+    print(f"  {GRIS}{t}{FIN}")
 
 
 def titre(t):
-    print(f"\n{'=' * 58}\n {t}\n{'=' * 58}")
+    print(f"\n{GRAS}{t}{FIN}")
 
 
-def ligne(cle, valeur, verdict=None):
-    marque = "" if verdict is None else ("  OK" if verdict else "  ECHEC")
-    print(f"  {cle:<30} {valeur}{marque}")
+def sh(cmd):
+    return subprocess.run(cmd, shell=True, capture_output=True, text=True).stdout.strip()
 
 
-titre("CALCULATEUR")
-ligne("modele", sh("cat /proc/device-tree/model | tr -d '\\0'"))
-ligne("os", sh(". /etc/os-release && echo $PRETTY_NAME"))
-ligne("noyau", sh("uname -r"))
-ligne("python", sys.version.split()[0])
-ligne("temperature", sh("vcgencmd measure_temp | cut -d= -f2"))
-throttled = sh("vcgencmd get_throttled | cut -d= -f2")
-ligne("throttling", throttled, throttled == "0x0")
-ligne("alimentation", sh("vcgencmd pmic_read_adc | grep EXT5V | awk '{print $3}' | cut -d= -f2"))
-ligne("uptime", sh("uptime -p"))
+def lire(chemin, delai=10):
+    debut = time.time()
+    with urllib.request.urlopen(BASE + chemin, timeout=delai) as r:
+        return json.load(r), time.time() - debut
 
-titre("RESSOURCES")
-ligne("ram", sh("free -h | awk 'NR==2{print $3\" / \"$2\" utilises\"}'"))
-ligne("disque", sh("df -h / | awk 'NR==2{print $3\" / \"$2\" (\"$5\")\"}'"))
-libre_go = float(sh("df -BG / | awk 'NR==2{print $4}' | tr -d G", "0"))
-ligne("marge disque", f"{libre_go:.0f} Go libres", libre_go > 3)
 
-titre("BUS ET PERIPHERIQUES")
-for chemin, nom in (("/dev/i2c-1", "i2c-1"), ("/dev/spidev0.0", "spi0.0"),
-                    ("/dev/fb0", "framebuffer"), ("/dev/ttyACM0", "mega (serie)")):
-    ligne(nom, chemin, os.path.exists(chemin))
-ligne("ecran", sh("cat /sys/class/graphics/fb0/virtual_size 2>/dev/null", "absent"))
-ligne("tactile", sh("grep -ci stmpe /proc/bus/input/devices || echo 0") != "0" and "present" or "HS (connu)")
-ligne("audio", sh("aplay -l 2>/dev/null | grep -c '^card'", "0") + " carte(s)")
-ligne("usb", sh("lsusb | grep -vic 'root hub'", "0") + " peripherique(s)")
+def materiel():
+    titre("MATÉRIEL")
+    th = sh("vcgencmd get_throttled")
+    valeur = int(th.split("=")[1], 16) if "=" in th else -1
+    if valeur == 0:
+        ok(f"alimentation saine, {th}")
+    elif valeur & 0xF:
+        echec(f"bridage EN COURS, {th} — sous-tension ou surchauffe maintenant")
+    else:
+        alerte(f"{th} — un creux est survenu depuis le démarrage, sans effet actuel")
 
-titre("BIBLIOTHEQUES PYTHON")
-for module, role in (("numpy", "calcul"), ("scipy", "traitement du signal"),
-                     ("xgboost", "modele de stress"), ("sklearn", "apprentissage"),
-                     ("vosk", "reconnaissance vocale"), ("piper", "synthese vocale"),
-                     ("serial", "liaison arduino"), ("PIL", "rendu ecran"),
-                     ("lgpio", "gpio"), ("mfrc522", "badge"), ("fastapi", "api")):
-    try:
-        m = importlib.import_module(module)
-        ligne(module, f"{getattr(m, '__version__', 'ok')}  ({role})", True)
-    except Exception as exc:
-        ligne(module, f"{type(exc).__name__}  ({role})", False)
+    t = float(sh("vcgencmd measure_temp").split("=")[1].split("'")[0])
+    (ok if t < 75 else alerte if t < 80 else echec)(f"SoC à {t:.1f} °C")
+    info(f"rail 5 V : {sh('vcgencmd pmic_read_adc EXT5V_V').split('=')[-1]}")
+    info(f"uptime : {sh('uptime -p')}")
 
-titre("MODELES EMBARQUES")
-for chemin, nom in (
-    ("~/atria/models/piper/fr_FR-siwis-medium.onnx", "piper voix fr"),
-    ("~/atria/models/vosk/vosk-model-small-fr-0.22", "vosk fr"),
-    ("~/atria/models/stress", "classifieur de stress"),
-):
-    p = os.path.expanduser(chemin)
-    existe = os.path.exists(p)
-    taille = sh(f"du -sh {p} 2>/dev/null | cut -f1", "-") if existe else "absent"
-    ligne(nom, taille, existe)
+    usb = sh("lsusb")
+    for nom, motif in (("Mega ADK (passerelle)", "2341:0044"),
+                       ("Mega 2560 (nœud)", "2341:0042"),
+                       ("caméra C270", "046d:0825"),
+                       ("micro QuadCast", "HyperX")):
+        (ok if motif in usb else echec)(f"{nom} {'présent' if motif in usb else 'ABSENT'}")
 
-titre("POLICES DE LA CHARTE")
-for f in ("Teko-SemiBold", "Inter-Regular", "MartianMono-Regular"):
-    p = f"/usr/share/fonts/truetype/atria/{f}.ttf"
-    ligne(f, "installee" if os.path.exists(p) else "absente", os.path.exists(p))
+    ports = sh("ls -1 /dev/serial/by-id/ 2>/dev/null").splitlines()
+    (ok if len(ports) >= 2 else echec)(f"{len(ports)} ports série sur 2 attendus")
+    video = sh("ls -1 /dev/v4l/by-id/ 2>/dev/null").splitlines()
+    (ok if video else echec)(f"{len(video)} périphériques vidéo")
 
-titre("BASE DE DONNEES")
-try:
+
+def services():
+    titre("SERVICES")
+    for s in ("atria-api", "atria-terminal", "atria-llm"):
+        etat = sh(f"systemctl is-active {s}")
+        (ok if etat == "active" else echec)(f"{s} : {etat}")
+    libre = sh("free -m | awk 'NR==2 {print $7}'")
+    (ok if int(libre) > 400 else alerte)(f"{libre} Mo de mémoire disponible")
+
+
+def capteurs():
+    titre("CHAÎNES DE MESURE")
     sys.path.insert(0, os.path.expanduser("~/atria"))
     from atria import db
     conn = db.connexion()
-    for table in ("crew", "poste", "compartiment", "capacite", "vitals",
-                  "ambiance", "presence", "affectation", "journal"):
-        n = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-        ligne(table, f"{n} lignes", n > 0)
-    taille = sh("du -h ~/atria/data/atria.db | cut -f1", "?")
-    ligne("taille fichier", taille)
-except Exception as exc:
-    ligne("base", f"{type(exc).__name__}: {exc}", False)
+    maintenant = time.time()
 
-titre("SERVICES")
-for service in ("atria-terminal",):
-    etat = sh(f"systemctl is-active {service}", "inconnu")
-    active = sh(f"systemctl is-enabled {service}", "?")
-    ligne(service, f"{etat} (au demarrage: {active})", etat == "active")
+    for comp in ("infirmerie", "réacteur"):
+        r = conn.execute(
+            "SELECT ts, temp_c, humidite FROM ambiance WHERE compartiment = ?"
+            " AND temp_c IS NOT NULL ORDER BY ts DESC LIMIT 1", (comp,)).fetchone()
+        if r is None:
+            echec(f"{comp} : aucune mesure d'atmosphère")
+        else:
+            age = maintenant - r["ts"]
+            (ok if age < 120 else alerte)(
+                f"{comp} : {r['temp_c']} °C, {r['humidite']} % il y a {age:.0f} s")
 
-titre("RESEAU")
-ligne("adresse", sh("hostname -I | awk '{print $1}'"))
-ligne("hostname", sh("hostname"))
-ligne("internet", "joignable" if sh("ping -c1 -W2 1.1.1.1 >/dev/null 2>&1 && echo ok") == "ok"
-      else "hors ligne")
-ligne("wifi", sh("iwgetid -r", "non connecte"))
+    e = db.ecrans(conn).get("réacteur")
+    if e and e["applique"]:
+        ok(f"écran du nœud acquitté il y a {maintenant - e['applique']:.0f} s")
+    elif e:
+        alerte("consigne d'écran posée mais jamais acquittée")
+    else:
+        info("aucune consigne d'écran en cours")
 
-titre("OUTILS")
-for outil in ("arduino-cli", "sqlite3", "fc-cache", "aplay"):
-    chemin = shutil.which(outil) or os.path.expanduser(f"~/bin/{outil}")
-    ligne(outil, chemin if os.path.exists(chemin) else "absent", os.path.exists(chemin))
+    enroles = db.membres_enroles(conn)
+    (ok if enroles else echec)(
+        "gabarits faciaux : " + (", ".join(f"{n} ({g})" for n, g in enroles) or "aucun"))
+
+    badges = conn.execute(
+        "SELECT COUNT(*) n FROM crew WHERE badge IS NOT NULL").fetchone()["n"]
+    (ok if badges >= 2 else alerte)(f"{badges} badges enregistrés")
+
+    j = conn.execute(
+        "SELECT ts, motif FROM journal WHERE type = 'identification'"
+        " ORDER BY ts DESC LIMIT 1").fetchone()
+    if j:
+        info(f"dernière identification il y a {(maintenant - j['ts']) / 60:.0f} min : "
+             f"{j['motif'][:60]}")
+
+
+def routes():
+    titre("ROUTES DU DASHBOARD")
+    attendus = {
+        "/api/etat": ("equipage", "compartiments", "confinements"),
+        "/api/social": ("noeuds", "liens", "conflits"),
+        "/api/surete": ("feu", "menaces", "dossiers"),
+        "/api/perception": ("camera", "ecoute", "modules"),
+        "/api/prediction": ("modele", "risques", "anomalies"),
+        "/api/briefing": ("constats", "texte"),
+        "/api/pouls": ("actif", "duree_s"),
+        "/api/ecoute": ("ecoute", "modules", "incidents"),
+        "/api/modules": ("modules",),
+        "/api/surveillance": ("incidents", "conduites"),
+        "/api/journal": ("entrees",),
+        "/api/camera/etat": ("actif", "surveillance"),
+        "/api/session": ("acteur", "capitaine"),
+    }
+    for chemin, cles in attendus.items():
+        try:
+            d, duree = lire(chemin)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            echec(f"{chemin} : {type(exc).__name__}")
+            continue
+        manquantes = [c for c in cles if c not in d]
+        if manquantes:
+            echec(f"{chemin} : clés absentes {manquantes}")
+        elif duree > 2.0:
+            alerte(f"{chemin} : {duree:.2f} s, lent")
+        else:
+            ok(f"{chemin} : {duree * 1000:.0f} ms")
+
+    try:
+        with urllib.request.urlopen(BASE + "/api/camera/image", timeout=10) as r:
+            taille = len(r.read())
+        (ok if taille > 3000 else echec)(f"/api/camera/image : {taille} octets")
+    except Exception as exc:
+        echec(f"/api/camera/image : {exc}")
+
+
+def fonctions():
+    titre("FONCTIONS")
+    d, _ = lire("/api/camera/etat")
+    s = d["surveillance"]
+    (ok if s["arme"] else echec)("module surveillance armé")
+    (ok if s["modeles"] else echec)("modèles MediaPipe présents")
+    if s["en_pause"]:
+        alerte(f"surveillance suspendue : {s['motif_pause']}")
+    elif s["vu_il_y_a"] is not None and s["vu_il_y_a"] < 5:
+        ok(f"analyse comportementale active, vue il y a {s['vu_il_y_a']} s")
+    else:
+        alerte("analyse comportementale jamais exécutée depuis le démarrage")
+    (ok if d["age"] is not None and d["age"] < 5 else echec)(
+        f"image caméra fraîche ({d['age']} s)")
+
+    p, _ = lire("/api/prediction")
+    if p["modele"]:
+        m = p["modele"]["mesures"]
+        ok(f"modèle entraîné : AUC {m['auc']}, rappel {m['rappel']}, "
+           f"{p['modele']['lignes']} exemples")
+        (ok if p["risques"] else alerte)(f"{len(p['risques'])} membres évalués")
+    else:
+        echec("aucun modèle de prédiction sur la carte")
+
+    g, _ = lire("/api/social")
+    hostiles = [x for x in g["liens"] if x["nature"] == "hostile"]
+    amicaux = [x for x in g["liens"] if x["nature"] == "amical"]
+    (ok if g["noeuds"] else echec)(
+        f"graphe social : {len(g['noeuds'])} membres, {len(amicaux)} affinités, "
+        f"{len(hostiles)} hostilités")
+
+    e, _ = lire("/api/ecoute")
+    ec = e["ecoute"]
+    (ok if ec.get("modele") else echec)("modèle YAMNet présent")
+    (ok if ec.get("vosk") else alerte)("transcription Vosk chargée")
+    info("écoute et transcription : " + ", ".join(
+        f"{m['nom']}={'armé' if m['actif'] else 'au repos'}" for m in e["modules"]))
+
+    b, _ = lire("/api/briefing")
+    (ok if len(b["constats"]) >= 4 else alerte)(
+        f"briefing : {len(b['constats'])} constats, rédigé par {b['source']}")
+    if b.get("rejet"):
+        info(f"reformulation refusée : {b['rejet']}")
+
+    etat, _ = lire("/api/etat")
+    occupes = [c["nom"] for c in etat["compartiments"] if c["occupants"]]
+    (ok if len(occupes) >= 3 else alerte)(
+        f"{len(occupes)} compartiments occupés : {', '.join(occupes)}")
+    instrumentes = [c["nom"] for c in etat["compartiments"] if c["instrumente"]]
+    (ok if len(instrumentes) >= 2 else alerte)(
+        f"{len(instrumentes)} compartiments instrumentés : {', '.join(instrumentes)}")
+    if etat["confinements"]:
+        alerte(f"confinements actifs : {list(etat['confinements'])}")
+    else:
+        ok("aucun confinement en cours")
+
+
+def main():
+    print(f"{GRAS}AUDIT ATRIA — {time.strftime('%d/%m %H:%M:%S')}{FIN}")
+    for etape in (materiel, services, capteurs, routes, fonctions):
+        try:
+            etape()
+        except Exception as exc:
+            echec(f"{etape.__name__} interrompu : {type(exc).__name__}: {exc}")
+
+    print(f"\n{GRAS}BILAN{FIN}  "
+          f"{VERT}{bilan['ok']} ok{FIN}  "
+          f"{JAUNE}{bilan['alerte']} à surveiller{FIN}  "
+          f"{ROUGE}{bilan['echec']} en échec{FIN}\n")
+    return 1 if bilan["echec"] else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -19,16 +19,21 @@ MODELES = os.path.expanduser("~/atria/models/mediapipe")
 VISAGE = os.path.join(MODELES, "face_landmarker.task")
 MAIN = os.path.join(MODELES, "hand_landmarker.task")
 
-PERIODE_S = 1.0
-TEMP_MAX_C = 79.0
-TEMP_REPRISE_C = 71.0
+PERIODE_S = 1.5
+TEMP_MAX_C = 78.0
+TEMP_REPRISE_C = 74.0
 """Le SoC de cette carte tourne deja pres de 70 °C au repos, refroidissement passif
 compris, et le Pi 5 commence a reduire ses frequences a 80 °C. La consigne de coupure se
 place donc juste en dessous.
 
-La consigne de reprise, elle, doit etre franchement plus basse que le repos : a 73 °C elle
-tombait dans la plage ou la carte oscille en permanence, et la surveillance restait
-suspendue indefiniment apres un seul pic."""
+La consigne de reprise doit rester au-dessus du repos, sans quoi elle n'est jamais
+atteinte : posee a 71 °C alors que la carte oscille entre 70 et 73, la surveillance restait
+suspendue pour de bon apres un seul pic.
+
+Le choix assume : entre 80 et 85 °C le Pi 5 reduit ses frequences sans rien abimer, et il
+ne coupe qu'au-dela. Sans refroidissement actif, la seule bande exploitable est donc celle
+qui empiete un peu sur la zone de bridage. Une surveillance qui tourne en frequences
+reduites vaut mieux qu'une surveillance qui ne tourne jamais."""
 REPOS_INCIDENT_S = 6.0
 """Un même geste tenu devant l'objectif ne doit compter qu'une fois."""
 

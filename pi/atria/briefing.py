@@ -13,6 +13,7 @@ rejeter, et le texte déterministe reprend sa place. Un briefing faux serait pir
 qu'aucun briefing.
 """
 
+import threading
 import time
 
 from . import confinement, db, llm, predict, social
@@ -37,6 +38,26 @@ redessine a chaque push. Sans ce cache, le graphe social etait reconstruit trois
 briefing et jusqu'a vingt fois par minute, pour un texte identique."""
 
 _cache = None
+_reformule = None
+_en_cours = threading.Lock()
+
+
+def _reformuler_en_fond(brut):
+    """Prepare la reformulation pour le briefing suivant, sans bloquer celui-ci.
+
+    Un seul fil a la fois. Sans ce verrou, chaque sondage du tableau de bord en lancait un
+    nouveau tant que le premier n'avait pas fini : dix appels simultanes au modele, et le
+    SoC est monte a 86 °C en bridage. Le verrou est pris sans attendre, donc un appel qui
+    arrive pendant qu'un autre travaille repart immediatement.
+    """
+    global _reformule, _cache
+    if not _en_cours.acquire(blocking=False):
+        return
+    try:
+        _reformule = (brut, *_reformuler(brut))
+        _cache = None
+    finally:
+        _en_cours.release()
 
 
 def _postes(etat):
@@ -180,7 +201,13 @@ def constats(etat):
 
 
 def rediger(etat, force=False):
-    """Rend le briefing, reformulé par le modèle local quand il passe les gardes."""
+    """Rend le briefing sans jamais attendre le modèle.
+
+    Le modèle met dix à trente secondes à reformuler, et la route bloquait d'autant : le
+    tableau de bord semblait fige, et l'audit rendait un depassement de delai. Les
+    constats sont deterministes et immediats, donc ils partent tels quels ; la
+    reformulation se fait en fond et prendra place au briefing suivant.
+    """
     global _cache
 
     if not force and _cache and time.time() - _cache["ts"] < FRAICHEUR_S:
@@ -198,8 +225,11 @@ def rediger(etat, force=False):
         rejet = "module de langage non armé"
     elif not llm.disponible():
         rejet = "modèle injoignable"
+    elif _reformule and _reformule[0] == brut:
+        rendu, rejet = _reformule[1], _reformule[2]
     else:
-        rendu, rejet = _reformuler(brut)
+        rejet = "reformulation en cours"
+        threading.Thread(target=_reformuler_en_fond, args=(brut,), daemon=True).start()
 
     _cache = {
         "ts": time.time(),
