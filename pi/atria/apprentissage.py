@@ -277,6 +277,13 @@ def valider(conn, plis=5):
 
     mesures = evaluer(y[evalue], retenues[evalue])
     mesures.update({
+        # Les probabilites rendues pour chaque exemple, separees selon ce qui est
+        # reellement arrive. C'est la matiere du nuage affiche au dashboard : on y voit
+        # la separation obtenue, et surtout les points du mauvais cote du seuil.
+        "predites_rupture": sorted(round(float(v), 4)
+                                   for v in retenues[evalue & (y > 0.5)]),
+        "predites_tenue": sorted(round(float(v), 4)
+                                 for v in retenues[evalue & (y < 0.5)]),
         "roc": roc(y[evalue], retenues[evalue]),
         "plis": plis,
         "membres": len(membres),

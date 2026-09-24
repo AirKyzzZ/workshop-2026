@@ -11,5 +11,11 @@ ExecStart=/home/atria/atria/.venv/bin/uvicorn atria.api:app --host 0.0.0.0 --por
 Restart=always
 RestartSec=3
 
+# Le flux video MJPEG et le websocket ne se ferment jamais d'eux-memes : uvicorn les
+# attend, et un redemarrage prenait quatre-vingt-dix secondes pendant lesquelles le
+# dashboard etait injoignable. On coupe court.
+TimeoutStopSec=5
+KillMode=mixed
+
 [Install]
 WantedBy=multi-user.target

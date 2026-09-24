@@ -1,4 +1,4 @@
-import { courbeCout, courbeRoc } from "./courbes-ml.js";
+import { nuagePredictions } from "./courbes-ml.js";
 import { bloc, el, json } from "./ui.js";
 
 function barre(valeur, teinte, echelle = 1) {
@@ -178,34 +178,21 @@ export async function vuePrediction(hote) {
       }
       perf.corps.appendChild(chiffres);
 
-      if (mes.roc && mes.roc.length) {
-        const graphes = el("div", "duo-modele");
-
-        const gRoc = el("div");
-        gRoc.appendChild(el("p", "verdict-titre", "COURBE ROC"));
-        const zoneRoc = el("div", "graphique-ml");
-        gRoc.appendChild(zoneRoc);
-        const { retenu } = courbeRoc(zoneRoc, mes.roc, mes.auc);
-        gRoc.appendChild(el("p", "note",
-          `La diagonale est le hasard. Le point marqué est le seuil retenu à 0.50 : `
-          + `${Math.round(retenu.tpr * 100)} % des ruptures attrapées pour `
-          + `${Math.round(retenu.fpr * 100)} % de fausses alertes. `
-          + "Déplacer ce seuil, c'est choisir entre rater une rupture et alerter "
-          + "pour rien."));
-        graphes.appendChild(gRoc);
-
-        const gCout = el("div");
-        gCout.appendChild(el("p", "verdict-titre", "APPRENTISSAGE"));
-        const zoneCout = el("div", "graphique-ml");
-        gCout.appendChild(zoneCout);
-        courbeCout(zoneCout, m.couts, m.iterations);
-        gCout.appendChild(el("p", "note",
-          "L'entropie croisée que la descente de gradient minimise, relevée pendant "
-          + `l'entraînement. Elle tombe de ${m.couts[0]} à ${m.couts[m.couts.length - 1]} `
-          + "puis se stabilise : le modèle a fini d'apprendre ce que ces données "
-          + "contiennent."));
-        graphes.appendChild(gCout);
-        perf.corps.appendChild(graphes);
+      if (mes.predites_rupture && mes.predites_rupture.length) {
+        const nuage = el("div", "bloc-nuage");
+        nuage.appendChild(el("p", "verdict-titre",
+          "CE QUE LE MODÈLE A RENDU POUR CHAQUE EXEMPLE"));
+        const zone = el("div", "graphique-nuage");
+        nuage.appendChild(zone);
+        const { rates, fausses } = nuagePredictions(zone, mes);
+        nuage.appendChild(el("p", "note",
+          "Un point par exemple, placé selon la probabilité que le modèle lui a donnée, "
+          + "rangé selon ce qui est réellement arrivé. Les points du mauvais côté du "
+          + `seuil sont les erreurs, entourées : ${rates} rupture(s) manquée(s) en haut `
+          + `à gauche, ${fausses} fausses alertes en bas à droite. Déplacer le seuil `
+          + "déplace la frontière entre ces deux erreurs, jamais les deux dans le même "
+          + "sens."));
+        perf.corps.appendChild(nuage);
       }
 
       const duo = el("div", "duo-modele");

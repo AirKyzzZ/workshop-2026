@@ -755,3 +755,29 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   .salle.attente_evacuation { animation: none; }
 }
+
+/* ---------- nuage des predictions ---------- */
+
+.bloc-nuage { margin-top: calc(var(--u) * 3); }
+.graphique-nuage { margin-top: var(--u); max-width: 780px; }
+.nuage { display: block; width: 100%; height: auto; overflow: visible; }
+.nuage-grille { stroke: var(--trait); stroke-width: 1; }
+.nuage-bande {
+  font-family: Inter, sans-serif; font-size: 12px; fill: var(--encre-forte);
+}
+.nuage-compte { font-family: Martian; font-size: 9px; fill: var(--faible); }
+.nuage-pt { opacity: .75; }
+.nuage-pt.juste-rupture { fill: var(--critique); }
+.nuage-pt.juste-tenue { fill: var(--nominal); }
+.nuage-pt.faux {
+  fill: none; stroke: var(--attention); stroke-width: 2; opacity: 1;
+}
+.nuage-seuil { stroke: var(--encre-forte); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.nuage-seuil-texte {
+  font-family: Martian; font-size: 9px; fill: var(--encre-forte);
+  letter-spacing: .06em;
+}
+.nuage-axe { font-family: Martian; font-size: 9px; fill: var(--faible); }
+.nuage-axe-titre {
+  font-family: Martian; font-size: 9px; fill: var(--sourdine); letter-spacing: .04em;
+}

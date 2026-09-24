@@ -6,106 +6,71 @@ const svgEl = (t, a = {}) => {
   return n;
 };
 
-export function courbeRoc(hote, points, auc) {
-  const L = 300;
-  const H = 300;
-  const M = 34;
-  const svg = svgEl("svg", { class: "courbe-ml", viewBox: `0 0 ${L} ${H}` });
+const txt = (contenu, a) => {
+  const n = svgEl("text", a);
+  n.textContent = contenu;
+  return n;
+};
 
-  const x = (v) => M + v * (L - M - 12);
-  const y = (v) => H - M - v * (H - M - 12);
+// Dispersion verticale déterministe : deux exemples de même probabilité ne doivent pas
+// se superposer, et un tirage aléatoire ferait bouger le nuage à chaque rafraîchissement.
+const decalage = (i, hauteur) => ((i * 2654435761) % 1000) / 1000 * hauteur;
 
-  for (let i = 0; i <= 4; i++) {
-    const t = i / 4;
-    svg.appendChild(svgEl("line", { class: "grille",
-      x1: x(0), y1: y(t), x2: x(1), y2: y(t) }));
-    svg.appendChild(svgEl("line", { class: "grille",
-      x1: x(t), y1: y(0), x2: x(t), y2: y(1) }));
+export function nuagePredictions(hote, mesures, seuil = 0.5) {
+  const L = 680;
+  const H = 260;
+  const MG = 96;
+  const MD = 16;
+  const bande = 62;
+  const yRupture = 46;
+  const yTenue = 150;
+
+  const svg = svgEl("svg", { class: "nuage", viewBox: `0 0 ${L} ${H}` });
+  const x = (p) => MG + p * (L - MG - MD);
+
+  for (let i = 0; i <= 10; i += 1) {
+    const p = i / 10;
+    svg.appendChild(svgEl("line", { class: "nuage-grille",
+      x1: x(p), y1: yRupture - 10, x2: x(p), y2: yTenue + bande + 6 }));
   }
 
-  // La diagonale est le hasard : une courbe qui la suit ne trie rien.
-  svg.appendChild(svgEl("line", { class: "hasard",
-    x1: x(0), y1: y(0), x2: x(1), y2: y(1) }));
-
-  const aire = points.map((p) => `${x(p.fpr)},${y(p.tpr)}`).join(" ");
-  svg.appendChild(svgEl("polygon", { class: "roc-aire",
-    points: `${x(0)},${y(0)} ${aire} ${x(1)},${y(0)}` }));
-  svg.appendChild(svgEl("polyline", { class: "roc-trace", points: aire }));
-
-  const retenu = points.reduce((a, b) =>
-    Math.abs(b.seuil - 0.5) < Math.abs(a.seuil - 0.5) ? b : a);
-  svg.appendChild(svgEl("circle", { class: "roc-point",
-    cx: x(retenu.fpr), cy: y(retenu.tpr), r: 4 }));
-
-  for (const [v, t] of [[0, "0"], [0.5, "0,5"], [1, "1"]]) {
-    const bas = svgEl("text", { class: "axe", x: x(v), y: H - 12,
-      "text-anchor": "middle" });
-    bas.textContent = t;
-    svg.appendChild(bas);
-    const cote = svgEl("text", { class: "axe", x: M - 8, y: y(v) + 3,
-      "text-anchor": "end" });
-    cote.textContent = t;
-    svg.appendChild(cote);
+  for (const [y0, libelle, compte] of [
+    [yRupture, "ruptures réelles", mesures.predites_rupture.length],
+    [yTenue, "tenues réelles", mesures.predites_tenue.length],
+  ]) {
+    svg.appendChild(txt(libelle, { class: "nuage-bande", x: MG - 12, y: y0 + 16,
+      "text-anchor": "end" }));
+    svg.appendChild(txt(`${compte} exemples`, { class: "nuage-compte", x: MG - 12,
+      y: y0 + 31, "text-anchor": "end" }));
   }
 
-  const titreX = svgEl("text", { class: "axe-titre", x: x(0.5), y: H - 1,
-    "text-anchor": "middle" });
-  titreX.textContent = "fausses alertes";
-  svg.appendChild(titreX);
+  const points = (valeurs, y0, classeJuste, cote) => {
+    valeurs.forEach((p, i) => {
+      const faux = cote === "haut" ? p < seuil : p >= seuil;
+      svg.appendChild(svgEl("circle", {
+        class: "nuage-pt " + (faux ? "faux" : classeJuste),
+        cx: x(p).toFixed(1), cy: (y0 + decalage(i, bande)).toFixed(1),
+        r: faux ? 3.4 : 2.6,
+      }));
+    });
+  };
+  points(mesures.predites_rupture, yRupture, "juste-rupture", "haut");
+  points(mesures.predites_tenue, yTenue, "juste-tenue", "bas");
 
-  const titreY = svgEl("text", { class: "axe-titre", x: 10, y: y(0.5),
-    "text-anchor": "middle", transform: `rotate(-90 10 ${y(0.5)})` });
-  titreY.textContent = "ruptures attrapées";
-  svg.appendChild(titreY);
+  svg.appendChild(svgEl("line", { class: "nuage-seuil",
+    x1: x(seuil), y1: yRupture - 14, x2: x(seuil), y2: yTenue + bande + 6 }));
+  svg.appendChild(txt(`seuil ${seuil.toFixed(2)}`, { class: "nuage-seuil-texte",
+    x: x(seuil), y: yRupture - 20, "text-anchor": "middle" }));
 
-  const val = svgEl("text", { class: "roc-auc", x: x(0.62), y: y(0.28) });
-  val.textContent = `AUC ${auc}`;
-  svg.appendChild(val);
+  for (const [p, t] of [[0, "0"], [0.5, "0,5"], [1, "1"]]) {
+    svg.appendChild(txt(t, { class: "nuage-axe", x: x(p), y: H - 24,
+      "text-anchor": "middle" }));
+  }
+  svg.appendChild(txt("probabilité de rupture rendue par le modèle", {
+    class: "nuage-axe-titre", x: (MG + L - MD) / 2, y: H - 6, "text-anchor": "middle" }));
 
+  const rates = mesures.predites_rupture.filter((p) => p < seuil).length;
+  const fausses = mesures.predites_tenue.filter((p) => p >= seuil).length;
   hote.appendChild(svg);
-  return { retenu };
-}
-
-export function courbeCout(hote, couts, iterations) {
-  const L = 300;
-  const H = 300;
-  const M = 40;
-  const svg = svgEl("svg", { class: "courbe-ml", viewBox: `0 0 ${L} ${H}` });
-
-  const haut = Math.max(...couts);
-  const bas = Math.min(...couts);
-  const etendue = Math.max(1e-6, haut - bas);
-  const x = (i) => M + (i / (couts.length - 1)) * (L - M - 12);
-  const y = (v) => H - M - ((v - bas) / etendue) * (H - M - 16);
-
-  for (let i = 0; i <= 4; i++) {
-    svg.appendChild(svgEl("line", { class: "grille",
-      x1: M, y1: y(bas + etendue * i / 4), x2: L - 12, y2: y(bas + etendue * i / 4) }));
-  }
-
-  svg.appendChild(svgEl("polyline", { class: "cout-trace",
-    points: couts.map((v, i) => `${x(i)},${y(v)}`).join(" ") }));
-
-  for (const [v, ancre] of [[haut, "depart"], [bas, "fin"]]) {
-    const t = svgEl("text", { class: "axe", x: M - 8, y: y(v) + 3,
-      "text-anchor": "end" });
-    t.textContent = v.toFixed(3);
-    svg.appendChild(t);
-    if (ancre === "fin") {
-      svg.appendChild(svgEl("circle", { class: "cout-point",
-        cx: x(couts.length - 1), cy: y(v), r: 3.5 }));
-    }
-  }
-
-  const titreX = svgEl("text", { class: "axe-titre", x: (M + L) / 2, y: H - 14,
-    "text-anchor": "middle" });
-  titreX.textContent = `${iterations} itérations de descente de gradient`;
-  svg.appendChild(titreX);
-
-  const titreY = svgEl("text", { class: "axe-titre", x: 10, y: H / 2,
-    "text-anchor": "middle", transform: `rotate(-90 10 ${H / 2})` });
-  titreY.textContent = "entropie croisée";
-  svg.appendChild(titreY);
-
-  hote.appendChild(svg);
+  return { rates, fausses };
 }
