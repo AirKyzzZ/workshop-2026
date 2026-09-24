@@ -144,7 +144,7 @@
       "top": -86,
       "left": 1330,
       "attrs": {
-        "text": "AD8232 ECG  A2  ·  hors service",
+        "text": "AD8232 ECG à électrodes  A2",
         "fontSize": "13"
       }
     },
@@ -200,7 +200,7 @@
       "top": 560,
       "left": 0,
       "attrs": {
-        "text": "Nœud de compartiment  ·  à brancher",
+        "text": "Nœud de compartiment  ·  réacteur",
         "fontSize": "18"
       }
     },
@@ -217,7 +217,7 @@
       "top": 596,
       "left": 260,
       "attrs": {
-        "text": "Mega 2560  ·  réacteur",
+        "text": "Mega 2560  ·  nœud réacteur",
         "fontSize": "14"
       }
     },
@@ -275,15 +275,15 @@
       "top": 596,
       "left": 960,
       "attrs": {
-        "text": "capteur de pouls à doigt  A0  ·  câblé, pas encore lu par le firmware",
+        "text": "capteur de pouls à doigt  A0",
         "fontSize": "13"
       }
     },
     {
       "type": "wokwi-text",
       "id": "tusb",
-      "top": 120,
-      "left": 300,
+      "top": 330,
+      "left": -40,
       "attrs": {
         "text": "sur les ports USB du Pi 5",
         "fontSize": "15"
@@ -292,30 +292,50 @@
     {
       "type": "wokwi-text",
       "id": "tcam",
-      "top": 150,
-      "left": 300,
+      "top": 358,
+      "left": -40,
       "attrs": {
-        "text": "caméra Logitech C270  ·  YuNet, SFace, MediaPipe visage et mains",
+        "text": "caméra Logitech C270",
         "fontSize": "13"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tcam2",
+      "top": 378,
+      "left": -40,
+      "attrs": {
+        "text": "→ YuNet · SFace · MediaPipe",
+        "fontSize": "12"
       }
     },
     {
       "type": "wokwi-text",
       "id": "tmic",
-      "top": 176,
-      "left": 300,
+      "top": 404,
+      "left": -40,
       "attrs": {
-        "text": "micro HyperX QuadCast  ·  YAMNet 521 classes, transcription Vosk",
+        "text": "micro HyperX QuadCast",
         "fontSize": "13"
       }
     },
     {
       "type": "wokwi-text",
-      "id": "tser",
-      "top": 202,
-      "left": 300,
+      "id": "tmic2",
+      "top": 424,
+      "left": -40,
       "attrs": {
-        "text": "Mega ADK et Mega 2560  ·  liaison série 115200 bauds",
+        "text": "→ YAMNet 521 classes · Vosk",
+        "fontSize": "12"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "tser",
+      "top": 450,
+      "left": -40,
+      "attrs": {
+        "text": "2 Arduino · série 115200 bauds",
         "fontSize": "13"
       }
     }

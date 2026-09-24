@@ -35,25 +35,28 @@ Deux cartes, séparées par un trait dans le canevas.
 l'atmosphère de l'infirmerie. Les alimentations passent par les rails de la plaque
 d'essai, les signaux vont directement sur les broches.
 
-| Broche | Composant | Tension | État |
+| Broche | Composant | Tension | Ce qu'elle mesure |
 |---|---|---|---|
-| `A0` | Capteur de son | 5 V | validé |
-| `A1` | MQ-2, fumée et gaz | 5 V | alimenté, non testé au gaz |
-| `A2` | AD8232 `OUTPUT` | 3,3 V | liaison intermittente, hors service |
-| `A3` | DHT22 infirmerie | 5 V | validé, remonte jusqu'au dashboard |
-| `D6` | Buzzer actif | 5 V | validé |
-| `D49` | RC522 `RST` | 3,3 V | validé |
+| `A0` | Capteur de son | 5 V | niveau sonore du compartiment |
+| `A1` | MQ-2 | 5 V | fumée et gaz combustibles, seuil de combustion |
+| `A2` | AD8232 `OUTPUT` | 3,3 V | ECG à électrodes |
+| `A3` | DHT22 infirmerie | 5 V | température et humidité |
+| `D6` | Buzzer actif | 5 V | acquittement de badge |
+| `D49` | RC522 `RST` | 3,3 V | remise à zéro du lecteur |
 | `D50` `D51` `D52` | SPI matériel `MISO` `MOSI` `SCK` | 3,3 V | imposé par le matériel |
-| `D53` | RC522 `SDA` / `SS` | 3,3 V | validé |
+| `D53` | RC522 `SDA` / `SS` | 3,3 V | sélection du lecteur de badges |
 
-**Le nœud de compartiment**, un Mega 2560 avec son afficheur, mesure le réacteur. Il est
-encore à brancher.
+La caméra et le micro ne passent pas par l'Arduino : ils sont branchés en USB sur le Pi,
+qui exécute lui-même les modèles de vision et d'écoute.
 
-| Broche | Composant |
-|---|---|
-| `A0` | DHT22 `DATA`, 5 V |
-| `D8` `D9` | LCD `RS` et `E` |
-| `D4` `D5` `D6` `D7` | LCD `D4`..`D7` |
+**Le nœud de compartiment**, un Mega 2560 avec son afficheur, mesure le réacteur.
+
+| Broche | Composant | Tension |
+|---|---|---|
+| `A0` | Capteur de pouls à doigt | 5 V |
+| `A1` | DHT22 réacteur `DATA` | 5 V |
+| `D8` `D9` | LCD `RS` et `E` | 5 V |
+| `D4` `D5` `D6` `D7` | LCD `D4`..`D7` | 5 V |
 
 Son firmware est dans [`../../firmware/atria_noeud/`](../../firmware/atria_noeud/). Il
 annonce une ligne par seconde :
@@ -67,11 +70,12 @@ Côté Pi, `pi/atria/noeud.py` scrute `/dev/serial/by-id` toutes les quinze seco
 ouvre toute carte qui n'est pas la passerelle. Rien à configurer : brancher le câble
 suffit, la carte annonce elle-même son compartiment.
 
-## Une seule substitution
+## Deux substitutions
 
 Hormis le Pi, tous les composants sont les vrais : Wokwi fournit le RC522, le capteur de
-son et le MQ-2. Seul l'AD8232 est représenté par un capteur cardiaque, faute d'ECG dans
-la bibliothèque, et de toute façon il est hors service.
+son, le MQ-2, les DHT22 et le LCD. Les deux capteurs cardiaques, l'AD8232 à électrodes de
+la passerelle et le capteur de pouls à doigt du nœud, sont représentés par la même pièce
+faute d'équivalent exact dans la bibliothèque.
 
 ## Deux règles de câblage
 
