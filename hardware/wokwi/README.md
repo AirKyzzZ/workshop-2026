@@ -57,6 +57,11 @@ qui exécute lui-même les modèles de vision et d'écoute.
 | `A1` | DHT22 réacteur `DATA` | 5 V |
 | `D8` `D9` | LCD `RS` et `E` | 5 V |
 | `D4` `D5` `D6` `D7` | LCD `D4`..`D7` | 5 V |
+| — | Potentiomètre 10 kΩ sur `V0` | 5 V et masse aux extrémités |
+
+Le potentiomètre n'est relié à aucune broche de la carte : il fixe la tension de contraste
+du LCD. Sans lui, `V0` flotte et l'écran reste muet même parfaitement câblé par ailleurs.
+C'est ce qui a coûté le plus de temps sur ce montage.
 
 Son firmware est dans [`../../firmware/atria_noeud/`](../../firmware/atria_noeud/). Il
 annonce une ligne par seconde :
