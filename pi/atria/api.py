@@ -1,9 +1,10 @@
 import asyncio
 import os
+import re
 import time
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import (anomalie, apprentissage, briefing, camera, confinement, db, demo,
@@ -22,19 +23,7 @@ PERIODE_SURETE = 5.0
 app = FastAPI(title="ATRIA", docs_url=None, redoc_url=None)
 
 
-@app.middleware("http")
-async def sans_cache(requete, suivant):
-    """Interdit la mise en cache des modules et de la feuille de style.
 
-    Chrome garde les modules ES en cache memoire et les ressert meme apres un
-    rechargement force : une correction deployee pendant une demonstration peut ne jamais
-    s'afficher, et on debogue alors du code qui n'est plus celui du serveur.
-    """
-    reponse = await suivant(requete)
-    if requete.url.path.startswith("/static/") and requete.url.path.endswith(
-            (".js", ".css", ".html")):
-        reponse.headers["Cache-Control"] = "no-store, must-revalidate"
-    return reponse
 etat = model.Etat()
 
 _dernier_acces_medical = 0.0
@@ -43,6 +32,47 @@ _dernier_acces_medical = 0.0
 presente au terminal physique, elle expire en trois minutes, et chaque ouverture d'acces
 medical est tracee au journal. Il n'y a pas d'authentification par client : le reseau de
 bord est considere comme le perimetre de confiance, comme sur une passerelle reelle."""
+
+
+STATIQUE = os.path.join(WEB, "static")
+_import_relatif = re.compile(r'(from|import)\s+"(\./[^"]+\.(?:js|css))"')
+
+
+def version_statique():
+    """Empreinte des fichiers servis, pour forcer le navigateur a relire les modules.
+
+    Chrome garde les modules ES deja resolus dans une table en memoire qui survit au
+    rafraichissement, et l'ancien `location.reload(true)` ne la vide plus depuis des
+    annees : une correction deployee peut ne jamais s'afficher, et on debogue alors du code
+    qui n'est plus celui du serveur. Changer l'adresse du module est la seule facon fiable
+    de lui faire relire le fichier.
+    """
+    recent = 0.0
+    for racine, _, fichiers in os.walk(STATIQUE):
+        for f in fichiers:
+            if f.endswith((".js", ".css")):
+                recent = max(recent, os.path.getmtime(os.path.join(racine, f)))
+    return str(int(recent))
+
+
+@app.get("/static/{chemin:path}")
+def api_statique(chemin: str):
+    """Sert les fichiers du dashboard, en versionnant les imports des modules."""
+    cible = os.path.realpath(os.path.join(STATIQUE, chemin))
+    if not cible.startswith(os.path.realpath(STATIQUE)) or not os.path.isfile(cible):
+        return Response(status_code=404)
+
+    entetes = {"Cache-Control": "no-store, must-revalidate"}
+    if not cible.endswith((".js", ".css")):
+        return FileResponse(cible, headers=entetes)
+
+    v = version_statique()
+    with open(cible, encoding="utf-8") as f:
+        contenu = f.read()
+    contenu = _import_relatif.sub(rf'\1 "\2?v={v}"', contenu)
+    return Response(contenu, headers=entetes,
+                    media_type="application/javascript" if cible.endswith(".js")
+                    else "text/css")
 
 
 def compartiment_json(c):
@@ -127,6 +157,14 @@ def instantane(medical=False, acteur=None):
             compartiment_json(c)
             for c in etat.compartiments
         ],
+
+        # L'etat des cloisons voyage avec l'instantane : le plan du vaisseau doit montrer
+        # un scellement au moment ou il tombe, pas au rafraichissement suivant.
+        "confinements": {
+            d["cible"]: {"etat": d["etat"], "motif": d["motif"],
+                         "occupants": d["donnees"].get("occupants", [])}
+            for d in confinement.actifs(etat.conn, genre="compartiment")
+        },
 
         "alertes": [
             {"niveau": n, "texte": t}

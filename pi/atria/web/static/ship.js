@@ -50,7 +50,7 @@ function structure(svg) {
   svg.appendChild(txt("POUPE", { class: "repere", x: 58, y: COULOIR_Y - 11 }));
 }
 
-function salle(svg, c, d, postes, capacites, surClic) {
+function salle(svg, c, d, postes, capacites, surClic, confinement) {
   const x = COL_X[c.col];
   const y = RANG_Y[c.rang];
   const g = el("g");
@@ -58,6 +58,7 @@ function salle(svg, c, d, postes, capacites, surClic) {
   let cls = "salle";
   if (d.fumee) cls += " feu";
   else if (d.alerte) cls += " alerte";
+  if (confinement) cls += ` ${confinement.etat}`;
   g.appendChild(el("rect", { class: cls, x, y, width: SALLE_W, height: SALLE_H, rx: 3 }));
 
   g.appendChild(txt(c.nom, { class: "salle-nom", x: x + 13, y: y + 27 }));
@@ -90,6 +91,8 @@ function salle(svg, c, d, postes, capacites, surClic) {
     g.appendChild(pt);
   });
 
+  if (confinement) cloison(g, x, y, c, confinement);
+
   if (surClic) {
     g.setAttribute("class", "salle-groupe");
     g.addEventListener("click", () => surClic(c.nom));
@@ -97,17 +100,49 @@ function salle(svg, c, d, postes, capacites, surClic) {
   svg.appendChild(g);
 }
 
+function cloison(g, x, y, c, confinement) {
+  const cx = x + SALLE_W / 2;
+  const scelle = confinement.etat === "scelle";
+
+  // La cloison se dessine sur l'embranchement qui relie la salle au couloir : c'est
+  // exactement ce qui se ferme, et le voir barré dit plus qu'une couleur de fond.
+  const porteY = c.rang === 0 ? y + SALLE_H : y;
+  g.appendChild(el("line", {
+    class: scelle ? "cloison-fermee" : "cloison-attente",
+    x1: cx - 26, y1: porteY, x2: cx + 26, y2: porteY,
+  }));
+
+  const bandeau = el("g", { class: scelle ? "bandeau-scelle" : "bandeau-evacuation" });
+  bandeau.appendChild(el("rect", {
+    x: x + 8, y: y + SALLE_H / 2 - 13, width: SALLE_W - 16, height: 26, rx: 2,
+  }));
+  bandeau.appendChild(txt(scelle ? "SCELLÉ" : "ÉVACUEZ", {
+    class: "bandeau-texte", x: cx, y: y + SALLE_H / 2 + 6, "text-anchor": "middle",
+  }));
+  g.appendChild(bandeau);
+
+  if (!scelle && confinement.occupants?.length) {
+    g.appendChild(txt(`${confinement.occupants.length} à l'intérieur`, {
+      class: "bandeau-compte", x: cx, y: y + SALLE_H / 2 + 24, "text-anchor": "middle",
+    }));
+  }
+}
+
 export function dessinerPlan(data, surClic) {
   const svg = document.getElementById("plan");
   svg.replaceChildren();
 
+  const confinements = data.confinements ?? {};
   const parNom = Object.fromEntries(data.compartiments.map((c) => [c.nom, c]));
   const capacites = Object.fromEntries(data.equipage.map((m) => [m.nom, m.cognitive]));
   const postes = {};
   data.postes.forEach((p) => (postes[p.compartiment] ??= []).push(p));
 
   structure(svg);
-  for (const c of PLAN) salle(svg, c, parNom[c.nom] ?? {}, postes[c.nom], capacites, surClic);
+  for (const c of PLAN) {
+    salle(svg, c, parNom[c.nom] ?? {}, postes[c.nom], capacites, surClic,
+          confinements[c.nom]);
+  }
 
   return data.compartiments.filter((c) => c.instrumente).length;
 }
