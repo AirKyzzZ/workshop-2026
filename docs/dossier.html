@@ -36,6 +36,13 @@
   li { margin-bottom: 7px; }
   .lede { color: var(--atria-neutre-500); }
 
+  .accroche {
+    font-family: var(--atria-display);
+    font-size: 34px; font-weight: 500; line-height: 1.02;
+    text-transform: uppercase; letter-spacing: 0.01em;
+    margin: 30px 0 0; max-width: 24ch;
+  }
+
   .rule { border: 0; border-top: 2px solid var(--atria-neutre-700); margin: 12px 0 24px; }
 
   header { display: flex; align-items: flex-end; justify-content: space-between; gap: 22px; }
@@ -80,6 +87,9 @@
 
   figure { margin: 6px 0 18px; }
   figure img { display: block; width: 100%; height: auto; border: 1px solid var(--atria-neutre-200); }
+  pre.code { background: var(--atria-neutre-950); color: var(--atria-neutre-100); border: 0; font-size: 10px; margin-bottom: 4px; }
+  pre.code .c { color: #8FD18F; }
+  .source { font-family: var(--atria-donnees); font-size: 10px; color: var(--atria-neutre-500); margin: 0 0 18px; }
   figcaption { font-size: 11.5px; color: var(--atria-neutre-500); margin-top: 8px; max-width: 66ch; }
 
   footer {
@@ -127,18 +137,25 @@
 
   <div class="resume">
     <p>
-      Le système de survie le plus fragile d'un vaisseau, c'est son équipage. ATRIA le traite comme
-      tel : il mesure en continu la santé physique et mentale de chaque membre, prédit les
-      ruptures d'aptitude, et refuse, chiffres à l'appui, un ordre du capitaine qui confierait un
-      poste vital à quelqu'un qui n'est plus en état de le tenir.
+      ATRIA est l'intelligence de bord qui veille sur l'équipage d'un vaisseau interstellaire. Elle
+      comprend ce que vivent les équipiers : dans quel environnement ils se trouvent, avec qui ils
+      passent leur temps, comment ils se comportent. Et elle voit venir la défaillance ou le
+      conflit avant qu'ils n'éclatent.
+    </p>
+    <p>
+      Au capitaine, elle offre une vue simple : qui peut tenir quel poste, maintenant. Toute la
+      profondeur reste chez ATRIA. Quand un ordre met le vaisseau en danger, elle le refuse,
+      chiffres à l'appui.
     </p>
     <p class="lede">
-      Tout tourne sur une carte Raspberry Pi 5 posée sur la table, reliée à deux Arduino et à leurs
-      capteurs, sans aucune liaison avec la Terre. Ce rapport décrit l'idée, les objectifs, le
-      fonctionnement réel du prototype livré, sa résilience, l'organisation de l'équipe, et ce qui
-      reste à faire pour une V1.
+      Huit modèles d'intelligence artificielle, deux Arduino et leurs capteurs, une caméra et un
+      micro : tout tient sur un Raspberry Pi 5 de 4 Go, sans aucune liaison avec la Terre. Ce
+      rapport présente la vision, le prototype réellement livré, sa résilience, l'organisation de
+      l'équipe et le chemin vers une V1.
     </p>
   </div>
+
+  <p class="accroche">Un réacteur prévient avant de lâcher. Un équipier, rarement. ATRIA le voit venir.</p>
 
   <h2>1. L'idée</h2>
   <hr class="rule">
@@ -156,6 +173,10 @@
     instrumentée en continu. Or un réacteur ne ment pas sur son état. Un équipier, si : par
     fatigue, par fierté, ou parce qu'il ne se rend pas compte qu'il décroche.
   </p>
+  <p>
+    Sur Terre, un équipier qui décroche est remplacé dans l'heure. À des années de la Terre, il
+    n'y a pas de remplaçant, pas de médiateur, pas de psychiatre. Il faut le voir venir.
+  </p>
 
   <h3>Le parti pris</h3>
   <p>
@@ -166,21 +187,86 @@
     quelqu'un inapte à un poste bien avant qu'il ne tombe malade.
   </p>
   <p>
-    ATRIA ne soigne pas et ne console pas. Il régule : il mesure l'aptitude de chacun, la compare à
+    ATRIA ne soigne pas et ne console pas. Elle régule : elle mesure l'aptitude de chacun, la compare à
     ce qu'exige chaque poste du vaisseau, et en tire des décisions motivées. Le vaisseau étudié
     compte 200 personnes à bord, dont 24 en service actif à un instant donné, sur un horizon de
     planification de 72 heures.
   </p>
 
-  <h3>Ce qui le distingue</h3>
+  <h3>Une machine qui comprend son équipage</h3>
+  <p>
+    ATRIA croise en permanence ce que voit la caméra, ce qu'entend le micro, ce que mesurent les
+    capteurs de chaque compartiment et qui se trouve où. De ces signaux, elle construit une
+    compréhension de chaque équipier et du collectif : son aptitude, sa conduite, ses liens, son
+    exposition au stress des autres. Ce que le prototype perçoit déjà :
+  </p>
+  <table>
+    <thead><tr><th style="width:26%">Dimension</th><th>Ce qu'ATRIA perçoit, en local</th></tr></thead>
+    <tbody>
+      <tr><td>Environnement</td><td>Température, humidité, fumée et niveau sonore de chaque compartiment instrumenté</td></tr>
+      <tr><td>Comportement</td><td>Doigt d'honneur, poing fermé, pouce baissé, expression hostile, cris, et à l'oreille la différence entre un juron, une insulte et une menace prononcée</td></tr>
+      <tr><td>Santé</td><td>Toux reconnue à l'oreille et rattachée au compartiment : le premier signe d'une maladie respiratoire devient un symptôme au registre</td></tr>
+      <tr><td>Sons anormaux</td><td>Chocs et cris parmi 521 classes sonores, reconnus en moins de 20 ms</td></tr>
+      <tr><td>Vigilance</td><td>Fermeture des paupières, bâillements, comparés à l'habitude de chacun</td></tr>
+      <tr><td>Présences et liens</td><td>Qui est où, avec qui, depuis combien de temps ; affinités et hostilités déduites</td></tr>
+      <tr><td>Identité</td><td>Badge et visage : un badge prêté est refusé, et chaque observation est attribuée à la bonne personne</td></tr>
+      <tr><td>Confiance</td><td>Pour chaque équipier, une confiance calculée à partir de sa conduite, de sa régularité et de l'appui que lui porte l'équipage</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Voir venir, plutôt que constater</h3>
+  <p>
+    Un système qui alerte quand le seuil est franchi arrive trop tard. ATRIA anticipe.
+  </p>
+  <table>
+    <thead><tr><th style="width:30%">Ce qu'ATRIA anticipe</th><th>Comment</th></tr></thead>
+    <tbody>
+      <tr><td>L'équipier qui va décrocher</td><td>Un modèle entraîné par l'équipe prédit la rupture d'aptitude six heures à l'avance, avec une AUC de 0,962</td></tr>
+      <tr><td>L'heure du décrochage</td><td>La tendance de chacun annonce à quelle heure il passera sous le seuil de son poste, jusqu'à 48 heures à l'avance</td></tr>
+      <tr><td>Les conflits probables</td><td>Les paires hostiles sont classées par risque, avec le compartiment où la tension se joue, pour les séparer avant l'incident</td></tr>
+      <tr><td>La contagion du stress</td><td>Le stress attendu de chacun se propage le long des liens d'amitié : un équipier entouré de collègues sous tension est repéré avant de craquer</td></tr>
+      <tr><td>L'escalade d'agressivité</td><td>Agressivité répétée, effondrement de l'état et fixation sur une même personne se combinent en un risque : alerte, puis proposition d'isolement au capitaine</td></tr>
+      <tr><td>L'épidémie</td><td>Dès la première toux reconnue, ATRIA remonte qui a partagé le compartiment dans l'heure, puis le second rang de contacts sur douze heures, avant que la maladie ne se déclare chez eux</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Tout tient dans 4 Go</h3>
+  <p>
+    Un modèle de langage de 1,5 milliard de paramètres, deux modèles de vision faciale, les modèles
+    de visage et de mains de MediaPipe, un classifieur de 521 sons, une transcription du français et
+    notre propre modèle prédictif tournent ensemble sur une carte de la taille d'une main, avec
+    4 Go de mémoire. Pendant que tout tourne, plus de 2 Go restent libres.
+  </p>
+  <p>
+    Pas de cloud, pas de latence vers la Terre, et aucune donnée ne sort du vaisseau : la vie privée
+    de l'équipage est protégée par construction, pas par une promesse.
+  </p>
+
+  <h3>Demain, sur la même carte</h3>
+  <p>
+    Le workshop demande une preuve de concept. Voici ce que la même machine, avec les mêmes
+    capteurs, est conçue pour faire ensuite. Chaque brique existe déjà dans le prototype : il reste
+    à les relier.
+  </p>
   <ul>
-    <li><strong>Il a le droit de dire non.</strong> ATRIA refuse un ordre du capitaine et affiche son motif chiffré. Le capitaine peut passer outre, et cette dérogation est horodatée, attribuée et écrite au journal.</li>
-    <li><strong>Il observe sans rien demander.</strong> Aucune donnée ne vient d'un questionnaire : badge, visage, gestes, somnolence, cris, insultes et atmosphère sont captés par le matériel.</li>
-    <li><strong>Il voit le collectif.</strong> Le graphe social de l'équipage se déduit des présences partagées et des frictions observées. Personne ne déclare ses affinités.</li>
-    <li><strong>Il tient sur la carte.</strong> Huit modèles d'intelligence artificielle tournent en local sur un Raspberry Pi 5 de 4 Go, sans réseau, dont un écrit et entraîné par l'équipe.</li>
+    <li><strong>Comprendre le ton des conversations.</strong> La transcription tourne déjà en local. Un classifieur de sentiment sur le texte transcrit fera peser une conversation négative dans la conduite et le graphe social, comme le fait déjà une insulte.</li>
+    <li><strong>Lire l'humeur en croisant les signaux.</strong> Associer au même instant le geste, le mot et l'expression du visage, pour distinguer une plaisanterie d'une menace.</li>
+    <li><strong>Prévenir le passage à l'acte.</strong> Repérer les schémas qui précèdent la violence, agressivité répétée, fixation sur une personne, isolement progressif, et en cas d'urgence humaine, fermer les cloisons autour des personnes menacées sur un seul geste du capitaine.</li>
+    <li><strong>Suivre la santé à l'oreille.</strong> Compter la toux de chacun jour après jour, distinguer une toux sèche d'une toux grasse, et repérer une infection respiratoire avant la fièvre.</li>
+    <li><strong>Couper avant l'incendie.</strong> Isoler automatiquement l'alimentation d'un compartiment dès la suspicion de combustion, plutôt qu'à la déclaration du feu.</li>
+    <li><strong>Planifier les quarts sur 72 heures.</strong> Séparer à l'avance les paires en conflit et répartir la fatigue, au lieu de refuser au dernier moment.</li>
   </ul>
 
-  <h2>2. Les objectifs</h2>
+  <h3>Ce qui la distingue</h3>
+  <ul>
+    <li><strong>Elle voit venir.</strong> Défaillance, conflit, contagion du stress : ATRIA anticipe au lieu de constater.</li>
+    <li><strong>Elle a le droit de dire non.</strong> ATRIA refuse un ordre du capitaine et affiche son motif chiffré. Le capitaine peut passer outre, et cette dérogation est horodatée, attribuée et écrite au journal.</li>
+    <li><strong>Elle observe sans rien demander.</strong> Aucune donnée ne vient d'un questionnaire : badge, visage, gestes, somnolence, cris, insultes et atmosphère sont captés par le matériel.</li>
+    <li><strong>Elle voit le collectif.</strong> Le graphe social de l'équipage se déduit des présences partagées et des frictions observées. Personne ne déclare ses affinités.</li>
+    <li><strong>Elle tient sur la carte.</strong> Huit modèles d'intelligence artificielle tournent en local sur un Raspberry Pi 5 de 4 Go, sans réseau, dont un écrit et entraîné par l'équipe.</li>
+  </ul>
+
+  <h2 class="saut">2. Les objectifs</h2>
   <hr class="rule">
 
   <p>
@@ -323,9 +409,21 @@
   <div class="quote">
     <span class="who">CAPITAINE</span> &nbsp;affecte moreau au poste chirurgie<br><br>
     <span class="refus">ATRIA</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ORDRE REFUSÉ<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Négatif. Conduite de moreau : 0,48. Seuil requis : 0,60.<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Négatif. Conduite de moreau : 0,55. Seuil requis : 0,60.<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Comportement relevé par la surveillance de bord.
   </div>
+  <pre class="code">conduite = db.conduite(etat.conn, membre.nom)
+if conduite &lt; db.SEUIL_CONDUITE:
+    parole = (f"Negatif. Conduite de {membre.nom}: {conduite:.2f}. "
+              f"Seuil requis: {db.SEUIL_CONDUITE:.2f}. "
+              f"Comportement releve par la surveillance de bord.")
+    db.journaliser(etat.conn, "refus", ...)
+    return Reponse(parole, "ORDRE REFUSE", ..., False)</pre>
+  <p class="source">pi/atria/regulator.py, le contrôle de conduite</p>
+  <figure>
+    <img src="img/dashboard-journal.png" alt="Journal des décisions du dashboard">
+    <figcaption>Le journal des décisions : l'incendie de la serre, sa simulation, et le refus d'affecter moreau, avec la conduite mesurée et le seuil.</figcaption>
+  </figure>
   <p>
     Le refus n'est pas définitif. Le capitaine, et lui seul, peut déroger. La dérogation est
     horodatée, attribuée à son auteur et inscrite au journal, qui compte onze types d'entrées et
@@ -336,20 +434,20 @@
 
   <h3>L'intelligence embarquée</h3>
   <p>
-    Huit modèles tournent sur la carte, sans aucun appel réseau. Sept sont pris sur étagère et
-    utilisés tels quels, la plupart avec des règles écrites par nous par-dessus. Le huitième est écrit et
+    Huit modèles tournent sur la carte, sans aucun appel réseau. Sept sont des modèles
+    pré-entraînés, utilisés tels quels, la plupart avec des règles écrites par nous par-dessus. Le huitième est écrit et
     entraîné par l'équipe.
   </p>
   <table>
-    <thead><tr><th>Modèle</th><th>Ce qu'il fait dans ATRIA</th><th>Origine</th></tr></thead>
+    <thead><tr><th>Modèle</th><th>Ce qu'il fait dans ATRIA</th><th>Provenance</th></tr></thead>
     <tbody>
-      <tr><td>YuNet</td><td>Détecte les visages dans l'image, à 2 Hz hors contrôle d'identité</td><td>Sur étagère, OpenCV</td></tr>
-      <tr><td>SFace</td><td>Empreinte de 128 réels : second facteur après le badge, et attribution des incidents</td><td>Sur étagère, OpenCV</td></tr>
-      <tr><td>MediaPipe Face Landmarker</td><td>52 coefficients d'expression : indice d'hostilité, et somnolence (fermeture des paupières, bâillements)</td><td>Sur étagère, règles pondérées par nous</td></tr>
-      <tr><td>MediaPipe Hand Landmarker</td><td>21 points par main : doigt d'honneur, poing fermé, pouce baissé, reconnus par ratios géométriques</td><td>Sur étagère, règles par nous</td></tr>
-      <tr><td>YAMNet</td><td>521 classes sonores sur des fenêtres de 3 s : cri, toux, choc, en 14 à 18 ms</td><td>Sur étagère, TFLite</td></tr>
-      <tr><td>Vosk, français</td><td>Transcription locale, lancée seulement quand YAMNet entend de la parole, pour repérer les insultes</td><td>Sur étagère, 66 Mo</td></tr>
-      <tr><td>Qwen2.5 1,5B</td><td>Reformule le briefing de quart et les réponses de la console, en lecture seule</td><td>Sur étagère, 941 Mo, llama.cpp</td></tr>
+      <tr><td>YuNet</td><td>Détecte les visages dans l'image, à 2 Hz hors contrôle d'identité</td><td>Pré-entraîné, OpenCV</td></tr>
+      <tr><td>SFace</td><td>Empreinte de 128 réels : second facteur après le badge, et attribution des incidents</td><td>Pré-entraîné, OpenCV</td></tr>
+      <tr><td>MediaPipe Face Landmarker</td><td>52 coefficients d'expression : indice d'hostilité, et somnolence (fermeture des paupières, bâillements)</td><td>Pré-entraîné, règles pondérées par nous</td></tr>
+      <tr><td>MediaPipe Hand Landmarker</td><td>21 points par main : doigt d'honneur, poing fermé, pouce baissé, reconnus par ratios géométriques</td><td>Pré-entraîné, règles par nous</td></tr>
+      <tr><td>YAMNet</td><td>521 classes sonores sur des fenêtres de 3 s : cri, toux, choc, en 14 à 18 ms</td><td>Pré-entraîné, TFLite</td></tr>
+      <tr><td>Vosk, français</td><td>Transcription locale, lancée seulement quand YAMNet entend de la parole, pour repérer les insultes</td><td>Pré-entraîné, 66 Mo</td></tr>
+      <tr><td>Qwen2.5 1,5B</td><td>Reformule le briefing de quart et les réponses de la console, en lecture seule</td><td>Pré-entraîné, 941 Mo, llama.cpp</td></tr>
       <tr><td>Rupture d'aptitude</td><td>Probabilité qu'un membre passe sous 0,60 de capacité dans les six prochaines heures</td><td><strong>Écrit et entraîné par nous</strong></td></tr>
     </tbody>
   </table>
@@ -358,6 +456,18 @@
     un membre passera sous le seuil de son poste, et une détection d'anomalie qui compare chacun à
     sa propre habitude, par écart standardisé sur six jours.
   </p>
+
+  <p>
+    Les gestes sont reconnus par des règles géométriques écrites par nous sur les 21 points de la
+    main fournis par MediaPipe. Un doigt est tendu quand son extrémité est nettement plus loin de sa
+    base que l'articulation intermédiaire, ce qui ne dépend pas de l'angle de la main.
+  </p>
+  <pre class="code">tendus = {nom: r >= (RATIO_POUCE if nom == "pouce" else RATIO_DOIGT)
+          for nom, r in ratios.items()}
+replies = sum(1 for n in autres if not tendus[n])
+if tendus["majeur"] and replies == 3:
+    geste = ("doigt_honneur", 1.0)</pre>
+  <p class="source">pi/atria/surveillance.py, la reconnaissance du doigt d'honneur</p>
 
   <h3>Le modèle de rupture d'aptitude</h3>
   <p>
@@ -399,6 +509,14 @@
     cas de rejet ou de silence, ATRIA affiche le texte déterministe. Le chat sert à comprendre,
     l'interface fait foi.
   </p>
+  <pre class="code">if (chiffres_inventes(texte, releve) or mots_inventes(texte, releve)
+        or causalite(texte)):
+    return None
+if any(re.search(rf"\b{re.escape(n)}\b", bas) for n in interdits):
+    return None
+
+return [{"nom": k, **v, "ecriture": False} for k, v in OUTILS.items()]</pre>
+  <p class="source">pi/atria/llm.py et pi/atria/chat.py, les gardes et le catalogue d'outils</p>
 
   <h3>Les crises</h3>
   <p>
@@ -410,6 +528,10 @@
     dérogation. L'écran LCD du réacteur acquitte chaque consigne, ce qui prouve qu'elle est
     réellement affichée.
   </p>
+  <figure>
+    <img src="img/dashboard-vaisseau-evacuation.png" alt="Plan du vaisseau pendant un incendie dans la serre">
+    <figcaption>Le plan du vaisseau pendant une combustion dans la serre occupée : ATRIA ordonne l'évacuation et garde la cloison ouverte tant que trois personnes sont à l'intérieur.</figcaption>
+  </figure>
   <p>
     <strong>Isolement d'une personne.</strong> ATRIA calcule un risque à partir de l'agressivité
     observée, d'un effondrement de l'état et d'une fixation sur une même personne. À 0,45 elle
@@ -431,6 +553,10 @@
     l'hostilité sature. Il faut que la friction se répète avec la même personne pour que le lien
     bascule. Le graphe actuel compte 24 membres, 12 affinités et 6 hostilités.
   </p>
+  <figure>
+    <img src="img/dashboard-social.png" alt="Graphe social de l'équipage">
+    <figcaption>Le graphe social : chaque arête est du temps réellement partagé, les liens rouges sont des hostilités nées de frictions répétées.</figcaption>
+  </figure>
 
   <h3>Identité et accès</h3>
   <p>
@@ -450,6 +576,10 @@
   </p>
 
   <h3>Les interfaces</h3>
+  <figure>
+    <img src="img/dashboard-bord.png" alt="Onglet Bord du dashboard">
+    <figcaption>L'onglet Bord vu par le capitaine : situation en temps réel, briefing de quart rédigé à partir des relevés, alertes, prévisions de décrochage et affectation des postes.</figcaption>
+  </figure>
   <table>
     <thead><tr><th>Onglet du dashboard</th><th>Contenu</th></tr></thead>
     <tbody>
@@ -496,10 +626,11 @@
   <p class="lede">
     C'est aussi pourquoi le modèle de rupture d'aptitude est entraîné sur l'historique simulé : il
     démontre la méthode et la chaîne complète, pas une performance clinique. Brancher de vraies
-    mesures physiologiques est la première étape de la V1.
+    mesures physiologiques est la première étape de la V1. Les captures du dashboard reproduites dans ce
+    rapport affichent ce même registre simulé.
   </p>
 
-  <h2>5. Résilience et maintenabilité</h2>
+  <h2 class="saut">5. Résilience et maintenabilité</h2>
   <hr class="rule">
 
   <h3>Tenir coupé de tout</h3>
@@ -683,34 +814,28 @@
     </tbody>
   </table>
 
-  <h2>10. Lecture par les grilles d'évaluation</h2>
+  <h2 class="saut">10. Pourquoi embarquer ATRIA</h2>
   <hr class="rule">
 
-  <p>
-    Pour faciliter la lecture du jury, voici où ce rapport répond à chaque critère des deux grilles
-    du sujet.
+  <p class="lede">
+    Si l'ESA ne devait embarquer qu'une seule solution, pourquoi la nôtre ?
   </p>
-  <h3>Évaluation locale</h3>
-  <table>
-    <thead><tr><th style="width:34%">Axe</th><th>Où le vérifier</th></tr></thead>
-    <tbody>
-      <tr><td>Pertinence et impact de la solution</td><td>Section 1 : un problème que les pistes du sujet laissent de côté, la dégradation lente d'un équipage sans relève</td></tr>
-      <tr><td>Faisabilité et qualité du prototype</td><td>Sections 3, 4 et 6 : le prototype réel, ce qu'il mesure et ce qu'il simule, la démonstration en direct. Section 9 : le chemin vers une V1</td></tr>
-      <tr><td>Innovation et complexité technique</td><td>Section 3 : refus motivé et dérogation journalisée, huit modèles d'IA sur la carte dont un entraîné par nous, graphe social déduit, deux Arduino, caméra et micro</td></tr>
-      <tr><td>Pérennité, résilience et maintenabilité</td><td>Section 5 : fonctionnement hors ligne, services relancés, garde thermique, audit en 43 contrôles, tests automatisés en intégration continue, documentation de reprise</td></tr>
-      <tr><td>Qualité documentaire</td><td>Ce rapport, la documentation du dépôt, le tableau kanban et l'historique git décrits en section 7</td></tr>
-    </tbody>
-  </table>
-  <h3>Évaluation nationale</h3>
-  <table>
-    <thead><tr><th style="width:34%">Axe</th><th>Où le vérifier</th></tr></thead>
-    <tbody>
-      <tr><td>Pertinence et impact pour la mission ESA 2080</td><td>Autonomie totale vis-à-vis de la Terre, sécurité des postes vitaux, gestion d'un incendie sans perte humaine, suivi des liens et de l'isolement à bord (sections 1 et 3)</td></tr>
-      <tr><td>Innovation et différenciation</td><td>Un système qui a le droit de refuser un ordre et qui trace qu'on l'a contredit, un modèle de langage sans aucune capacité d'agir, un graphe social que personne ne déclare (sections 1 et 3)</td></tr>
-      <tr><td>Qualité et performance du prototype</td><td>Fonctionnement réel sur la carte, audit au vert, suite de tests, modèle à 0,962 d'AUC en validation croisée par membre (sections 3 et 5)</td></tr>
-      <tr><td>Pitch et capacité à convaincre</td><td>Une thèse en une phrase et une démonstration en quatre temps, chacun prouvant une propriété du système (résumé et section 6)</td></tr>
-    </tbody>
-  </table>
+  <p>
+    <strong>Parce que tout le reste en dépend.</strong> Le recycleur, le réacteur, la serre sont
+    pilotés par des humains. Un équipage qui décroche rend fragile chacun de ces systèmes, et c'est
+    le seul qui n'est pas instrumenté.
+  </p>
+  <p>
+    <strong>Parce qu'elle voit venir.</strong> ATRIA ne se contente pas d'alerter : elle annonce
+    le décrochage six heures à l'avance, repère le conflit qui s'installe, et a le droit de dire non
+    quand un ordre met le vaisseau en danger.
+  </p>
+  <p>
+    <strong>Parce qu'elle tient sans la Terre, et laisse le dernier mot à l'humain.</strong> Huit
+    modèles d'IA dans 4 Go, hors ligne, et chaque décision au journal, contredite si le capitaine le
+    juge bon.
+  </p>
+  <p class="accroche">Le système de survie le plus fragile d'un vaisseau, c'est son équipage.</p>
 
   <h2 class="saut">Annexes</h2>
   <hr class="rule">
