@@ -43,21 +43,27 @@ laquelle aucune donnée médicale n'apparaît.
 
 ## Dashboard de bord
 
-Le Pi sert un tableau de bord sur son propre réseau, en cinq onglets. On y entre en badgeant
-le terminal physique : sans badge présenté, il n'y a qu'un écran de verrouillage, et la
-session se referme d'elle-même au bout de trois minutes.
+Le Pi sert lui-même un tableau de bord en onze onglets. On y entre en badgeant le terminal
+physique, puis en présentant son visage à la caméra : sans badge, il n'y a qu'un écran de
+verrouillage.
 
 | Onglet | Contenu |
 |---|---|
-| Bord | synthèse, alertes, prévisions par régression, atmosphère en direct |
-| Vaisseau | plan cliquable, puis atmosphère et occupants de chaque compartiment |
-| Équipage | liste triée par capacité, puis fiche complète avec courbes sur 24 h |
+| Bord | état personnel, situation temps réel, briefing de quart, alertes |
+| Vaisseau | plan cliquable, puis atmosphère, occupants et cloisons de chaque compartiment |
+| Équipage | liste triée par capacité, puis fiche complète |
+| Social | graphe des liens déduit des présences et des frictions |
+| Perception | ce que voient et entendent les modèles, à l'instant |
+| Mesures | audit cardiaque et écoute active, déclenchés à la demande |
+| Prédiction | risque de rupture d'aptitude par membre, contributions, courbe ROC |
+| Sûreté | incendie, confinement, levée |
 | Journal | toutes les décisions, refus et dérogations, filtrables par type |
 | Console | questions en langage naturel, sept outils tous en lecture seule |
+| Visage | enrôlement et contrôle de la reconnaissance faciale |
 
 Ce que voit le capitaine et ce que voit un membre d'équipage diffèrent. Le capitaine a la vue
-globale et les postes, jamais une donnée physiologique. Le porte-clés ouvre le détail médical,
-mais seulement à celui qui l'a présenté, et chaque consultation est écrite au journal.
+globale et les postes. Le porte-clés ouvre le détail médical, mais seulement à celui qui l'a
+présenté, et chaque consultation est écrite au journal.
 
 Les courbes sont dessinées à la main en SVG, sans bibliothèque : tout doit fonctionner sans
 réseau, donc rien n'est chargé depuis un CDN.
@@ -103,10 +109,11 @@ brand/tokens.json   même palette, pour les outils non-web
 ## Organisation du dépôt
 
 ```
-docs/         documentation technique
+docs/         documentation technique, cahier des charges, rapport d'ingénierie
+pdf/          rendus imprimables, dont Workshop2026-B3-G2-Dossier.pdf
 firmware/     sketches Arduino (Mega ADK)
 hardware/     schema de cablage Wokwi, versionne
-pi/           services Python (Raspberry Pi 5)
+pi/           services Python (Raspberry Pi 5) et leurs tests
 brand/        identité visuelle et jetons de design
 systemd/      unités de service
 config/       cartographie matérielle et identifiants
@@ -128,6 +135,21 @@ Pour reconstruire le Raspberry Pi depuis une carte SD vierge, suivre
 
 Les écueils rencontrés pendant le montage, et leurs solutions, sont consignés dans
 [`docs/pieges.md`](docs/pieges.md). À lire avant de rebrancher quoi que ce soit.
+
+## Tests
+
+La suite pytest tourne sans matériel : chaque test travaille sur une base SQLite temporaire,
+caméra, micro et modèles neutralisés. Elle passe sur GitHub Actions à chaque envoi.
+
+```bash
+cd pi
+pip install -r requirements-dev.txt
+pytest          # unitaires, fonctionnels, bout en bout local
+pytest -m pi    # bout en bout sur la carte, depuis le réseau du vaisseau
+```
+
+Sur la carte, `python audit.py` passe les 43 contrôles de santé du prototype, et
+`python repetition.py` rejoue la démonstration pas à pas.
 
 ## Générer un PDF
 
