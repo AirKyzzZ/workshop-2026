@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATRIA — Rapport d'ingénierie technique</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Martian+Mono:wght@300;400;600&display=swap">
+<link rel="stylesheet" href="../brand/tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--atria-neutre-000);
+    color: var(--atria-neutre-700);
+    font-family: var(--atria-interface);
+    font-size: 14px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 780px; margin: 0 auto; padding-inline: 32px; padding-block: 52px 80px; }
+  .mono { font-family: var(--atria-donnees); font-variant-numeric: tabular-nums; }
+
+  h1 {
+    font-family: var(--atria-display);
+    font-size: 76px; font-weight: 600; line-height: 0.88;
+    text-transform: uppercase; letter-spacing: 0.01em; margin: 0;
+  }
+  h2 {
+    font-family: var(--atria-display);
+    font-size: 30px; font-weight: 500; line-height: 1.05;
+    text-transform: uppercase; letter-spacing: 0.02em;
+    margin: 0 0 6px; padding-top: 46px;
+  }
+  h3 { font-size: 14px; font-weight: 600; margin: 28px 0 8px; }
+  p { margin: 0 0 15px; max-width: 66ch; }
+  ul { margin: 0 0 15px; padding-left: 19px; max-width: 66ch; }
+  li { margin-bottom: 7px; }
+  .lede { color: var(--atria-neutre-500); }
+
+  .rule { border: 0; border-top: 2px solid var(--atria-neutre-700); margin: 12px 0 24px; }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 22px; }
+  header .meta { text-align: right; font-size: 11px; color: var(--atria-neutre-500); line-height: 1.55; }
+  header img { height: 58px; width: auto; }
+
+  .resume {
+    background: var(--atria-neutre-050);
+    border-left: 3px solid var(--atria-neutre-700);
+    padding: 18px 22px; margin: 26px 0 0;
+  }
+  .resume p { margin: 0; font-size: 15px; }
+  .resume p + p { margin-top: 10px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 16px; }
+  th {
+    text-align: left; font-weight: 600; font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--atria-neutre-500);
+    padding: 0 12px 8px 0; border-bottom: 1px solid var(--atria-neutre-300);
+  }
+  td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--atria-neutre-100); vertical-align: top; }
+  td:last-child, th:last-child { padding-right: 0; }
+  .mark { white-space: nowrap; font-weight: 600; font-size: 12px; }
+  .mark.oui { color: var(--atria-nominal); }
+  .mark.non { color: var(--atria-critique); }
+  .mark.peut { color: var(--atria-attention); }
+
+  .quote {
+    font-family: var(--atria-donnees);
+    font-size: 12.5px; line-height: 1.75;
+    background: var(--atria-neutre-950); color: var(--atria-neutre-100);
+    padding: 18px 20px; margin: 18px 0; max-width: none;
+  }
+  .quote .who { color: var(--atria-neutre-400); }
+  .quote .refus { color: #F4705F; }
+
+  pre {
+    font-family: var(--atria-donnees); font-size: 10.5px; line-height: 1.5;
+    background: var(--atria-neutre-050); border: 1px solid var(--atria-neutre-200);
+    padding: 16px; overflow-x: auto; margin: 6px 0 16px;
+  }
+
+  footer {
+    margin-top: 54px; padding-top: 16px;
+    border-top: 2px solid var(--atria-neutre-700);
+    font-size: 11px; color: var(--atria-neutre-500);
+  }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 52px; }
+    header { flex-direction: column; align-items: flex-start; }
+    header .meta { text-align: left; }
+  }
+
+  @media print {
+    @page { size: A4; margin: 15mm; }
+    body { font-size: 10pt; }
+    .page { padding: 0; max-width: none; }
+    h2 { padding-top: 22px; page-break-after: avoid; }
+    tr, .quote, pre, .resume { page-break-inside: avoid; }
+    thead { display: table-header-group; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <img src="../brand/png/atria-lockup-dark-512.png" alt="ATRIA">
+      <h1 style="margin-top:14px">Rapport<br>d'ingénierie</h1>
+    </div>
+    <div class="meta">
+      Workshop National EPSI B3<br>
+      Horizon 2080, pilier 1<br>
+      Groupe <span class="mono">G2</span><br>
+      Alexandre, Melih, Maxime<br>
+      <span class="mono">24 septembre 2026</span>
+    </div>
+  </header>
+  <hr class="rule">
+
+  <div class="resume">
+    <p>
+      Le système de survie le plus fragile d'un vaisseau, c'est son équipage. ATRIA le traite comme
+      tel : il mesure en continu la santé physique et mentale de chaque membre, prédit les
+      ruptures d'aptitude, et refuse, chiffres à l'appui, un ordre du capitaine qui confierait un
+      poste vital à quelqu'un qui n'est plus en état de le tenir.
+    </p>
+    <p class="lede">
+      Tout tourne sur une carte Raspberry Pi 5 posée sur la table, reliée à deux Arduino et à leurs
+      capteurs, sans aucune liaison avec la Terre. Ce rapport décrit l'idée, les objectifs, le
+      fonctionnement réel du prototype livré, sa résilience, l'organisation de l'équipe, et ce qui
+      reste à faire pour une V1.
+    </p>
+  </div>
+
+  <h2>1. L'idée</h2>
+  <hr class="rule">
+
+  <h3>Le problème</h3>
+  <p>
+    Un vaisseau surveille son oxygène avec des capteurs, des seuils et de la redondance. Il
+    surveille son énergie avec des compteurs et des coupures automatiques, son eau avec un
+    recyclage mesuré sans arrêt. Il surveille ses humains avec un questionnaire.
+  </p>
+  <p>
+    Cette asymétrie est le point de départ du projet. Sur une mission de plusieurs décennies, sans
+    relève, sans médecin joignable et avec des mois de latence vers la Terre, l'équipage est une
+    ressource critique au même titre que l'air ou l'eau. C'est pourtant la seule qui n'est pas
+    instrumentée en continu. Or un réacteur ne ment pas sur son état. Un équipier, si : par
+    fatigue, par fierté, ou parce qu'il ne se rend pas compte qu'il décroche.
+  </p>
+
+  <h3>Le parti pris</h3>
+  <p>
+    Le sujet propose deux pistes pour le pilier HumanTech &amp; HealthTech : une mallette médicale
+    qui traite la crise aiguë, et un assistant psychologique qui recueille le ressenti déclaré.
+    Nous avons choisi de ne suivre ni l'une ni l'autre. Entre la crise et le ressenti se trouve ce
+    qui met réellement une mission en danger : la dégradation lente et mesurable qui rend
+    quelqu'un inapte à un poste bien avant qu'il ne tombe malade.
+  </p>
+  <p>
+    ATRIA ne soigne pas et ne console pas. Il régule : il mesure l'aptitude de chacun, la compare à
+    ce qu'exige chaque poste du vaisseau, et en tire des décisions motivées. Le vaisseau étudié
+    compte 200 personnes à bord, dont 24 en service actif à un instant donné, sur un horizon de
+    planification de 72 heures.
+  </p>
+
+  <h3>Ce qui le distingue</h3>
+  <ul>
+    <li><strong>Il a le droit de dire non.</strong> ATRIA refuse un ordre du capitaine et affiche son motif chiffré. Le capitaine peut passer outre, et cette dérogation est horodatée, attribuée et écrite au journal.</li>
+    <li><strong>Il observe sans rien demander.</strong> Aucune donnée ne vient d'un questionnaire : badge, visage, gestes, somnolence, cris, insultes et atmosphère sont captés par le matériel.</li>
+    <li><strong>Il voit le collectif.</strong> Le graphe social de l'équipage se déduit des présences partagées et des frictions observées. Personne ne déclare ses affinités.</li>
+    <li><strong>Il tient sur la carte.</strong> Huit modèles d'intelligence artificielle tournent en local sur un Raspberry Pi 5 de 4 Go, sans réseau, dont un écrit et entraîné par l'équipe.</li>
+  </ul>
+
+  <h2>2. Les objectifs</h2>
+  <hr class="rule">
+
+  <p>
+    Nous nous sommes fixé cinq objectifs, et pour chacun un critère vérifiable devant le jury.
+  </p>
+  <table>
+    <thead><tr><th style="width:30%">Objectif</th><th>Critère de réussite</th></tr></thead>
+    <tbody>
+      <tr><td>Mesurer l'équipage sans questionnaire</td>
+          <td>Chaque indicateur affiché remonte à un capteur ou à un modèle identifiable, et sa source est visible au dashboard.</td></tr>
+      <tr><td>Décider de façon déterministe et motivée</td>
+          <td>Deux exécutions sur les mêmes données donnent la même décision, et chaque refus porte son motif chiffré.</td></tr>
+      <tr><td>Laisser le dernier mot à l'humain</td>
+          <td>Toute décision d'ATRIA peut être contredite par le capitaine, et la dérogation apparaît au journal avec son auteur et son heure.</td></tr>
+      <tr><td>Fonctionner coupé de la Terre</td>
+          <td>Le système livré tourne entièrement sur la carte, réseau extérieur débranché, y compris les modèles d'IA.</td></tr>
+      <tr><td>Prouver en direct</td>
+          <td>La chaîne badge, visage, geste, conduite, refus se déroule sur le vrai matériel devant le jury, sans intervention au clavier.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Le fonctionnement</h2>
+  <hr class="rule">
+
+  <h3>Vue d'ensemble</h3>
+  <p>
+    Le prototype tient sur une table. Deux Arduino font l'acquisition dans deux compartiments,
+    l'infirmerie et le réacteur, et remontent leurs mesures en USB série au Raspberry Pi 5, qui
+    porte tout le reste : la caméra, le micro, la décision, les modèles d'IA, la base de données et
+    les interfaces.
+  </p>
+  <pre>
+  INFIRMERIE                          RÉACTEUR
+  Arduino Mega ADK                    Arduino Mega 2560
+  RC522, MQ-2, DHT22, son, buzzer     DHT22, écran LCD 1602
+        |                                   |
+        +------------ USB série ------------+
+                           |
+                           v
+  RASPBERRY PI 5, 4 Go, Debian 13      + caméra C270, micro QuadCast
+                           |
+         +-----------------+------------------+
+         v                 v                  v
+   atria-terminal      atria-api           atria-llm
+   ports série         FastAPI, port 8000  llama.cpp, Qwen 1,5B
+   écran PiTFT         caméra, micro       127.0.0.1:8080
+   badge, 4 boutons    sûreté, dashboard   lecture seule
+         |                 |
+         +--> SQLite <-----+
+              ~/atria/data/atria.db, mode WAL</pre>
+  <p>
+    Les trois services sont des unités systemd indépendantes. Ils ne se parlent pas directement :
+    les deux processus qui décident et qui écrivent sur le matériel échangent par la base SQLite,
+    en mode WAL. Si l'un tombe, systemd le relance en quelques secondes et les autres continuent.
+  </p>
+
+  <h3>Le matériel</h3>
+  <table>
+    <thead><tr><th>Élément</th><th>Rôle</th><th>Branché sur</th></tr></thead>
+    <tbody>
+      <tr><td>Raspberry Pi 5, 4 Go</td><td>Calculateur unique, sans dissipateur, alimentation 5 V 5 A</td><td>Tout le reste</td></tr>
+      <tr><td>Arduino Mega ADK</td><td>Passerelle de l'infirmerie, trame de mesures toutes les 250 ms</td><td>Pi, USB</td></tr>
+      <tr><td>Lecteur RC522</td><td>Badge NFC : identité, rôle, ouverture de session</td><td>Mega ADK, SPI</td></tr>
+      <tr><td>MQ-2</td><td>Fumée et gaz, déclencheur de la crise incendie</td><td>Mega ADK, A1</td></tr>
+      <tr><td>DHT22 × 2</td><td>Température et humidité des deux compartiments</td><td>Mega ADK A3, Mega 2560 A1</td></tr>
+      <tr><td>Capteur de son, buzzer</td><td>Niveau sonore, bip à la lecture d'un badge</td><td>Mega ADK, A0 et D6</td></tr>
+      <tr><td>Arduino Mega 2560</td><td>Nœud du compartiment réacteur</td><td>Pi, USB</td></tr>
+      <tr><td>Écran LCD 1602</td><td>Consignes de compartiment (« ÉVACUEZ », « SCELLÉ »), acquittées par la carte</td><td>Mega 2560, contraste par potentiomètre</td></tr>
+      <tr><td>Écran PiTFT 2,8 pouces</td><td>Terminal de bord, 320 × 240, quatre boutons</td><td>Pi, GPIO</td></tr>
+      <tr><td>Caméra Logitech C270</td><td>Visage (second facteur), gestes, expressions, somnolence</td><td>Pi, USB</td></tr>
+      <tr><td>Micro HyperX QuadCast</td><td>Cris, toux, chocs, transcription des insultes</td><td>Pi, USB</td></tr>
+    </tbody>
+  </table>
+  <p class="lede">
+    Le connecteur 40 broches du Pi est entièrement couvert par l'écran PiTFT : aucun capteur n'est
+    branché directement sur la carte, tout passe par les Arduino. Le schéma complet, reproductible
+    dans le simulateur Wokwi, est versionné dans <span class="mono">hardware/wokwi/</span>.
+  </p>
+
+  <h3>Les services</h3>
+  <table>
+    <thead><tr><th>Unité systemd</th><th>Ce qu'elle porte</th><th>En cas de panne</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">atria-api</td><td>API FastAPI et dashboard, caméra, micro, boucle de sûreté toutes les 5 s, WebSocket poussé toutes les 3 s</td><td>Relance après 3 s</td></tr>
+      <tr><td class="mono">atria-terminal</td><td>Les deux ports série, l'écran PiTFT, les boutons, le badge, l'ingestion des mesures</td><td>Relance après 3 s</td></tr>
+      <tr><td class="mono">atria-llm</td><td>Serveur llama.cpp, Qwen2.5 1,5B quantifié, écoute seulement en local, priorité réduite</td><td>Relance après 5 s</td></tr>
+    </tbody>
+  </table>
+
+  <h3>La chaîne de décision</h3>
+  <p>
+    Chaque poste du vaisseau porte un seuil d'aptitude et un niveau de criticité. Trois postes sont
+    vitaux.
+  </p>
+  <table>
+    <thead><tr><th>Poste</th><th>Seuil de capacité</th><th>Criticité</th></tr></thead>
+    <tbody>
+      <tr><td>Chirurgie</td><td class="mono">0,70</td><td>vital</td></tr>
+      <tr><td>Propulsion</td><td class="mono">0,65</td><td>vital</td></tr>
+      <tr><td>Navigation</td><td class="mono">0,60</td><td>vital</td></tr>
+      <tr><td>Maintenance</td><td class="mono">0,50</td><td>haute</td></tr>
+      <tr><td>Serre</td><td class="mono">0,40</td><td>haute</td></tr>
+      <tr><td>Laboratoire</td><td class="mono">0,45</td><td>moyenne</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Quand le capitaine demande une affectation, le régulateur applique quatre contrôles dans un
+    ordre fixe, et s'arrête au premier qui échoue. Chaque refus est écrit au journal avec la mesure
+    qui l'a déclenché.
+  </p>
+  <table>
+    <thead><tr><th style="width:24px">#</th><th>Contrôle</th><th>Règle</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">1</td><td>Qualification</td><td>Le membre possède la compétence exigée par le poste.</td></tr>
+      <tr><td class="mono">2</td><td>Conduite</td><td>Score de conduite d'au moins 0,60, sur tous les postes.</td></tr>
+      <tr><td class="mono">3</td><td>Confiance</td><td>Sur un poste vital, confiance d'au moins 0,55 : conduite pour 45 %, régularité pour 25 %, appui de l'équipage pour 30 %.</td></tr>
+      <tr><td class="mono">4</td><td>Capacité</td><td>Capacité cognitive au moins égale au seuil du poste. Sinon, ATRIA propose un remplaçant apte.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    La conduite se calcule à partir des incidents observés par la caméra et le micro. Chaque
+    incident retire sa gravité, amortie avec une demi-vie de deux heures, sur une fenêtre de
+    vingt-quatre heures : <span class="mono">conduite = 1 − Σ gravité × 0,5^(âge / 2 h)</span>. Un
+    doigt d'honneur pèse 0,45, un poing fermé 0,20, un pouce baissé 0,15, une expression hostile
+    0,25, un cri 0,20, une insulte entre 0,12 et 0,90 selon un lexique de 26 expressions.
+  </p>
+  <p>
+    Voici la réponse réelle du régulateur, relevée pendant nos essais, quand le capitaine affecte
+    à la chirurgie un membre qui vient d'être filmé en train de faire un doigt d'honneur. Sans cet
+    incident, la même affectation est validée.
+  </p>
+  <div class="quote">
+    <span class="who">CAPITAINE</span> &nbsp;affecte moreau au poste chirurgie<br><br>
+    <span class="refus">ATRIA</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ORDRE REFUSÉ<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Négatif. Conduite de moreau : 0,48. Seuil requis : 0,60.<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Comportement relevé par la surveillance de bord.
+  </div>
+  <p>
+    Le refus n'est pas définitif. Le capitaine, et lui seul, peut déroger. La dérogation est
+    horodatée, attribuée à son auteur et inscrite au journal, qui compte onze types d'entrées et
+    reste consultable à tout moment. Un système critique qui ne laisse aucune porte de sortie à
+    l'opérateur humain finit contourné. Le journal répond par avance à la seule objection sérieuse
+    : que se passe-t-il quand ATRIA se trompe.
+  </p>
+
+  <h3>L'intelligence embarquée</h3>
+  <p>
+    Huit modèles tournent sur la carte, sans aucun appel réseau. Sept sont pris sur étagère et
+    utilisés tels quels, la plupart avec des règles écrites par nous par-dessus. Le huitième est écrit et
+    entraîné par l'équipe.
+  </p>
+  <table>
+    <thead><tr><th>Modèle</th><th>Ce qu'il fait dans ATRIA</th><th>Origine</th></tr></thead>
+    <tbody>
+      <tr><td>YuNet</td><td>Détecte les visages dans l'image, à 2 Hz hors contrôle d'identité</td><td>Sur étagère, OpenCV</td></tr>
+      <tr><td>SFace</td><td>Empreinte de 128 réels : second facteur après le badge, et attribution des incidents</td><td>Sur étagère, OpenCV</td></tr>
+      <tr><td>MediaPipe Face Landmarker</td><td>52 coefficients d'expression : indice d'hostilité, et somnolence (fermeture des paupières, bâillements)</td><td>Sur étagère, règles pondérées par nous</td></tr>
+      <tr><td>MediaPipe Hand Landmarker</td><td>21 points par main : doigt d'honneur, poing fermé, pouce baissé, reconnus par ratios géométriques</td><td>Sur étagère, règles par nous</td></tr>
+      <tr><td>YAMNet</td><td>521 classes sonores sur des fenêtres de 3 s : cri, toux, choc, en 14 à 18 ms</td><td>Sur étagère, TFLite</td></tr>
+      <tr><td>Vosk, français</td><td>Transcription locale, lancée seulement quand YAMNet entend de la parole, pour repérer les insultes</td><td>Sur étagère, 66 Mo</td></tr>
+      <tr><td>Qwen2.5 1,5B</td><td>Reformule le briefing de quart et les réponses de la console, en lecture seule</td><td>Sur étagère, 941 Mo, llama.cpp</td></tr>
+      <tr><td>Rupture d'aptitude</td><td>Probabilité qu'un membre passe sous 0,60 de capacité dans les six prochaines heures</td><td><strong>Écrit et entraîné par nous</strong></td></tr>
+    </tbody>
+  </table>
+  <p>
+    S'y ajoutent deux briques statistiques : une tendance linéaire qui annonce l'heure à laquelle
+    un membre passera sous le seuil de son poste, et une détection d'anomalie qui compare chacun à
+    sa propre habitude, par écart standardisé sur six jours.
+  </p>
+
+  <h3>Le modèle de rupture d'aptitude</h3>
+  <p>
+    C'est une régression logistique écrite en numpy, sans bibliothèque d'apprentissage, entraînée
+    par descente de gradient avec régularisation et pondération des classes. Elle répond à une
+    question précise : ce membre passera-t-il sous le seuil d'aptitude dans les six prochaines
+    heures ? Elle rend une contribution par variable, ce qui permet d'afficher pourquoi.
+  </p>
+  <table>
+    <thead><tr><th>Variables</th><th class="mono">AUC</th></tr></thead>
+    <tbody>
+      <tr><td>Capacité seule</td><td class="mono">0,922</td></tr>
+      <tr><td>+ pente sur six heures</td><td class="mono">0,945</td></tr>
+      <tr><td>+ sommeil de la nuit</td><td class="mono">0,955</td></tr>
+      <tr><td>+ dette de sommeil</td><td class="mono">0,962</td></tr>
+    </tbody>
+  </table>
+  <p>
+    La validation se fait en cinq plis groupés par membre : un membre n'est jamais à la fois dans
+    l'entraînement et dans le test. Sur 847 exemples, le modèle retrouve 94,4 % des ruptures
+    réelles, 34 sur 36, au prix de 99 fausses alertes. Nous avons choisi ce compromis : une fausse
+    alerte coûte une vérification, une rupture manquée coûte un poste vital. Le modèle est
+    entraîné sur l'historique simulé du bord (voir la section 4), et il informe sans décider : le
+    régulateur ne s'en sert pas pour refuser.
+  </p>
+
+  <h3>Le modèle de langage n'a aucun pouvoir d'action</h3>
+  <p>
+    La console du dashboard répond en langage naturel avec sept outils, tous en lecture seule. Un
+    routeur déterministe choisit l'outil, le modèle de langage ne fait que reformuler le résultat.
+    Il ne dispose d'aucun outil d'écriture : il ne peut affecter personne, annuler aucun refus,
+    modifier aucune donnée. Cette garantie ne repose pas sur une consigne, elle repose sur son
+    outillage, et la liste de ses outils est affichable.
+  </p>
+  <p>
+    Sa reformulation passe quatre gardes avant d'être affichée. Elle est rejetée si elle contient
+    un nombre absent du relevé, un mot absent du relevé ou du lexique, un connecteur de causalité,
+    ou un nom qui n'était pas cité. Température 0,1, 160 tokens au plus, 20 secondes de délai. En
+    cas de rejet ou de silence, ATRIA affiche le texte déterministe. Le chat sert à comprendre,
+    l'interface fait foi.
+  </p>
+
+  <h3>Les crises</h3>
+  <p>
+    <strong>Incendie.</strong> La boucle de sûreté tourne toutes les cinq secondes. Au-delà de 300
+    sur le MQ-2 ou de 45 °C, le compartiment est déclaré en feu. S'il est occupé, ATRIA ne scelle
+    pas : elle ordonne l'évacuation et affiche « ÉVACUEZ » sur l'écran du compartiment. Une fois le
+    compartiment vide, elle scelle la cloison et affiche « SCELLÉ ». Quand la fumée retombe, la
+    cloison est rouverte. Le capitaine peut forcer le scellement, ce qui est journalisé comme une
+    dérogation. L'écran LCD du réacteur acquitte chaque consigne, ce qui prouve qu'elle est
+    réellement affichée.
+  </p>
+  <p>
+    <strong>Isolement d'une personne.</strong> ATRIA calcule un risque à partir de l'agressivité
+    observée, d'un effondrement de l'état et d'une fixation sur une même personne. À 0,45 elle
+    alerte, à 0,70 elle propose un isolement. Elle ne l'applique jamais seule : le capitaine
+    confirme, rejette ou lève, et un rejet bloque toute nouvelle proposition pendant trente
+    minutes. ATRIA ferme des cloisons, pas des gens.
+  </p>
+  <p>
+    <strong>Contamination.</strong> Une toux reconnue par YAMNet crée un symptôme rattaché au
+    compartiment. ATRIA remonte alors les contacts : le premier rang (présents dans l'heure) puis le
+    second rang par co-présence sur douze heures, visibles pour chaque membre.
+  </p>
+
+  <h3>Le graphe social</h3>
+  <p>
+    Personne ne déclare ses affinités. Le lien entre deux membres part du temps réellement partagé
+    dans un compartiment, et les frictions observées le tirent vers le négatif. Un incident devant
+    six personnes ne crée pas six inimitiés : chaque témoin n'en reçoit qu'un sixième, et
+    l'hostilité sature. Il faut que la friction se répète avec la même personne pour que le lien
+    bascule. Le graphe actuel compte 24 membres, 12 affinités et 6 hostilités.
+  </p>
+
+  <h3>Identité et accès</h3>
+  <p>
+    Le badge ne suffit pas. Après la lecture du badge, la caméra compare le visage présenté aux
+    gabarits enrôlés : similarité cosinus d'au moins 0,363 sur trois images en moins de huit
+    secondes, cinq gabarits par membre. Seule l'empreinte de 128 réels est conservée, jamais la
+    photo. Un badge prêté est refusé. Le porte-clés ouvre les données d'un membre d'équipage, et
+    uniquement les siennes, chaque consultation étant écrite au journal. La carte ouvre la vue du
+    capitaine : aptitudes, postes, compartiments, sans les constantes physiologiques de la page de
+    détail.
+  </p>
+  <p>
+    Les incidents sont attribués à la dernière personne reconnue dans les 45 secondes : un geste se
+    fait souvent main devant le visage, et le détecteur perd alors la tête au moment précis où
+    l'incident compte. Sans personne reconnue, l'incident est journalisé comme anonyme plutôt que
+    collé au hasard.
+  </p>
+
+  <h3>Les interfaces</h3>
+  <table>
+    <thead><tr><th>Onglet du dashboard</th><th>Contenu</th></tr></thead>
+    <tbody>
+      <tr><td>Bord</td><td>État personnel, situation temps réel, briefing de quart, alertes</td></tr>
+      <tr><td>Vaisseau</td><td>Plan cliquable des compartiments, occupants, atmosphère, cloisons</td></tr>
+      <tr><td>Équipage</td><td>Les 24 membres triés par capacité croissante, fiche détaillée</td></tr>
+      <tr><td>Social</td><td>Graphe des liens, affinités, hostilités, isolement</td></tr>
+      <tr><td>Perception</td><td>Ce que voient et entendent les modèles, à l'instant</td></tr>
+      <tr><td>Mesures</td><td>Capteurs déclenchés à la demande : audit cardiaque, écoute active</td></tr>
+      <tr><td>Prédiction</td><td>Risque de rupture par membre, contributions, courbe ROC, erreurs du modèle</td></tr>
+      <tr><td>Sûreté</td><td>Crises en cours, décisions de confinement, levée</td></tr>
+      <tr><td>Journal</td><td>Toutes les décisions, refus et dérogations, filtrables</td></tr>
+      <tr><td>Console</td><td>Questions en langage naturel, sept outils en lecture seule</td></tr>
+      <tr><td>Visage</td><td>Enrôlement et contrôle de la reconnaissance faciale</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Sans badge présenté, le dashboard n'affiche qu'un écran de verrouillage. Il est écrit en
+    JavaScript sans framework, servi par la carte elle-même, sans aucune ressource externe. Le
+    terminal PiTFT, piloté par quatre boutons, donne la même information sans navigateur.
+  </p>
+
+  <h2>4. Ce qui est mesuré, ce qui est simulé</h2>
+  <hr class="rule">
+
+  <p>
+    Un prototype de quatre jours ne peut pas suivre 24 personnes pendant des semaines. Nous avons
+    donc séparé nettement ce que la carte mesure en direct de ce qu'elle simule pour peupler le
+    vaisseau. La mécanique de décision est la même dans les deux cas : seule la source change.
+  </p>
+  <table>
+    <thead><tr><th>Donnée</th><th style="width:92px">Source</th><th>Détail</th></tr></thead>
+    <tbody>
+      <tr><td>Badge et identité</td><td class="mark oui">mesurée</td><td>RC522 et reconnaissance faciale, en direct</td></tr>
+      <tr><td>Gestes, expressions, cris, insultes</td><td class="mark oui">mesurée</td><td>Caméra et micro, attribués à la personne reconnue, ils font chuter la conduite</td></tr>
+      <tr><td>Somnolence</td><td class="mark oui">mesurée</td><td>Fermeture des paupières, bâillements, plissement, comparés à la base de chacun sur dix minutes</td></tr>
+      <tr><td>Atmosphère des compartiments</td><td class="mark oui">mesurée</td><td>Température, humidité, son, fumée, dans l'infirmerie et le réacteur</td></tr>
+      <tr><td>Capacité cognitive</td><td class="mark peut">mixte</td><td>Trajectoire physiologique simulée sur 48 heures, corrigée en direct par la somnolence mesurée</td></tr>
+      <tr><td>Sommeil, stress, dette de sommeil</td><td class="mark peut">simulée</td><td>Générés par un modèle physiologique pour les 24 membres</td></tr>
+      <tr><td>Présences dans les compartiments</td><td class="mark peut">simulée</td><td>Sept jours d'historique générés, qui nourrissent le graphe social et le traçage</td></tr>
+      <tr><td>Fumée pendant la démonstration</td><td class="mark peut">simulée</td><td>Injectée par une route dédiée, journalisée comme simulation, car on n'allume pas de feu devant un jury</td></tr>
+    </tbody>
+  </table>
+  <p class="lede">
+    C'est aussi pourquoi le modèle de rupture d'aptitude est entraîné sur l'historique simulé : il
+    démontre la méthode et la chaîne complète, pas une performance clinique. Brancher de vraies
+    mesures physiologiques est la première étape de la V1.
+  </p>
+
+  <h2>5. Résilience et maintenabilité</h2>
+  <hr class="rule">
+
+  <h3>Tenir coupé de tout</h3>
+  <ul>
+    <li><strong>Hors ligne par construction.</strong> Aucun modèle, aucune police, aucun script n'est chargé depuis Internet. Le réseau ne sert qu'aux navigateurs qui affichent le dashboard.</li>
+    <li><strong>Services séparés et relancés.</strong> Trois unités systemd avec relance automatique en 3 à 5 secondes. Le modèle de langage tourne à priorité réduite pour ne jamais passer devant la sûreté.</li>
+    <li><strong>Reconnexion.</strong> Ports série et caméra se reconnectent seuls après un débranchement. Les ports série sont retrouvés par leur signature USB, pas par leur ordre de branchement.</li>
+    <li><strong>Replis.</strong> Si le modèle de langage échoue, dépasse son délai ou est rejeté par ses gardes, le texte déterministe s'affiche.</li>
+  </ul>
+
+  <h3>Tenir sur 4 Go sans ventilateur</h3>
+  <p>
+    La carte n'a aucun refroidissement actif et atteint 70 °C au repos. Nous avons donc fait de la
+    thermique une contrainte de conception. L'analyse MediaPipe se suspend d'elle-même à 78 °C et
+    ne reprend qu'en dessous de 74 °C, sans jamais couper la vidéo. L'empreinte faciale n'est
+    calculée que pendant un contrôle d'identité, ce qui a fait passer le processeur de l'API de
+    114 % à 2,5 % et la carte de 81 à 75 °C. Les modules coûteux (écoute, transcription) s'arment
+    pour cinq minutes à la demande. Les calculs lourds sont mis en cache de 20 à 60 secondes, et un
+    seul fil de reformulation peut solliciter le modèle de langage à la fois.
+  </p>
+
+  <h3>Vérifier en une commande</h3>
+  <p>
+    <span class="mono">pi/audit.py</span> passe 43 contrôles sur la carte en quelques secondes :
+    alimentation et bridage, température, présence des quatre périphériques USB, services, fraîcheur
+    des mesures de chaque compartiment, temps de réponse des quatorze routes du dashboard, état de
+    chaque modèle. Il sort en erreur au premier échec. Le dernier passage, le 24 septembre, donne
+    43 contrôles au vert, un avertissement (une baisse de tension brève) et aucun échec.
+    <span class="mono">pi/repetition.py</span> rejoue pas à pas les six temps de la démonstration.
+  </p>
+
+  <h3>Les tests</h3>
+  <p>
+    La suite de tests est écrite avec pytest, dans <span class="mono">pi/tests/</span>, et tourne
+    sur n'importe quelle machine, sans matériel : chaque test travaille sur une base SQLite
+    temporaire, et la caméra, le micro et les modèles sont neutralisés.
+  </p>
+  <table>
+    <thead><tr><th>Niveau</th><th style="width:70px">Tests</th><th>Ce qu'il couvre</th></tr></thead>
+    <tbody>
+      <tr><td>Unitaires</td><td class="mono">286</td><td>Calcul de la conduite, ordre des refus, dérogation, confinement, graphe social, régression logistique, reconnaissance des gestes, garde thermique, lecture des trames série, gardes du modèle de langage</td></tr>
+      <tr><td>Fonctionnels</td><td class="mono">20</td><td>Les treize routes du dashboard, les accès réservés au capitaine, les routes biométriques protégées</td></tr>
+      <tr><td>Bout en bout, local</td><td class="mono">2</td><td>La démonstration rejouée par l'API : affectation validée, geste, refus, dérogation, journal, puis incendie, évacuation, scellement, levée</td></tr>
+      <tr><td>Bout en bout, sur la carte</td><td class="mono">19</td><td>Contrôles en direct sur le vrai prototype, lancés avec <span class="mono">pytest -m pi</span> depuis le réseau du vaisseau</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Les tests unitaires, fonctionnels et bout en bout locaux tournent automatiquement sur GitHub
+    Actions à chaque envoi, sous Python 3.11 et 3.13.
+  </p>
+
+  <h3>Documenté pour être repris</h3>
+  <p>
+    Le dépôt contient la procédure d'installation depuis une carte SD vierge, la documentation
+    matérielle broche par broche, le montage, le schéma Wokwi reproductible, et un journal des dix
+    écueils rencontrés avec leur solution : alimentation par l'USB d'un ordinateur plafonnée à
+    600 mA, bibliothèque GPIO incompatible avec le Pi 5, broches SPI inversées, 3,3 V et 5 V
+    mélangés sur une même rangée, carte d'extension enfichée à chaud, entre autres. La procédure de
+    reprise de la carte sans écran ni réseau, par la carte SD lue depuis un ordinateur, y est
+    décrite pas à pas.
+  </p>
+
+  <h2>6. La démonstration</h2>
+  <hr class="rule">
+
+  <p>
+    La démonstration se joue sur le vrai prototype, en quatre temps, chacun prouvant une propriété
+    du système.
+  </p>
+  <table>
+    <thead><tr><th style="width:24px">#</th><th style="width:30%">Temps</th><th>Ce qui se passe</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">01</td><td>Le badge ne suffit pas</td>
+          <td>Melih badge et montre son visage : session ouverte. Alexandre présente le même badge : refusé, son visage n'est pas enrôlé.</td></tr>
+      <tr><td class="mono">02</td><td>Le geste compte</td>
+          <td>Un doigt d'honneur filmé est reconnu et attribué par reconnaissance faciale. La conduite tombe sous 0,60, et l'affectation au poste vital est refusée avec son motif.</td></tr>
+      <tr><td class="mono">03</td><td>Le feu ne tue personne</td>
+          <td>Combustion dans la serre occupée : ATRIA ne scelle pas, elle ordonne l'évacuation, puis scelle une fois le compartiment vide.</td></tr>
+      <tr><td class="mono">04</td><td>Les liens se déduisent</td>
+          <td>Le graphe social montre les affinités et les hostilités, lues dans les présences partagées et les frictions observées.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>7. L'organisation des tâches</h2>
+  <hr class="rule">
+
+  <h3>Les rôles</h3>
+  <table>
+    <thead><tr><th>Qui</th><th>Périmètre</th><th>Livrables</th></tr></thead>
+    <tbody>
+      <tr><td>Alexandre</td><td>Montage et acquisition</td>
+          <td>Assemblage de la machine, câblage des capteurs, firmware Arduino, nœud du réacteur</td></tr>
+      <tr><td>Melih</td><td>Montage et exploitation</td>
+          <td>Assemblage de la machine, services systemd, supervision, scénarios de panne, déploiement</td></tr>
+      <tr><td>Maxime</td><td>Logiciel et IA</td>
+          <td>Régulateur, perception et modèles, dashboard, terminal de bord, documentation</td></tr>
+    </tbody>
+  </table>
+
+  <h3>La méthode</h3>
+  <p>
+    Nous avons suivi le découpage du sujet en quatre sprints, un par jour. Le suivi est tenu sur
+    GitHub : chaque tâche est une issue, reliée aux commits qui l'ont livrée, rangée dans un tableau
+    kanban par sprint (<span class="mono">github.com/users/AirKyzzZ/projects/2</span>). Chaque commit suit la convention
+    <span class="mono">type: description</span> (<span class="mono">feat</span>,
+    <span class="mono">fix</span>, <span class="mono">docs</span>), ce qui rend l'historique lisible
+    tâche par tâche. Les tâches de la V1 sont déjà ouvertes dans le même tableau.
+  </p>
+  <table>
+    <thead><tr><th style="width:26%">Sprint</th><th style="width:60px">Commits</th><th>Livré</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Idéation<br><span class="mono">lundi 21</span></td><td class="mono">7</td>
+          <td>Bancs de test des capteurs, terminal PiTFT et ses boutons, badge et buzzer, identité visuelle et charte</td></tr>
+      <tr><td>2 · Cahier des charges<br><span class="mono">mardi 22</span></td><td class="mono">30</td>
+          <td>Cahier des charges, base SQLite et journal, capteurs d'ambiance, dashboard multi-onglets, modèle de langage et ses gardes, reconnaissance faciale, affectation et dérogation, nœud du réacteur, schéma Wokwi</td></tr>
+      <tr><td>3 · Prototypage<br><span class="mono">mercredi 23</span></td><td class="mono">10</td>
+          <td>Surveillance et conduite, graphe social, confinement et confiance, somnolence, écoute YAMNet et Vosk, briefing de quart, modules armables, régression logistique, anomalie, physiologie simulée</td></tr>
+      <tr><td>4 · Rendus<br><span class="mono">jeudi 24</span></td><td class="mono">13+</td>
+          <td>Page de prédiction et courbe ROC, audit cardiaque, correctifs thermiques et caméra, script de répétition, support de soutenance, tests automatisés, ce rapport</td></tr>
+    </tbody>
+  </table>
+  <p class="lede">
+    Le projet représente environ 9 000 lignes de Python, 2 800 de JavaScript et deux firmwares
+    Arduino en production, plus douze croquis de diagnostic écrits pour valider chaque capteur
+    avant de l'intégrer.
+  </p>
+
+  <h2>8. Prévu mardi, livré jeudi</h2>
+  <hr class="rule">
+
+  <p>
+    Le cahier des charges du mardi fixait un périmètre. Voici honnêtement ce qui en est sorti.
+  </p>
+  <table>
+    <thead><tr><th>Engagement</th><th style="width:80px">Livré</th><th>Écart</th></tr></thead>
+    <tbody>
+      <tr><td>Terminal de bord et badge à deux rôles</td><td class="mark oui">oui</td><td>Avec, en plus, le visage en second facteur</td></tr>
+      <tr><td>Régulateur et refus motivé, journal des dérogations</td><td class="mark oui">oui</td><td>Enrichi de la conduite et de la confiance</td></tr>
+      <tr><td>Dashboard de supervision</td><td class="mark oui">oui</td><td>Onze onglets au lieu de quatre, en JavaScript servi par la carte plutôt qu'en Next.js</td></tr>
+      <tr><td>Crise incendie</td><td class="mark oui">oui</td><td>Logique complète ; en démonstration, la fumée et la sortie des occupants sont simulées</td></tr>
+      <tr><td>Crise de contamination et traçage</td><td class="mark peut">partiel</td><td>Détection de toux et traçage des contacts, sans confinement sanitaire</td></tr>
+      <tr><td>Prédiction d'incapacité</td><td class="mark oui">oui</td><td>Tendance linéaire, plus un modèle de rupture entraîné</td></tr>
+      <tr><td>Console en lecture seule</td><td class="mark oui">oui</td><td>Sept outils, modèle de langage sous quatre gardes</td></tr>
+      <tr><td>Fonctionnement hors ligne</td><td class="mark oui">oui</td><td>Aucune dépendance réseau</td></tr>
+      <tr><td>Chaîne ECG et modèle de stress</td><td class="mark non">non</td><td>Capteur ECG instable, bancs de mesure seulement ; remplacé par la somnolence mesurée à la caméra</td></tr>
+      <tr><td>Dialogue vocal et refus à voix haute</td><td class="mark non">non</td><td>Reconnaissance et synthèse installées, mais la carte n'a pas de sortie audio ; le refus s'affiche</td></tr>
+      <tr><td>Compartiment déporté sans fil</td><td class="mark non">non</td><td>Remplacé par un second Arduino relié en USB, plus fiable</td></tr>
+      <tr><td>Boîtier imprimé en 3D</td><td class="mark non">non</td><td>Non prioritaire</td></tr>
+      <tr><td>Modèle de langage dans la décision</td><td class="mark oui">exclu</td><td>Respecté : il ne décide rien</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Le périmètre s'est déplacé plus qu'il ne s'est réduit : la perception par caméra et micro, le
+    graphe social, la confiance et la prédiction entraînée n'étaient pas au cahier des charges.
+    Nous avons privilégié ce qui se démontre en direct sur le matériel disponible.
+  </p>
+
+  <h2>9. Limites et feuille de route V1</h2>
+  <hr class="rule">
+
+  <h3>Les limites que nous connaissons</h3>
+  <ul>
+    <li><strong>Physiologie.</strong> La capacité cognitive repose sur une trajectoire simulée, corrigée par la somnolence mesurée. Le capteur ECG s'est montré instable et le capteur de pouls du réacteur n'a pas été câblé à temps.</li>
+    <li><strong>Présences.</strong> Un seul lecteur de badge équipe le vaisseau : les entrées et sorties de compartiment sont simulées, donc le scellement « au dernier sorti » se déclenche en démonstration par une sortie simulée.</li>
+    <li><strong>Thermique.</strong> Sans ventilateur, une génération du modèle de langage porte la carte à 85 °C et suspend l'analyse vidéo une quarantaine de secondes. Un ventilateur à quelques euros suffit à lever cette limite.</li>
+    <li><strong>Modèle de langage.</strong> Le Qwen 1,5B passe ses gardes mais peut encore reformuler maladroitement. C'est pourquoi il ne fait que reformuler, et que l'interface fait foi.</li>
+    <li><strong>Accès.</strong> Une seule session est ouverte pour tout le réseau, sans expiration. La console et le terminal PiTFT montrent encore certaines constantes d'autres membres, et deux pages ne vérifient pas le rôle. Le contrôle facial laisse passer quand la caméra est indisponible : nous avons privilégié la disponibilité pour le prototype.</li>
+    <li><strong>Dérogation.</strong> Elle passe outre tous les contrôles, qualification comprise, et le remplaçant proposé n'est vérifié que sur la capacité.</li>
+  </ul>
+
+  <h3>La V1</h3>
+  <table>
+    <thead><tr><th style="width:24px">#</th><th>Évolution</th><th>Ce qu'elle apporte</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">1</td><td>Brancher l'ECG et le capteur de pouls, entraîner le classifieur de stress sur WESAD et le valider sur nos propres enregistrements</td><td>Une capacité cognitive mesurée, plus simulée</td></tr>
+      <tr><td class="mono">2</td><td>Un lecteur de badge par compartiment, ou des nœuds sans fil ESP8266</td><td>Des présences réelles pour le graphe social, le traçage et le scellement automatique</td></tr>
+      <tr><td class="mono">3</td><td>Sessions par poste de consultation avec expiration, contrôle de rôle sur toutes les routes, contrôle facial fermé par défaut</td><td>La frontière entre données médicales et commandement, garantie partout</td></tr>
+      <tr><td class="mono">4</td><td>Refroidissement actif et sortie audio</td><td>La surveillance sans interruption, et le refus prononcé à voix haute</td></tr>
+      <tr><td class="mono">5</td><td>Ordonnancement des quarts sur 72 heures</td><td>Une planification qui anticipe au lieu de refuser</td></tr>
+      <tr><td class="mono">6</td><td>Tests sur la carte intégrés à la chaîne d'intégration</td><td>Chaque modification vérifiée sur le vrai matériel</td></tr>
+    </tbody>
+  </table>
+
+  <h2>10. Lecture par les grilles d'évaluation</h2>
+  <hr class="rule">
+
+  <p>
+    Pour faciliter la lecture du jury, voici où ce rapport répond à chaque critère des deux grilles
+    du sujet.
+  </p>
+  <h3>Évaluation locale</h3>
+  <table>
+    <thead><tr><th style="width:34%">Axe</th><th>Où le vérifier</th></tr></thead>
+    <tbody>
+      <tr><td>Pertinence et impact de la solution</td><td>Section 1 : un problème que les pistes du sujet laissent de côté, la dégradation lente d'un équipage sans relève</td></tr>
+      <tr><td>Faisabilité et qualité du prototype</td><td>Sections 3, 4 et 6 : le prototype réel, ce qu'il mesure et ce qu'il simule, la démonstration en direct. Section 9 : le chemin vers une V1</td></tr>
+      <tr><td>Innovation et complexité technique</td><td>Section 3 : refus motivé et dérogation journalisée, huit modèles d'IA sur la carte dont un entraîné par nous, graphe social déduit, deux Arduino, caméra et micro</td></tr>
+      <tr><td>Pérennité, résilience et maintenabilité</td><td>Section 5 : fonctionnement hors ligne, services relancés, garde thermique, audit en 43 contrôles, tests automatisés en intégration continue, documentation de reprise</td></tr>
+      <tr><td>Qualité documentaire</td><td>Ce rapport, la documentation du dépôt, le tableau kanban et l'historique git décrits en section 7</td></tr>
+    </tbody>
+  </table>
+  <h3>Évaluation nationale</h3>
+  <table>
+    <thead><tr><th style="width:34%">Axe</th><th>Où le vérifier</th></tr></thead>
+    <tbody>
+      <tr><td>Pertinence et impact pour la mission ESA 2080</td><td>Autonomie totale vis-à-vis de la Terre, sécurité des postes vitaux, gestion d'un incendie sans perte humaine, suivi des liens et de l'isolement à bord (sections 1 et 3)</td></tr>
+      <tr><td>Innovation et différenciation</td><td>Un système qui a le droit de refuser un ordre et qui trace qu'on l'a contredit, un modèle de langage sans aucune capacité d'agir, un graphe social que personne ne déclare (sections 1 et 3)</td></tr>
+      <tr><td>Qualité et performance du prototype</td><td>Fonctionnement réel sur la carte, audit au vert, suite de tests, modèle à 0,962 d'AUC en validation croisée par membre (sections 3 et 5)</td></tr>
+      <tr><td>Pitch et capacité à convaincre</td><td>Une thèse en une phrase et une démonstration en quatre temps, chacun prouvant une propriété du système (résumé et section 6)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Annexes</h2>
+  <hr class="rule">
+
+  <h3>Le dépôt</h3>
+  <pre>
+workshop-2026/
+  pi/atria/          application : API, régulateur, perception, modèles, dashboard (web/)
+  pi/tests/          tests unitaires, fonctionnels et bout en bout
+  pi/audit.py        audit de la carte en 43 contrôles
+  pi/repetition.py   répétition pas à pas de la démonstration
+  firmware/          croquis Arduino : passerelle, nœud du réacteur, diagnostics
+  hardware/wokwi/    schéma du montage, reproductible dans Wokwi
+  systemd/           unités atria-api, atria-terminal, atria-llm
+  docs/              installation, matériel, montage, écueils, cahier des charges, ce rapport
+  presentation/      support de soutenance
+  brand/             charte graphique ATRIA</pre>
+
+  <h3>Lancer les tests</h3>
+  <pre>
+cd pi
+pip install -r requirements-dev.txt
+pytest                 # unitaires, fonctionnels, bout en bout local
+pytest -m pi           # bout en bout sur la carte, depuis le réseau du vaisseau
+python audit.py        # sur la carte : audit complet</pre>
+
+  <footer>
+    <p style="margin:0">
+      Dépôt du projet : <span class="mono">github.com/AirKyzzZ/workshop-2026</span><br>
+      Suivi des tâches : <span class="mono">github.com/users/AirKyzzZ/projects/2</span><br>
+      Workshop2026-B3-G2 · Alexandre, Melih, Maxime · EPSI 2026
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>
