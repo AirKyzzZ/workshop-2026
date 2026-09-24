@@ -8,7 +8,8 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import (anomalie, apprentissage, briefing, camera, confinement, db, demo,
-               ecoute, llm, model, modules, predict, regulator, social, visage)
+               ecoute, llm, model, modules, pouls, predict, regulator, social,
+               visage)
 
 from . import surveillance as surveillance_mod
 
@@ -473,6 +474,62 @@ def api_social():
         n.update(confiances.get(n["nom"], {}))
     g["seuil_confiance"] = social.SEUIL_CONFIANCE
     return g
+
+
+@app.get("/api/pouls")
+def api_pouls():
+    """Etat de l'audit cardiaque, et conclusion de la session quand elle est ecoulee."""
+    return pouls.etat(etat.conn)
+
+
+@app.post("/api/pouls")
+def api_pouls_commander(corps: dict, requete: Request):
+    """Demarre ou arrete un audit cardiaque au capteur du noeud.
+
+    La mesure est ecrite au dossier de la personne que la camera reconnait a cet instant :
+    un capteur ne sait pas qui pose le doigt dessus, seule l'identification le sait.
+    """
+    refus = refus_biometrie(requete, "audit cardiaque")
+    if refus:
+        return refus
+    if not corps.get("actif", True):
+        return pouls.arreter(etat.conn)
+    crew = corps.get("crew") or camera.flux.auteur_vu
+    return pouls.demarrer(etat.conn, crew,
+                          float(corps.get("secondes") or pouls.DUREE_DEFAUT_S))
+
+
+@app.post("/api/ecoute")
+def api_ecoute_armer(corps: dict, requete: Request):
+    """Arme l'ecoute et la transcription ensemble, le temps d'une demonstration."""
+    refus = refus_biometrie(requete, "ecoute active")
+    if refus:
+        return refus
+    minutes = int(corps.get("minutes") or 3)
+    actif = bool(corps.get("actif", True))
+    for nom in ("ecoute", "transcription"):
+        modules.armer(nom, minutes) if actif else modules.desarmer(nom)
+    db.journaliser(etat.conn, "systeme",
+                   f"ecoute active {'armee' if actif else 'desarmee'}"
+                   + (f" pour {minutes} min" if actif else ""),
+                   acteur=db.session(etat.conn)["acteur"] or "capitaine")
+    return api_ecoute()
+
+
+@app.get("/api/ecoute")
+def api_ecoute():
+    """Ce que le micro entend en ce moment, et ce qu'il en a retenu."""
+    e = ecoute.ecoute.etat() if ecoute.ecoute else {}
+    recents = [i for i in db.incidents(etat.conn, limite=12,
+                                       depuis=time.time() - 600)
+               if i["canal"] == "micro"]
+    return {
+        "ecoute": e,
+        "modules": [modules.etat(n) for n in ("ecoute", "transcription")],
+        "incidents": recents,
+        "lexique": sorted(ecoute.LEXIQUE, key=lambda m: -ecoute.LEXIQUE[m])[:8],
+        "symptomes": db.symptomes(etat.conn, heures=1),
+    }
 
 
 @app.get("/api/modules")

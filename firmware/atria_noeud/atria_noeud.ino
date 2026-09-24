@@ -11,12 +11,16 @@
 //   NOM <compartiment>       change le compartiment annonce
 //   ECRAN <haut>|<bas>       affiche un message, prioritaire sur la mesure
 //   ECRAN                    efface le message et rend l'ecran a la mesure
+//   POULS 1 | POULS 0        arme ou desarme la lecture du capteur de pouls
 //   PING                     -> PONG
+// Pouls arme, une ligne par battement :
+//   BATTEMENT <ms depuis le precedent> <amplitude>
 
 #include <DHT.h>
 #include <LiquidCrystal.h>
 
 const uint8_t DHT_PIN = A1;
+const uint8_t POULS_PIN = A0;
 const uint8_t RETRO = 10;
 const unsigned long MESURE_MS = 2000;
 const unsigned long ANNONCE_MS = 1000;
@@ -28,6 +32,22 @@ const int SONDE_REPOS_MIN = 1000;
    avant de toucher au capteur plutot que de tomber dans la boucle. */
 
 bool sonde_ok = false;
+
+/* Detection de battements sur le capteur photoplethysmographique.
+
+   La ligne de base derive avec la pression du doigt et la lumiere ambiante : un seuil fixe
+   ne tient pas dix secondes. On suit donc une moyenne glissante et on declenche sur un
+   depassement relatif, avec une periode refractaire qui borne la cadence a 200 battements
+   par minute. Sans elle, le rebond dicrote du meme battement en compte un second. */
+const unsigned long REFRACTAIRE_MS = 300;
+const unsigned long POULS_PERIODE_MS = 20;
+const int MARGE_BATTEMENT = 14;
+
+bool pouls_arme = false;
+float pouls_base = 0;
+bool pouls_haut = false;
+unsigned long pouls_dernier = 0;
+unsigned long prochainPouls = 0;
 
 // Cablage LCD 1602 en mode parallele, tel qu'il est monte sur le shield Elegoo.
 LiquidCrystal ecran(8, 9, 4, 5, 6, 7);
@@ -69,6 +89,15 @@ void traiter(char *cmd) {
     compartiment[sizeof(compartiment) - 1] = 0;
     Serial.print(F("READY noeud="));
     Serial.println(compartiment);
+  } else if (!strncmp(cmd, "POULS ", 6)) {
+    pouls_arme = cmd[6] == '1';
+    if (pouls_arme) {
+      pouls_base = analogRead(POULS_PIN);
+      pouls_haut = false;
+      pouls_dernier = 0;
+    }
+    Serial.print(F("POULS "));
+    Serial.println(pouls_arme ? F("arme") : F("desarme"));
   } else if (!strcmp(cmd, "PING")) {
     Serial.println(F("PONG"));
   }
@@ -146,9 +175,34 @@ void setup() {
   Serial.println(repos);
 }
 
+void lirePouls(unsigned long maintenant) {
+  if (!pouls_arme || maintenant < prochainPouls) return;
+  prochainPouls = maintenant + POULS_PERIODE_MS;
+
+  int valeur = analogRead(POULS_PIN);
+  pouls_base = pouls_base * 0.97 + valeur * 0.03;
+  int ecart = valeur - (int)pouls_base;
+
+  if (!pouls_haut && ecart > MARGE_BATTEMENT) {
+    pouls_haut = true;
+    if (pouls_dernier && maintenant - pouls_dernier >= REFRACTAIRE_MS) {
+      Serial.print(F("BATTEMENT "));
+      Serial.print(maintenant - pouls_dernier);
+      Serial.print(' ');
+      Serial.println(ecart);
+      pouls_dernier = maintenant;
+    } else if (!pouls_dernier) {
+      pouls_dernier = maintenant;
+    }
+  } else if (pouls_haut && ecart < MARGE_BATTEMENT / 2) {
+    pouls_haut = false;
+  }
+}
+
 void loop() {
   lireSerie();
   unsigned long maintenant = millis();
+  lirePouls(maintenant);
 
   if (maintenant >= prochaineMesure) {
     prochaineMesure = maintenant + MESURE_MS;

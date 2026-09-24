@@ -157,6 +157,25 @@ CREATE TABLE IF NOT EXISTS symptome (
 
 CREATE INDEX IF NOT EXISTS idx_symptome_ts ON symptome(ts DESC);
 
+CREATE TABLE IF NOT EXISTS audit_pouls (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  crew         TEXT REFERENCES crew(nom),
+  debut        REAL NOT NULL,
+  duree        REAL NOT NULL,
+  actif        INTEGER NOT NULL DEFAULT 1,
+  arme         REAL
+);
+
+CREATE TABLE IF NOT EXISTS battement (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  audit        INTEGER NOT NULL REFERENCES audit_pouls(id),
+  ts           REAL NOT NULL,
+  intervalle   INTEGER NOT NULL,
+  amplitude    INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_battement_audit ON battement(audit, ts);
+
 CREATE TABLE IF NOT EXISTS ecran (
   compartiment TEXT PRIMARY KEY REFERENCES compartiment(nom),
   haut         TEXT NOT NULL DEFAULT '',
@@ -563,3 +582,48 @@ def symptomes(conn, heures=12, limite=40):
     return [dict(l) for l in conn.execute(
         "SELECT * FROM symptome WHERE ts >= ? ORDER BY ts DESC LIMIT ?",
         (time.time() - heures * 3600, limite))]
+
+
+def ouvrir_audit(conn, crew, duree):
+    """Ouvre une session de mesure cardiaque. Le noeud la voit au sondage suivant."""
+    conn.execute("UPDATE audit_pouls SET actif = 0 WHERE actif = 1")
+    curseur = conn.execute(
+        "INSERT INTO audit_pouls (crew, debut, duree, actif) VALUES (?,?,?,1)",
+        (crew, time.time(), duree))
+    conn.commit()
+    return curseur.lastrowid
+
+
+def audit_actif(conn):
+    ligne = conn.execute(
+        "SELECT * FROM audit_pouls WHERE actif = 1 ORDER BY debut DESC LIMIT 1").fetchone()
+    return dict(ligne) if ligne else None
+
+
+def marquer_audit_arme(conn, identifiant):
+    conn.execute("UPDATE audit_pouls SET arme = ? WHERE id = ?", (time.time(), identifiant))
+    conn.commit()
+
+
+def fermer_audit(conn, identifiant):
+    conn.execute("UPDATE audit_pouls SET actif = 0 WHERE id = ?", (identifiant,))
+    conn.commit()
+
+
+def enregistrer_battement(conn, audit, intervalle, amplitude=None):
+    conn.execute(
+        "INSERT INTO battement (audit, ts, intervalle, amplitude) VALUES (?,?,?,?)",
+        (audit, time.time(), intervalle, amplitude))
+    conn.commit()
+
+
+def battements(conn, audit):
+    return [dict(l) for l in conn.execute(
+        "SELECT ts, intervalle, amplitude FROM battement WHERE audit = ? ORDER BY ts",
+        (audit,))]
+
+
+def dernier_audit(conn):
+    ligne = conn.execute(
+        "SELECT * FROM audit_pouls ORDER BY debut DESC LIMIT 1").fetchone()
+    return dict(ligne) if ligne else None

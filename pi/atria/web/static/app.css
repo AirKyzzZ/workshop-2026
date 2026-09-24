@@ -202,6 +202,7 @@ main[data-page="social"] { grid-template-columns: repeat(auto-fit, minmax(380px,
 main[data-page="surete"] { grid-template-columns: minmax(0, 1000px); justify-content: center; }
 main[data-page="perception"] { grid-template-columns: minmax(0, 1fr); }
 main[data-page="prediction"] { grid-template-columns: minmax(0, 1fr); }
+main[data-page="mesures"] { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
 
 /* ---------- panneaux ---------- */
 
@@ -780,4 +781,37 @@ h3 {
 .nuage-axe { font-family: Martian; font-size: 9px; fill: var(--faible); }
 .nuage-axe-titre {
   font-family: Martian; font-size: 9px; fill: var(--sourdine); letter-spacing: .04em;
+}
+
+
+/* ---------- mesures a la demande ---------- */
+
+.grille-grande {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: calc(var(--u) * 2); margin: calc(var(--u) * 2) 0;
+}
+.mesure-grande { display: flex; flex-direction: column; gap: 2px; }
+.mesure-grande .chiffre {
+  font-family: Teko; font-size: 44px; font-weight: 600; line-height: .9;
+  color: var(--encre-forte); font-variant-numeric: tabular-nums;
+}
+.mesure-grande .etiquette {
+  font-family: Martian; font-size: 9px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--faible);
+}
+
+.classes-audio { margin: calc(var(--u) * 2) 0; }
+.classe {
+  display: grid; grid-template-columns: 1fr 90px 40px; align-items: center;
+  gap: var(--u); font-size: 11px; color: var(--sourdine); padding: 3px 0;
+}
+.classe .etiquette { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.classe .mesure {
+  font-family: Martian; font-size: 10px; text-align: right; color: var(--encre);
+}
+
+.transcription {
+  font-size: 15px; line-height: 1.5; color: var(--encre-forte);
+  padding-left: calc(var(--u) * 1.5); border-left: 2px solid var(--trait-fort);
+  margin: calc(var(--u) * 2) 0;
 }

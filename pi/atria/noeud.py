@@ -21,6 +21,7 @@ SIGNATURE_NOEUD = ("CH340", "1a86", "0042", "USB2.0-Ser")
 PERIODE_ECRITURE_S = 20.0
 DELAI_RECONNEXION_S = 5.0
 PERIODE_ECRAN_S = 1.0
+PERIODE_POULS_S = 1.0
 
 
 def _ascii(texte):
@@ -75,6 +76,8 @@ class Noeud:
         self._prochaine_ecriture = 0.0
         self._prochain_ecran = 0.0
         self._ecran_pose = None
+        self._prochain_pouls = 0.0
+        self._audit = None
         self._stop = threading.Event()
         self._fil = threading.Thread(target=self._boucle, daemon=True)
         self._fil.start()
@@ -100,8 +103,9 @@ class Noeud:
                     self._ouvrir()
                 try:
                     self._suivre_ecran()
+                    self._suivre_pouls()
                 except Exception as exc:
-                    self.erreur = f"ecran: {str(exc)[:70]}"
+                    self.erreur = f"consigne: {str(exc)[:70]}"
                 ligne = self._serie.readline().decode("ascii", "ignore").strip()
                 if ligne:
                     try:
@@ -130,6 +134,18 @@ class Noeud:
             self.compartiment = (self.compartiment
                                  or resoudre_compartiment(self.conn, annonce)
                                  or annonce)
+            return
+        if morceaux[0] == "BATTEMENT" and len(morceaux) >= 2:
+            if self._audit is None:
+                return
+            try:
+                intervalle = int(morceaux[1])
+                amplitude = int(morceaux[2]) if len(morceaux) > 2 else None
+            except ValueError:
+                return
+            db.enregistrer_battement(self.conn, self._audit, intervalle, amplitude)
+            return
+        if morceaux[0] == "POULS":
             return
         if morceaux[0] == "ECRAN":
             if self.compartiment:
@@ -184,6 +200,30 @@ class Noeud:
         if voulu != self._ecran_pose:
             self.afficher(*voulu)
 
+    def _suivre_pouls(self):
+        """Arme ou desarme le capteur de pouls selon la session ouverte en base.
+
+        L'API ouvre la session, le terminal tient le port serie : la consigne passe par la
+        base comme celle de l'ecran, faute de pouvoir partager le port entre deux
+        processus.
+        """
+        maintenant = time.time()
+        if maintenant < self._prochain_pouls:
+            return
+        self._prochain_pouls = maintenant + PERIODE_POULS_S
+
+        session = db.audit_actif(self.conn)
+        voulu = session["id"] if session else None
+        if voulu == self._audit:
+            return
+
+        self._audit = voulu
+        if self._serie is None:
+            return
+        self._serie.write(b"POULS 1\n" if voulu else b"POULS 0\n")
+        if voulu:
+            db.marquer_audit_arme(self.conn, voulu)
+
     def _ecrire(self):
         maintenant = time.time()
         if maintenant < self._prochaine_ecriture:
@@ -197,6 +237,7 @@ class Noeud:
                 "connecte": self.connecte, "temp_c": self.temp_c,
                 "humidite": self.humidite, "inconnu": self.inconnu,
                 "ecran": self._ecran_pose,
+                "audit_pouls": self._audit,
                 "erreur": self.erreur,
                 "age": round(time.time() - self.vu_le, 1) if self.vu_le else None}
 
