@@ -689,3 +689,32 @@ h3 {
 .apport .mesure {
   font-family: Martian; font-size: 10px; text-align: right; color: var(--encre);
 }
+
+
+/* ---------- courbes du modele ---------- */
+
+.graphique-ml { margin-top: var(--u); max-width: 340px; }
+.courbe-ml { display: block; width: 100%; height: auto; overflow: visible; }
+.courbe-ml .grille { stroke: var(--trait); stroke-width: 1; }
+.courbe-ml .hasard {
+  stroke: var(--faible); stroke-width: 1; stroke-dasharray: 3 4; opacity: .7;
+}
+.courbe-ml .axe { font-family: Martian; font-size: 8px; fill: var(--faible); }
+.courbe-ml .axe-titre {
+  font-family: Martian; font-size: 8.5px; fill: var(--sourdine);
+  letter-spacing: .04em;
+}
+.roc-aire { fill: var(--nominal); opacity: .10; }
+.roc-trace {
+  fill: none; stroke: var(--nominal); stroke-width: 2;
+  stroke-linejoin: round; stroke-linecap: round;
+}
+.roc-point { fill: var(--fond); stroke: var(--critique); stroke-width: 2.5; }
+.roc-auc {
+  font-family: Teko; font-size: 26px; font-weight: 600; fill: var(--nominal);
+}
+.cout-trace {
+  fill: none; stroke: var(--attention); stroke-width: 2;
+  stroke-linejoin: round; stroke-linecap: round;
+}
+.cout-point { fill: var(--attention); }

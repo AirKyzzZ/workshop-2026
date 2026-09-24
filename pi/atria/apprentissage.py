@@ -153,14 +153,45 @@ def entrainer(X, y, pas=0.35, iterations=4000, regularisation=1e-3):
     poids = np.where(y > 0.5, len(y) / (2 * positifs), len(y) / (2 * negatifs))
 
     theta = np.zeros(Z.shape[1])
-    for _ in range(iterations):
+    couts = []
+    for i in range(iterations):
         p = _sigmoide(Z @ theta)
+        if i % max(1, iterations // 60) == 0:
+            couts.append(round(float(_cout(y, p, poids)), 5))
         gradient = Z.T @ (poids * (p - y)) / len(y)
         gradient[:-1] += regularisation * theta[:-1]
         theta -= pas * gradient
+    couts.append(round(float(_cout(y, _sigmoide(Z @ theta), poids)), 5))
 
     return {"theta": theta.tolist(), "moyenne": moyenne.tolist(),
-            "ecart": ecart.tolist()}
+            "ecart": ecart.tolist(), "couts": couts, "iterations": iterations}
+
+
+def _cout(y, p, poids):
+    """Entropie croisée pondérée, celle que la descente de gradient minimise."""
+    p = np.clip(p, 1e-9, 1 - 1e-9)
+    return -np.mean(poids * (y * np.log(p) + (1 - y) * np.log(1 - p)))
+
+
+def roc(y, p, points=60):
+    """Courbe ROC : taux de faux positifs et de vrais positifs à chaque seuil.
+
+    Le seul graphique qui montre l'arbitrage réel du modèle. Une valeur d'aire sous la
+    courbe dit qu'il classe bien ; la courbe dit à quel prix, et c'est ce prix qu'on
+    choisit quand on place un seuil.
+    """
+    seuils = np.unique(np.concatenate([[0.0, 1.0], np.linspace(0, 1, points)]))
+    positifs = max(1.0, float(y.sum()))
+    negatifs = max(1.0, float(len(y) - y.sum()))
+    courbe = []
+    for s in sorted(seuils, reverse=True):
+        predit = p >= s
+        vp = float(np.sum(predit & (y > 0.5)))
+        fp = float(np.sum(predit & (y < 0.5)))
+        courbe.append({"seuil": round(float(s), 3),
+                       "fpr": round(fp / negatifs, 4),
+                       "tpr": round(vp / positifs, 4)})
+    return courbe
 
 
 def predire(modele, lignes):
@@ -246,6 +277,7 @@ def valider(conn, plis=5):
 
     mesures = evaluer(y[evalue], retenues[evalue])
     mesures.update({
+        "roc": roc(y[evalue], retenues[evalue]),
         "plis": plis,
         "membres": len(membres),
         "lignes_evaluees": int(evalue.sum()),

@@ -20,6 +20,21 @@ PERIODE_PUSH = 3.0
 PERIODE_SURETE = 5.0
 
 app = FastAPI(title="ATRIA", docs_url=None, redoc_url=None)
+
+
+@app.middleware("http")
+async def sans_cache(requete, suivant):
+    """Interdit la mise en cache des modules et de la feuille de style.
+
+    Chrome garde les modules ES en cache memoire et les ressert meme apres un
+    rechargement force : une correction deployee pendant une demonstration peut ne jamais
+    s'afficher, et on debogue alors du code qui n'est plus celui du serveur.
+    """
+    reponse = await suivant(requete)
+    if requete.url.path.startswith("/static/") and requete.url.path.endswith(
+            (".js", ".css", ".html")):
+        reponse.headers["Cache-Control"] = "no-store, must-revalidate"
+    return reponse
 etat = model.Etat()
 
 _dernier_acces_medical = 0.0
@@ -477,6 +492,8 @@ def api_prediction():
             "variables": modele["variables"],
             "libelles": modele["libelles"],
             "poids": modele["theta"][:-1],
+            "couts": modele.get("couts", []),
+            "iterations": modele.get("iterations"),
             "mesures": modele["mesures"],
             "ablation": modele.get("ablation", []),
             "horizon_h": modele["horizon_h"],
