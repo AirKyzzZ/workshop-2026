@@ -633,6 +633,12 @@ h3 {
   gap: calc(var(--u) * 4); margin-top: calc(var(--u) * 2);
 }
 
+.piste {
+  display: block; height: 4px; background: var(--trait);
+  border-radius: 2px; overflow: hidden;
+}
+.piste i { display: block; height: 100%; border-radius: 2px; }
+
 .matrice, .ablation {
   width: 100%; border-collapse: collapse; font-size: 12px; margin-top: var(--u);
 }
