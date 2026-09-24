@@ -43,6 +43,11 @@ ROUGE = (95, 112, 244)
 AMBRE = (60, 163, 232)
 GRIS = (150, 145, 145)
 
+
+def modules_armes():
+    from . import modules
+    return modules.actif("surveillance")
+
 TTL_MAIN_S = 6.0
 """Une main vue recemment garde l'analyse ouverte meme sans visage : c'est ce qui permet
 de continuer a lire un geste fait devant la tete, sans faire tourner MediaPipe en
@@ -225,9 +230,13 @@ class Flux:
                 continue
             self.echecs = 0
 
-            surveille = (self.surveillance is not None
-                         and self.surveillance.active
-                         and not self.surveillance.en_pause)
+            # La pause thermique ne concerne que l'analyse MediaPipe, jamais l'image.
+            # Encoder un JPEG coute quelques millisecondes ; couper le flux video quand le
+            # SoC chauffe privait le dashboard de sa camera sans rien economiser d'utile,
+            # et la boucle ne reprenait qu'une fois la temperature redescendue sous la
+            # consigne de reprise, ce qui pouvait durer.
+            surveille = (self.surveillance is not None and self.surveillance.active
+                         and modules_armes())
             if not controle and not regarde and not surveille:
                 time.sleep(PERIODE_VEILLE_S)
                 continue

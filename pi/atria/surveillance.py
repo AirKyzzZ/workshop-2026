@@ -20,12 +20,15 @@ VISAGE = os.path.join(MODELES, "face_landmarker.task")
 MAIN = os.path.join(MODELES, "hand_landmarker.task")
 
 PERIODE_S = 1.0
-TEMP_MAX_C = 78.0
-TEMP_REPRISE_C = 73.0
-"""Le SoC de cette carte tourne deja pres de 69 °C au repos, refroidissement passif
-compris. Une consigne a 72 °C suspend donc la surveillance avant meme qu'elle n'analyse
-quoi que ce soit. Le Pi 5 commence a reduire ses frequences a 80 °C : 78 laisse de la
-marge sans jamais entrer dans cette zone."""
+TEMP_MAX_C = 79.0
+TEMP_REPRISE_C = 71.0
+"""Le SoC de cette carte tourne deja pres de 70 °C au repos, refroidissement passif
+compris, et le Pi 5 commence a reduire ses frequences a 80 °C. La consigne de coupure se
+place donc juste en dessous.
+
+La consigne de reprise, elle, doit etre franchement plus basse que le repos : a 73 °C elle
+tombait dans la plage ou la carte oscille en permanence, et la surveillance restait
+suspendue indefiniment apres un seul pic."""
 REPOS_INCIDENT_S = 6.0
 """Un même geste tenu devant l'objectif ne doit compter qu'une fois."""
 

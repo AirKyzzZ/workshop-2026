@@ -7,23 +7,43 @@ const poster = (url, corps) =>
   }).then((r) => r.json());
 
 export function libererFlux(racine) {
-  // Un flux MJPEG ne se termine jamais tout seul. Sans cette liberation, Chrome garde
-  // la connexion ouverte, sature ses six creneaux par hote, et toutes les requetes
-  // suivantes du dashboard restent en attente indefiniment.
   for (const img of racine.querySelectorAll(".camera img")) {
-    img.src = "";
+    img.dataset.arrete = "1";
     img.removeAttribute("src");
   }
 }
 
 export function fluxCamera(hote) {
+  // Images unitaires plutot qu'un flux MJPEG continu : le flux gardait une connexion
+  // ouverte en permanence, et Chrome n'en accorde que six par hote, websocket compris.
+  // Deux onglets ouverts saturaient le quota et figeaient tout le dashboard sans erreur.
+  // Chaque image se termine et rend sa place ; la suivante n'est demandee qu'une fois la
+  // precedente arrivee, donc les requetes ne s'empilent jamais.
   const cadre = el("div", "camera");
   const image = el("img");
-  image.src = `/api/camera/flux?t=${Date.now()}`;
-  image.alt = "flux de la caméra de la passerelle";
-  const secours = el("div", "camera-vide", "Flux indisponible.");
+  image.alt = "caméra de la passerelle";
+  const secours = el("div", "camera-vide", "Caméra indisponible.");
   secours.hidden = true;
-  image.addEventListener("error", () => { image.hidden = true; secours.hidden = false; });
+
+  const suivante = () => {
+    if (image.dataset.arrete || !image.isConnected) return;
+    setTimeout(() => {
+      if (image.dataset.arrete || !image.isConnected) return;
+      image.src = `/api/camera/image?t=${Date.now()}`;
+    }, 250);
+  };
+  image.addEventListener("load", () => {
+    image.hidden = false;
+    secours.hidden = true;
+    suivante();
+  });
+  image.addEventListener("error", () => {
+    image.hidden = true;
+    secours.hidden = false;
+    suivante();
+  });
+  image.src = `/api/camera/image?t=${Date.now()}`;
+
   cadre.append(image, secours);
   hote.appendChild(cadre);
   return image;

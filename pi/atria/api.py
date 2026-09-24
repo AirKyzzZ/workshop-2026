@@ -307,6 +307,23 @@ async def api_camera_flux(requete: Request):
                              media_type="multipart/x-mixed-replace; boundary=trame")
 
 
+@app.get("/api/camera/image")
+def api_camera_image():
+    """Une seule image JPEG, et la connexion se libere.
+
+    Le flux MJPEG tenait une connexion ouverte sans jamais la rendre. Chrome n'en accorde
+    que six par hote en HTTP/1.1, websocket compris : deux ou trois onglets du dashboard
+    suffisaient a saturer le quota, et toutes les requetes suivantes attendaient
+    indefiniment, sans erreur affichee. Une image par requete coute un peu plus de
+    protocole et supprime toute la famille de pannes.
+    """
+    image = camera.flux.image()
+    if image is None:
+        return Response(status_code=503)
+    return Response(image, media_type="image/jpeg",
+                    headers={"Cache-Control": "no-store"})
+
+
 @app.get("/api/camera/etat")
 def api_camera_etat():
     etat_flux = camera.flux.etat()
