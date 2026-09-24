@@ -348,26 +348,37 @@ def risques(conn, etat, modele=None):
     if modele is None:
         return []
 
-    lignes, noms = [], []
+    lignes, noms, deja = [], [], []
     for membre in etat.equipage:
+        # Le modele n'a appris que sur des membres au-dessus du seuil : lui demander si
+        # quelqu'un a 0.34 va descendre sous 0.60 revient a l'interroger hors de son
+        # domaine, et il repondait 1.00 avec une contribution de +15, tres loin de tout ce
+        # qu'il a vu. Un membre deja sous le seuil releve du regulateur, pas de la
+        # prediction.
+        if membre.cognitive < SEUIL_APTITUDE:
+            deja.append({"crew": membre.nom, "role": membre.role,
+                         "capacite": round(membre.cognitive, 3),
+                         "risque": None, "deja_sous_seuil": True,
+                         "contributions": []})
+            continue
         v = variables_courantes(conn, membre.nom, etat)
         if v is None:
             continue
         lignes.append(v)
         noms.append(membre.nom)
-    if not lignes:
-        return []
 
-    probabilites = predire(modele, lignes)
     sorties = []
-    for nom, ligne, p in zip(noms, lignes, probabilites):
-        membre = etat.membre(nom)
-        sorties.append({
-            "crew": nom,
-            "role": membre.role,
-            "capacite": round(membre.cognitive, 3),
-            "risque": round(float(p), 3),
-            "contributions": contributions(modele, ligne)[:4],
-        })
-    sorties.sort(key=lambda s: -s["risque"])
-    return sorties
+    if lignes:
+        probabilites = predire(modele, lignes)
+        for nom, ligne, p in zip(noms, lignes, probabilites):
+            membre = etat.membre(nom)
+            sorties.append({
+                "crew": nom,
+                "role": membre.role,
+                "capacite": round(membre.cognitive, 3),
+                "risque": round(float(p), 3),
+                "deja_sous_seuil": False,
+                "contributions": contributions(modele, ligne)[:4],
+            })
+        sorties.sort(key=lambda s: -s["risque"])
+    return sorties + sorted(deja, key=lambda s: s["capacite"])

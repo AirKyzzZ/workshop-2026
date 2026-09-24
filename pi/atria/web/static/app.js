@@ -6,6 +6,7 @@ import { vueJournal } from "./vue-journal.js";
 import { vueSocial } from "./vue-social.js";
 import { vueSurete } from "./vue-surete.js";
 import { vuePerception } from "./vue-perception.js";
+import { vuePrediction } from "./vue-prediction.js";
 import { vueConsole } from "./vue-console.js";
 import { fluxCamera, libererFlux, vueVisage } from "./vue-visage.js";
 
@@ -15,6 +16,7 @@ const ONGLETS = [
   { route: "#/equipage", libelle: "Équipage" },
   { route: "#/social", libelle: "Social" },
   { route: "#/perception", libelle: "Perception" },
+  { route: "#/prediction", libelle: "Prédiction" },
   { route: "#/surete", libelle: "Sûreté" },
   { route: "#/journal", libelle: "Journal" },
   { route: "#/atria", libelle: "Console" },
@@ -192,6 +194,7 @@ async function peindre() {
     else if (section === "equipage") vueEquipage(vue, etat);
     else if (section === "social") await vueSocial(vue);
     else if (section === "perception") minuteur = await vuePerception(vue);
+    else if (section === "prediction") minuteur = await vuePrediction(vue);
     else if (section === "surete") minuteur = await vueSurete(vue, session);
     else if (section === "journal") minuteur = await vueJournal(vue);
     else if (section === "atria") await vueConsole(vue);

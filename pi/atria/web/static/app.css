@@ -201,6 +201,7 @@ main[data-page="compartiment"] { grid-template-columns: repeat(3, minmax(0, 1fr)
 main[data-page="social"] { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
 main[data-page="surete"] { grid-template-columns: minmax(0, 1000px); justify-content: center; }
 main[data-page="perception"] { grid-template-columns: minmax(0, 1fr); }
+main[data-page="prediction"] { grid-template-columns: minmax(0, 1fr); }
 
 /* ---------- panneaux ---------- */
 
@@ -623,3 +624,62 @@ h3 {
 }
 .module.arme { border-left-color: var(--nominal); }
 .module.arme .cout { color: var(--nominal); }
+
+
+/* ---------- prediction ---------- */
+
+.duo-modele {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: calc(var(--u) * 4); margin-top: calc(var(--u) * 2);
+}
+
+.matrice, .ablation {
+  width: 100%; border-collapse: collapse; font-size: 12px; margin-top: var(--u);
+}
+.matrice th, .ablation th {
+  font-family: Martian; font-size: 9px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--faible); font-weight: 400;
+  text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--trait);
+}
+.matrice td, .ablation td {
+  padding: 8px; border-bottom: 1px solid var(--trait);
+  font-family: Martian; font-size: 13px;
+}
+.matrice td { text-align: center; font-size: 17px; }
+.matrice td.juste { color: var(--nominal); }
+.matrice td.faux { color: var(--critique); }
+.ablation td:first-child { font-family: Inter, sans-serif; font-size: 12.5px; }
+.ablation tr.retenu td { color: var(--encre-forte); }
+.ablation tr.retenu td:first-child { font-weight: 600; }
+.ablation .piste { display: block; margin-top: 4px; }
+
+.carte-risque {
+  padding: calc(var(--u) * 2); border: 1px solid var(--trait-fort);
+  border-left-width: 3px; border-radius: var(--rayon); background: var(--surface);
+}
+.carte-risque + .carte-risque { margin-top: calc(var(--u) * 1.5); }
+.carte-risque.urgent { border-left-color: var(--critique); }
+.carte-risque > .piste {
+  display: block; height: 4px; background: var(--trait);
+  border-radius: 2px; margin: var(--u) 0; overflow: hidden;
+}
+.carte-risque > .piste i { display: block; height: 100%; border-radius: 2px; }
+
+.apports { margin-top: calc(var(--u) * 1.5); }
+.apport {
+  display: grid; grid-template-columns: 1fr 120px 48px; align-items: center;
+  gap: var(--u); font-size: 11px; color: var(--sourdine); padding: 2px 0;
+}
+.apport .etiquette { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.piste-centre {
+  position: relative; height: 6px; background: var(--trait);
+  border-radius: 2px; overflow: hidden;
+}
+.piste-centre::before {
+  content: ""; position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 1px; background: var(--trait-fort);
+}
+.piste-centre i { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
+.apport .mesure {
+  font-family: Martian; font-size: 10px; text-align: right; color: var(--encre);
+}

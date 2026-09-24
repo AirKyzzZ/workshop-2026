@@ -6,8 +6,8 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import (briefing, camera, confinement, db, demo, ecoute, llm, model,
-               modules, predict, regulator, social, visage)
+from . import (anomalie, apprentissage, briefing, camera, confinement, db, demo,
+               ecoute, llm, model, modules, predict, regulator, social, visage)
 
 from . import surveillance as surveillance_mod
 
@@ -456,6 +456,40 @@ def api_demo_preparer(requete: Request):
     resultat = demo.preparer(etat)
     briefing._cache = None
     _contagion_cache["ts"] = 0.0
+    return resultat
+
+
+_prediction_cache = {"ts": 0.0, "valeur": None}
+FRAICHEUR_PREDICTION_S = 30.0
+
+
+@app.get("/api/prediction")
+def api_prediction():
+    """Le modele entraine, ses metriques, et ce qu'il predit pour chaque membre."""
+    if (_prediction_cache["valeur"] is not None
+            and time.time() - _prediction_cache["ts"] < FRAICHEUR_PREDICTION_S):
+        return _prediction_cache["valeur"]
+
+    etat.recharger()
+    modele = apprentissage.charger()
+    resultat = {
+        "modele": None if modele is None else {
+            "variables": modele["variables"],
+            "libelles": modele["libelles"],
+            "poids": modele["theta"][:-1],
+            "mesures": modele["mesures"],
+            "ablation": modele.get("ablation", []),
+            "horizon_h": modele["horizon_h"],
+            "seuil_aptitude": modele["seuil_aptitude"],
+            "lignes": modele["lignes"],
+            "ruptures": modele["ruptures"],
+            "entraine_le": modele["entraine_le"],
+        },
+        "risques": apprentissage.risques(etat.conn, etat, modele),
+        "anomalies": anomalie.ecarts(etat.conn, etat),
+        "seuil_anomalie": anomalie.SEUIL_ANOMALIE,
+    }
+    _prediction_cache.update({"ts": time.time(), "valeur": resultat})
     return resultat
 
 
