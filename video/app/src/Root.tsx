@@ -1,6 +1,6 @@
 import "./index.css";
-import "./polices";
 import { Composition, Folder } from "remotion";
+import { AttentePolices } from "./attente-polices";
 import { FPS, repliques, scenes } from "./donnees";
 import { framesScene, framesTotal } from "./timing";
 import { Acte, VideoComplete } from "./video";
@@ -8,7 +8,9 @@ import { demosCharte } from "./vitrine/charte";
 import { demosMetier } from "./vitrine/metier";
 
 const framesActe = (acte: number) =>
-  scenes.filter((s) => s.acte === acte).reduce((t, s) => t + framesScene(s, repliques[s.id], FPS), 0);
+  scenes
+    .filter((s) => s.acte === acte)
+    .reduce((t, s) => t + framesScene(s, repliques[s.id], FPS), 0);
 
 export const RemotionRoot: React.FC = () => (
   <>
@@ -39,7 +41,11 @@ export const RemotionRoot: React.FC = () => (
         <Composition
           key={d.id}
           id={d.id}
-          component={d.composant}
+          component={() => (
+            <AttentePolices>
+              <d.composant />
+            </AttentePolices>
+          )}
           durationInFrames={Math.round(d.dureeS * FPS)}
           fps={FPS}
           width={1920}

@@ -123,7 +123,7 @@ const CoucheEtat: React.FC<{ etat: EtatCompartiment; x: number; y: number; opaci
     return (
       <g opacity={opacite}>
         <rect x={x} y={y} width={LARGEUR_COMP} height={HAUTEUR_COMP} fill={alpha(couleurs.critique, 0.12 + 0.06 * pulsation)} />
-        <rect x={x} y={y} width={LARGEUR_COMP} height={HAUTEUR_COMP} fill={`url(#${motif}-hachures)`} opacity={0.5} />
+        <rect x={x} y={y} width={LARGEUR_COMP} height={HAUTEUR_COMP} fill={`url(#${motif}-hachures)`} opacity={0.14} />
       </g>
     );
   }
@@ -194,7 +194,7 @@ export const PlanVaisseau: React.FC<PlanVaisseauProps> = ({
     <svg width={width} height={height} style={{ position: "absolute", inset: 0 }}>
       <defs>
         <pattern id={`${motif}-hachures`} width={28} height={28} patternUnits="userSpaceOnUse" patternTransform={`rotate(45) translate(${(frame * 0.8) % 28} 0)`}>
-          <rect width={12} height={28} fill={couleurs.critique} />
+          <rect width={8} height={28} fill={couleurs.critique} />
         </pattern>
         <pattern id={`${motif}-scelle`} width={14} height={14} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
           <rect width={1.5} height={14} fill={alpha(couleurs.texte, 0.22)} />
@@ -297,7 +297,7 @@ export const PlanVaisseau: React.FC<PlanVaisseauProps> = ({
                   <rect
                     x={d.x + 24}
                     y={(d.haut ? d.y : d.y + HAUTEUR_COMP) - 20}
-                    width={libelleEtat.length * 15.4 + 32}
+                    width={libelleEtat.length * 16.2 + 36}
                     height={40}
                     fill={badgePlein ? couleurs.critique : couleurs.fond}
                     stroke={couleurLibelle}
@@ -305,8 +305,9 @@ export const PlanVaisseau: React.FC<PlanVaisseauProps> = ({
                     opacity={badgePlein ? 0.8 + 0.2 * Math.sin(frame / 3) : 1}
                   />
                   <text
-                    x={d.x + 40}
+                    x={d.x + 24 + (libelleEtat.length * 16.2 + 36) / 2}
                     y={(d.haut ? d.y : d.y + HAUTEUR_COMP) + 1}
+                    textAnchor="middle"
                     fill={badgePlein ? couleurs.fond : couleurLibelle}
                     fontFamily={polices.donnees}
                     fontWeight={badgePlein ? 600 : 400}
@@ -330,14 +331,17 @@ export const PlanVaisseau: React.FC<PlanVaisseauProps> = ({
           const avant = etape > 0 ? m.trajet[etape - 1] : null;
           const arrivee = emplacement(courant.compartiment, rangs(courant.compartiment, m.nom));
           let position = arrivee;
-          let enRoute = false;
+          let opaciteNom = 1;
           if (avant && avant.compartiment !== courant.compartiment) {
             const t = progression(frame, courant.frame, dureeTrajet, AMORTI);
             const depart = emplacement(avant.compartiment, rangs(avant.compartiment, m.nom));
             const pa = porte(avant.compartiment);
             const pb = porte(courant.compartiment);
             position = surPolyligne([depart, pa.interieur, pa.coursive, pb.coursive, pb.interieur, arrivee], t);
-            enRoute = t < 1;
+            opaciteNom = interpolate(frame, [courant.frame, courant.frame + 6, courant.frame + dureeTrajet - 4, courant.frame + dureeTrajet + 8], [1, 0, 0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            });
           }
           const alerte = (m.alertes ?? []).filter((a) => a.frame <= frame).sort((a, b) => a.frame - b.frame).pop();
           const pAlerte = alerte ? progression(frame, alerte.frame, 12) : 0;
@@ -356,7 +360,7 @@ export const PlanVaisseau: React.FC<PlanVaisseauProps> = ({
                 fontFamily={polices.donnees}
                 fontSize={24}
                 dominantBaseline="central"
-                opacity={enRoute ? 0.6 : 1}
+                opacity={opaciteNom}
               >
                 {m.nom}
               </text>

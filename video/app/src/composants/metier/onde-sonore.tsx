@@ -47,12 +47,11 @@ export const OndeSonore: React.FC<OndeSonoreProps> = ({
     const k = k0 - i;
     const x = largeur - (t - k) * pas;
     const f = k * framesParBarre;
-    const actif = evenements.filter((e) => enveloppe(e, f) > 0.001);
     const niveau = fond + evenements.reduce((s, e) => s + enveloppe(e, f), 0);
     const grain = 0.3 + 0.7 * random(`${graine}-${k}`);
     const syllabe = 0.55 + 0.45 * Math.abs(Math.sin(k * 0.55 + phase));
     const amplitude = Math.min(1, niveau * grain * syllabe);
-    const ton = actif.find((e) => e.ton)?.ton;
+    const ton = evenements.find((e) => e.ton && f >= e.frame && f <= e.frame + e.duree)?.ton;
     return { k, x, amplitude, ton };
   }).filter((b) => b.x > -pas && b.x <= largeur + 0.5);
 

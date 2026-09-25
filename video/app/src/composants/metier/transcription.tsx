@@ -53,7 +53,7 @@ export const Transcription: React.FC<TranscriptionProps> = ({ mots, entete, lege
           flexWrap: "wrap",
           alignItems: "baseline",
           columnGap: 16,
-          rowGap: 28,
+          rowGap: 76,
           paddingTop: 76,
           minHeight: 200,
           fontFamily: polices.interface,
