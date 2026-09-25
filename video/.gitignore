@@ -1,0 +1,6 @@
+.tts/
+essais-voix/*.wav
+.audio-env/
+__pycache__/
+*.nbc
+*.nbi
