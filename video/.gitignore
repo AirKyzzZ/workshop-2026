@@ -5,3 +5,4 @@ __pycache__/
 *.nbc
 *.nbi
 .mp-env/
+app/public/audio/musique/segment-*.wav
