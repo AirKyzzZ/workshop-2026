@@ -41,7 +41,7 @@ MODELES = {
     },
     "omnivoice": {
         "repo": "mlx-community/OmniVoice-bf16",
-        "params": {"language": "fr", "instruct": "male, middle-aged, low pitch, standard Parisian French accent from France"},
+        "params": {"language": "fr", "instruct": "male, middle-aged, low pitch"},
     },
 }
 
