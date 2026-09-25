@@ -2,7 +2,7 @@ import { interpolate, useCurrentFrame } from "remotion";
 import { couleurs, polices } from "../../charte";
 import { alpha, nombreFr, progression } from "./commun";
 
-export type SegmentMemoire = { nom: string; taille: number };
+export type SegmentMemoire = { nom: string; taille: number; libelle?: string };
 
 export type BarreMemoireProps = {
   capacite: number;
@@ -130,7 +130,7 @@ export const BarreMemoire: React.FC<BarreMemoireProps> = ({
               >
                 {s.nom}
                 <tspan fill={couleurs.texteDoux} fontFamily={polices.donnees} fontWeight={400} fontSize={24} dx={16}>
-                  {nombreFr(s.taille)} {unite}
+                  {s.libelle ?? `${nombreFr(s.taille)} ${unite}`}
                 </tspan>
               </text>
             </g>
