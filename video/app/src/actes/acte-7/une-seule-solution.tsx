@@ -7,10 +7,10 @@ import { TypoCinetique } from "../../composants/charte/typo-cinetique";
 import { Sfx } from "../../composants/son";
 import { framesDe } from "../../donnees";
 
-const QUESTION = 6;
-const SORTIE_QUESTION = 96;
-const PREMIERE_LIGNE = 108;
-const PAS = 16;
+const QUESTION = 0;
+const SORTIE_QUESTION = 58;
+const PREMIERE_LIGNE = 66;
+const PAS = 12;
 
 const LIGNES = ["TOUT EN DÉPEND", "ELLE VOIT VENIR", "ELLE TIENT SANS LA TERRE"];
 
@@ -44,8 +44,8 @@ export const UneSeuleSolution: React.FC = () => {
           <div style={{ display: "flex", flexDirection: "column" }}>
             {LIGNES.map((ligne, i) => {
               const debut = PREMIERE_LIGNE + i * PAS;
-              const entree = avance(frame, debut, 22);
-              const filet = avance(frame, debut + 6, 26, courbes.bascule);
+              const entree = avance(frame, debut, 14);
+              const filet = avance(frame, debut + 4, 16, courbes.bascule);
               return (
                 <div key={ligne} style={{ position: "relative", display: "flex", alignItems: "center", gap: 40, height: 150 }}>
                   <div

@@ -2,193 +2,193 @@
  "1.4": {
   "texte": "Cet ordre va être refusé. Voici ce qu'ATRIA a vu.",
   "fichier": "voix/1-4.wav",
-  "dureeS": 4.63,
-  "genere": false
+  "dureeS": 3.26,
+  "genere": true
  },
  "2.1": {
   "texte": "Un vaisseau surveille son oxygène, son énergie, son eau. Capteurs, seuils, redondance.",
   "fichier": "voix/2-1.wav",
-  "dureeS": 5.02,
-  "genere": false
+  "dureeS": 5.93,
+  "genere": true
  },
  "2.2": {
   "texte": "Ses humains, il les surveille avec un questionnaire.",
   "fichier": "voix/2-2.wav",
-  "dureeS": 3.48,
-  "genere": false
+  "dureeS": 3.16,
+  "genere": true
  },
  "2.3": {
   "texte": "Si loin de la Terre, ni relève, ni psychiatre. Un équipier qui décroche, il faut le voir venir.",
   "fichier": "voix/2-3.wav",
-  "dureeS": 7.32,
-  "genere": false
+  "dureeS": 6.09,
+  "genere": true
  },
  "2.4": {
   "texte": "Le système de survie le plus fragile d'un vaisseau, c'est son équipage. Voici ATRIA.",
   "fichier": "voix/2-4.wav",
-  "dureeS": 6.55,
-  "genere": false
+  "dureeS": 5.64,
+  "genere": true
  },
  "3.1": {
   "texte": "Rembobinons. Voici la serre, telle qu'ATRIA la voit.",
   "fichier": "voix/3-1.wav",
-  "dureeS": 3.86,
-  "genere": false
+  "dureeS": 3.48,
+  "genere": true
  },
  "3.2": {
   "texte": "D'abord, qui est là. Le badge ne suffit pas : ATRIA compare le visage à son empreinte. Un badge prêté est refusé.",
   "fichier": "voix/3-2.wav",
-  "dureeS": 8.86,
-  "genere": false
+  "dureeS": 7.59,
+  "genere": true
  },
  "3.3": {
   "texte": "Ensuite, où. Température, humidité, bruit, fumée : chaque compartiment est mesuré en continu.",
   "fichier": "voix/3-3.wav",
-  "dureeS": 5.02,
-  "genere": false
+  "dureeS": 5.94,
+  "genere": true
  },
  "3.4": {
   "texte": "Puis ce qui s'entend. Cinq cent vingt et une classes de sons, et le français transcrit sur la carte. Juron, insulte, menace : trois gravités.",
   "fichier": "voix/3-4.wav",
-  "dureeS": 10.02,
-  "genere": false
+  "dureeS": 8.56,
+  "genere": true
  },
  "3.5": {
   "texte": "Et ce qui se voit. Vingt et un points par main. ATRIA mesure l'extension de chaque doigt depuis sa propre base, quel que soit l'angle. Majeur tendu, trois doigts repliés.",
   "fichier": "voix/3-5.wav",
-  "dureeS": 12.71,
-  "genere": false
+  "dureeS": 10.04,
+  "genere": true
  },
  "3.6": {
   "texte": "Le geste est attribué au dernier visage reconnu, et l'incident est écrit au journal.",
   "fichier": "voix/3-6.wav",
-  "dureeS": 6.17,
-  "genere": false
+  "dureeS": 4.56,
+  "genere": true
  },
  "3.7": {
   "texte": "Sa conduite tombe à 0,55, sous le seuil. Et le lien entre les deux équipiers bascule vers l'hostilité.",
   "fichier": "voix/3-7.wav",
-  "dureeS": 8.09,
-  "genere": false
+  "dureeS": 6.79,
+  "genere": true
  },
  "3.8": {
   "texte": "ATRIA sait que Melih ne doit pas tenir un poste vital. Le commandant, lui, l'ignore.",
   "fichier": "voix/3-8.wav",
-  "dureeS": 6.55,
-  "genere": false
+  "dureeS": 5.61,
+  "genere": true
  },
  "4.2": {
   "texte": "Négatif. Conduite de Melih : 0,55. Seuil requis : 0,60. Je recommande Bernard.",
   "fichier": "voix/4-2.wav",
-  "dureeS": 5.4,
-  "genere": false
+  "dureeS": 6.7,
+  "genere": true
  },
  "4.3": {
   "texte": "ATRIA a le droit de dire non. Le commandant garde le dernier mot : il peut passer outre, mais jamais en silence.",
   "fichier": "voix/4-3.wav",
-  "dureeS": 8.48,
-  "genere": false
+  "dureeS": 5.73,
+  "genere": true
  },
  "4.4": {
   "texte": "Chaque décision est écrite avec sa mesure. C'est la réponse à la seule question sérieuse : et si ATRIA se trompe ?",
   "fichier": "voix/4-4.wav",
-  "dureeS": 8.48,
-  "genere": false
+  "dureeS": 6.59,
+  "genere": true
  },
  "5.1": {
   "texte": "Ce que la serre a montré, ATRIA le fait pour tout le vaisseau, en permanence.",
   "fichier": "voix/5-1.wav",
-  "dureeS": 6.17,
-  "genere": false
+  "dureeS": 4.56,
+  "genere": true
  },
  "5.2": {
   "texte": "Elle suit chaque équipier. Six heures à l'avance, elle annonce qui va décrocher, et à quelle heure.",
   "fichier": "voix/5-2.wav",
-  "dureeS": 7.32,
-  "genere": false
+  "dureeS": 5.81,
+  "genere": true
  },
  "5.3": {
   "texte": "Un incendie ? Tant qu'il reste quelqu'un, ATRIA ne scelle pas : elle fait évacuer. Au dernier sorti, la cloison se ferme.",
   "fichier": "voix/5-3.wav",
-  "dureeS": 8.86,
-  "genere": false
+  "dureeS": 6.91,
+  "genere": true
  },
  "5.4": {
   "texte": "Une toux à l'infirmerie ? Avant que la maladie ne se déclare, ATRIA sait déjà qui a été exposé.",
   "fichier": "voix/5-4.wav",
-  "dureeS": 7.71,
-  "genere": false
+  "dureeS": 5.27,
+  "genere": true
  },
  "5.5": {
   "texte": "Elle repère les conflits qui s'installent, et où ils se jouent, pour séparer les équipes avant l'incident.",
   "fichier": "voix/5-5.wav",
-  "dureeS": 7.71,
-  "genere": false
+  "dureeS": 5.3,
+  "genere": true
  },
  "5.6": {
   "texte": "Et quand un équipier craque, elle sait qui sera touché ensuite.",
   "fichier": "voix/5-6.wav",
-  "dureeS": 4.63,
-  "genere": false
+  "dureeS": 4.39,
+  "genere": true
  },
  "6.1": {
   "texte": "Et ce n'est qu'un début.",
   "fichier": "voix/6-1.wav",
-  "dureeS": 3.09,
-  "genere": false
+  "dureeS": 1.99,
+  "genere": true
  },
  "6.2": {
   "texte": "Elle entend le ton d'une conversation, bien avant l'insulte.",
   "fichier": "voix/6-2.wav",
-  "dureeS": 4.63,
-  "genere": false
+  "dureeS": 2.98,
+  "genere": true
  },
  "6.3": {
   "texte": "Elle croise le geste, le mot et l'expression : plaisanterie, ou menace.",
   "fichier": "voix/6-3.wav",
-  "dureeS": 5.02,
-  "genere": false
+  "dureeS": 4.25,
+  "genere": true
  },
  "6.4": {
   "texte": "Elle reconnaît ce qui précède la violence, et protège les menacés d'un geste du commandant.",
   "fichier": "voix/6-4.wav",
-  "dureeS": 6.55,
-  "genere": false
+  "dureeS": 5.04,
+  "genere": true
  },
  "6.5": {
   "texte": "Elle entend une infection avant la fièvre.",
   "fichier": "voix/6-5.wav",
-  "dureeS": 3.09,
-  "genere": false
+  "dureeS": 2.68,
+  "genere": true
  },
  "6.6": {
   "texte": "Et elle coupe le courant avant la flamme.",
   "fichier": "voix/6-6.wav",
-  "dureeS": 3.48,
-  "genere": false
+  "dureeS": 2.31,
+  "genere": true
  },
  "7.1": {
   "texte": "Tout ceci tient sur une carte de la taille d'une main.",
   "fichier": "voix/7-1.wav",
-  "dureeS": 5.02,
-  "genere": false
+  "dureeS": 2.53,
+  "genere": true
  },
  "7.2": {
   "texte": "Huit modèles d'IA, quatre gigaoctets, aucune connexion. Rien ne sort du vaisseau.",
   "fichier": "voix/7-2.wav",
-  "dureeS": 5.4,
-  "genere": false
+  "dureeS": 4.44,
+  "genere": true
  },
  "7.3": {
   "texte": "Si l'ESA ne devait embarquer qu'une seule solution : celle dont tout le reste dépend.",
   "fichier": "voix/7-3.wav",
-  "dureeS": 6.55,
-  "genere": false
+  "dureeS": 3.97,
+  "genere": true
  },
  "7.4": {
   "texte": "ATRIA. Parce que le système de survie le plus fragile d'un vaisseau, c'est son équipage.",
   "fichier": "voix/7-4.wav",
-  "dureeS": 6.94,
-  "genere": false
+  "dureeS": 5.83,
+  "genere": true
  }
 }

@@ -2,181 +2,181 @@
  {
   "id": "1.1",
   "acte": 1,
-  "dureeMinS": 4
+  "dureeMinS": 3.0
  },
  {
   "id": "1.2",
   "acte": 1,
-  "dureeMinS": 8
+  "dureeMinS": 4.0
  },
  {
   "id": "1.3",
   "acte": 1,
-  "dureeMinS": 6
+  "dureeMinS": 4.5
  },
  {
   "id": "1.4",
   "acte": 1,
-  "dureeMinS": 7
+  "dureeMinS": 2.0
  },
  {
   "id": "2.1",
   "acte": 2,
-  "dureeMinS": 10
+  "dureeMinS": 2.0
  },
  {
   "id": "2.2",
   "acte": 2,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "2.3",
   "acte": 2,
-  "dureeMinS": 9
+  "dureeMinS": 2.0
  },
  {
   "id": "2.4",
   "acte": 2,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "3.1",
   "acte": 3,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "3.2",
   "acte": 3,
-  "dureeMinS": 10
+  "dureeMinS": 7.5
  },
  {
   "id": "3.3",
   "acte": 3,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "3.4",
   "acte": 3,
-  "dureeMinS": 10
+  "dureeMinS": 2.0
  },
  {
   "id": "3.5",
   "acte": 3,
-  "dureeMinS": 16
+  "dureeMinS": 10.5
  },
  {
   "id": "3.6",
   "acte": 3,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "3.7",
   "acte": 3,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "3.8",
   "acte": 3,
-  "dureeMinS": 7
+  "dureeMinS": 2.0
  },
  {
   "id": "4.1",
   "acte": 4,
-  "dureeMinS": 6
+  "dureeMinS": 3.0
  },
  {
   "id": "4.2",
   "acte": 4,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "4.3",
   "acte": 4,
-  "dureeMinS": 9
+  "dureeMinS": 2.0
  },
  {
   "id": "4.4",
   "acte": 4,
-  "dureeMinS": 12
+  "dureeMinS": 2.0
  },
  {
   "id": "5.1",
   "acte": 5,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "5.2",
   "acte": 5,
-  "dureeMinS": 10
+  "dureeMinS": 2.0
  },
  {
   "id": "5.3",
   "acte": 5,
-  "dureeMinS": 10
+  "dureeMinS": 7.0
  },
  {
   "id": "5.4",
   "acte": 5,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "5.5",
   "acte": 5,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "5.6",
   "acte": 5,
-  "dureeMinS": 6
+  "dureeMinS": 2.0
  },
  {
   "id": "6.1",
   "acte": 6,
-  "dureeMinS": 4
+  "dureeMinS": 2.0
  },
  {
   "id": "6.2",
   "acte": 6,
-  "dureeMinS": 6
+  "dureeMinS": 2.0
  },
  {
   "id": "6.3",
   "acte": 6,
-  "dureeMinS": 6
+  "dureeMinS": 2.0
  },
  {
   "id": "6.4",
   "acte": 6,
-  "dureeMinS": 6
+  "dureeMinS": 2.0
  },
  {
   "id": "6.5",
   "acte": 6,
-  "dureeMinS": 4
+  "dureeMinS": 2.0
  },
  {
   "id": "6.6",
   "acte": 6,
-  "dureeMinS": 4
+  "dureeMinS": 2.0
  },
  {
   "id": "7.1",
   "acte": 7,
-  "dureeMinS": 6
+  "dureeMinS": 2.0
  },
  {
   "id": "7.2",
   "acte": 7,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "7.3",
   "acte": 7,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  },
  {
   "id": "7.4",
   "acte": 7,
-  "dureeMinS": 8
+  "dureeMinS": 2.0
  }
 ]

@@ -16,10 +16,10 @@ const VERDICT = { x: 1270, y: 360, largeur: 530 };
 const Y_VERDICT = VERDICT.y + 96;
 
 const PHASES = [
-  { playhead: 20, puces: 28, liens: 44, verdict: 58, sortie: 90 },
-  { playhead: 94, puces: 118, liens: 132, verdict: 146, sortie: 10000 },
+  { playhead: 6, puces: 10, liens: 20, verdict: 28, sortie: 58 },
+  { playhead: 60, puces: 76, liens: 86, verdict: 94, sortie: 10000 },
 ];
-const DUREE_DEPLACEMENT = 22;
+const DUREE_DEPLACEMENT = 16;
 
 const INSTANTS = valeurs.instants;
 if (INSTANTS.length !== 2) throw new Error(`6.3 attend 2 instants, reçu ${INSTANTS.length}`);
@@ -59,7 +59,7 @@ const Puce: React.FC<{ y: number; x: number; p: number; couleur: string; childre
 
 export const PlaisanterieOuMenace: React.FC = () => {
   const frame = useCurrentFrame();
-  const pPistes = avance(frame, 0, 26, courbes.bascule);
+  const pPistes = avance(frame, 0, 16, courbes.bascule);
   const xPlayhead = interpolate(frame, [PHASES[1].playhead, PHASES[1].playhead + DUREE_DEPLACEMENT], X_INSTANTS, { ...bloque, easing: courbes.bascule });
   const phase = frame >= PHASES[1].playhead ? 1 : 0;
   const pPlayhead = avance(frame, PHASES[0].playhead, 12);

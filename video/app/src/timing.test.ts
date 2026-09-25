@@ -9,7 +9,7 @@ test("une scène sans réplique dure sa durée minimale", () => {
 });
 
 test("une réplique plus longue que le minimum allonge la scène de la marge", () => {
-  assert.equal(dureeScene(scene, { texte: "", fichier: "", dureeS: 6, genere: true }), 6.6);
+  assert.equal(dureeScene(scene, { texte: "", fichier: "", dureeS: 6, genere: true }), 6.35);
 });
 
 test("le total refuse de dépasser 4:45", () => {

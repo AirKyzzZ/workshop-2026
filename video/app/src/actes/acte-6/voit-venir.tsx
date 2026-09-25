@@ -7,9 +7,9 @@ import { Sfx } from "../../composants/son";
 import { framesDe } from "../../donnees";
 import { VueAvenir } from "./vue-avenir";
 
-const TITRE = 6;
-const ELARGISSEMENT = 30;
-const DUREE_ELARGISSEMENT = 44;
+const TITRE = 0;
+const ELARGISSEMENT = 14;
+const DUREE_ELARGISSEMENT = 36;
 
 export const VoitVenir: React.FC = () => {
   const frame = useCurrentFrame();
@@ -30,8 +30,9 @@ export const VoitVenir: React.FC = () => {
         taille={150}
         alignement="centre"
         debut={TITRE}
-        decalage={8}
-        sortie={duree - 26}
+        decalage={6}
+        duree={16}
+        sortie={duree - 16}
       />
       <Sfx nom="impact-titre" a={TITRE + 2} volume={(f) => interpolate(f, [0, 10, 90], [0.3, 0.3, 0], bloque)} duree={100} />
       <Sfx nom="whoosh" a={ELARGISSEMENT} volume={0.22} />

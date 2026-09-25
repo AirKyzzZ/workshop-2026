@@ -6,8 +6,8 @@ import { Grain, Vignette } from "../../composants/charte/plateau";
 import { Sfx } from "../../composants/son";
 import { valeurs } from "../../donnees";
 
-const DEBUT_FRAPPE = 16;
-const PAR_CARACTERE = 0.9;
+const DEBUT_FRAPPE = 3;
+const PAR_CARACTERE = 0.62;
 const SEPARATEUR = " · ";
 
 const SEGMENTS = [
@@ -24,7 +24,7 @@ export const Telemetrie: React.FC = () => {
   const frame = useCurrentFrame();
   const tapes = Math.max(0, Math.min(LIGNE.length, Math.floor((frame - DEBUT_FRAPPE) / PAR_CARACTERE)));
   const finFrappe = DEBUT_FRAPPE + LIGNE.length * PAR_CARACTERE;
-  const regle = avance(frame, 4, 40, courbes.bascule);
+  const regle = avance(frame, 0, 24, courbes.bascule);
   const curseurVisible = frame < finFrappe || Math.floor(frame / 8) % 2 === 0;
 
   return (
@@ -37,7 +37,7 @@ export const Telemetrie: React.FC = () => {
               height: 10,
               backgroundColor: couleurs.nominal,
               boxShadow: `0 0 14px ${alpha(couleurs.nominal, 0.7)}`,
-              opacity: interpolate(frame, [2, 6], [0, 1], bloque) * (0.6 + 0.4 * Math.cos(frame / 5)),
+              opacity: interpolate(frame, [0, 3], [0, 1], bloque) * (0.6 + 0.4 * Math.cos(frame / 5)),
             }}
           />
           <div style={{ height: 1, flex: 1, backgroundColor: alpha(couleurs.texte, 0.18), scale: `${regle} 1`, transformOrigin: "left" }} />
@@ -71,14 +71,14 @@ export const Telemetrie: React.FC = () => {
               height: 30,
               translate: "0 -2px",
               backgroundColor: couleurs.texte,
-              opacity: curseurVisible && frame >= DEBUT_FRAPPE - 6 ? 0.85 : 0,
+              opacity: curseurVisible ? 0.85 : 0,
             }}
           />
         </div>
       </div>
       <Vignette force={0.4} />
       <Grain opacite={0.05} />
-      <Sfx nom="grondement-vaisseau" a={0} volume={(f) => interpolate(f, [0, 45], [0, 0.55], bloque)} />
+      <Sfx nom="grondement-vaisseau" a={0} volume={(f) => interpolate(f, [0, 20], [0, 0.55], bloque)} />
       {DEPARTS.map((d) => (
         <Sfx key={d} nom="telemetrie-bip" a={DEBUT_FRAPPE + d * PAR_CARACTERE} volume={0.32} />
       ))}

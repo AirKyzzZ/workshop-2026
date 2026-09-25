@@ -10,18 +10,18 @@ import { secondesDebutSerre } from "../acte-3/commun";
 import { PlanSerre } from "./embrouille";
 import { OrdreCommandant } from "./ordre";
 
-const DEBUT_REMBOBINAGE = 92;
-const FIN_OVERLAY = DEBUT_REMBOBINAGE - 4;
+const DEBUT_REMBOBINAGE = Math.round(framesDe("1.4") * 0.42);
+const FIN_OVERLAY = DEBUT_REMBOBINAGE - 2;
 
 export const OrdreEnAttente: React.FC = () => {
   const frame = useCurrentFrame();
-  const dureeRembobinage = framesDe("1.4") - DEBUT_REMBOBINAGE - 14;
+  const dureeRembobinage = framesDe("1.4") - DEBUT_REMBOBINAGE - 6;
   const finRembobinage = DEBUT_REMBOBINAGE + dureeRembobinage;
   const bascule = Math.round(DEBUT_REMBOBINAGE + dureeRembobinage * 0.3);
   const derniereOrdre = framesDe("1.3") - 1;
-  const desature = avance(frame, 0, 18);
-  const overlay = avance(frame, 6, 18) * (1 - avance(frame, FIN_OVERLAY, 10, courbes.bascule));
-  const texte = avance(frame, 26, 24);
+  const desature = avance(frame, 0, 10);
+  const overlay = avance(frame, 1, 10) * (1 - avance(frame, FIN_OVERLAY, 8, courbes.bascule));
+  const texte = avance(frame, 6, 14);
   const recul = versSecondes(valeurs.heureOrdre) - secondesDebutSerre;
   const imageOrdre = Math.round(interpolate(frame, [DEBUT_REMBOBINAGE, bascule], [derniereOrdre, 0], bloque));
   const imageSerre = Math.round(interpolate(frame, [bascule, finRembobinage], [framesDe("1.2") - 1, 0], { ...bloque, easing: courbes.bascule }));
@@ -47,7 +47,7 @@ export const OrdreEnAttente: React.FC = () => {
       <AbsoluteFill style={{ opacity: overlay, background: `radial-gradient(ellipse 34% 40% at 50% 44%, ${alpha(couleurs.fond, 0.92)} 0%, ${alpha(couleurs.fond, 0.6)} 55%, transparent 100%)` }} />
       <AbsoluteFill style={{ opacity: overlay, justifyContent: "center", alignItems: "center", paddingBottom: 150 }}>
         <div style={{ scale: `${interpolate(frame, [0, FIN_OVERLAY + 10], [1, 1.06], bloque)}` }}>
-          <MarqueAtria nom={false} taille={170} debut={6} duree={36} />
+          <MarqueAtria nom={false} taille={170} debut={1} duree={22} />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 44 }}>
           <div
@@ -66,9 +66,9 @@ export const OrdreEnAttente: React.FC = () => {
       </AbsoluteFill>
 
       <Sfx nom="pulsation" a={0} volume={0.45} />
-      <Sfx nom="telemetrie-bip" a={26} volume={0.3} />
+      <Sfx nom="telemetrie-bip" a={6} volume={0.3} />
       <Sfx nom="rembobinage" a={DEBUT_REMBOBINAGE} volume={0.55} />
-      <Sfx nom="whoosh" a={finRembobinage - 20} volume={0.25} />
+      <Sfx nom="whoosh" a={finRembobinage - 14} volume={0.25} />
     </AbsoluteFill>
   );
 };

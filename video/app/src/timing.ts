@@ -1,7 +1,7 @@
 export type Scene = { id: string; acte: number; dureeMinS: number };
 export type Replique = { texte: string; fichier: string; dureeS: number; genere: boolean };
 
-export const MARGE_S = 0.6;
+export const MARGE_S = 0.35;
 export const DUREE_MAX_S = 285;
 
 export const dureeScene = (scene: Scene, replique?: Replique): number =>

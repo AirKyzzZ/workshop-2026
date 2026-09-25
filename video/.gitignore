@@ -4,3 +4,4 @@ essais-voix/*.wav
 __pycache__/
 *.nbc
 *.nbi
+.mp-env/

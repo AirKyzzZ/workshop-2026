@@ -6,9 +6,9 @@ import { Sfx } from "../../composants/son";
 import { valeurs } from "../../donnees";
 import { VueAvenir } from "./vue-avenir";
 
-const PREMIERE = 14;
-const PAS = 42;
-const DUREE_REPLIQUE = 26;
+const PREMIERE = 4;
+const PAS = 26;
+const DUREE_REPLIQUE = 20;
 const BARRE = { x: 400, y: 646, largeur: 1120 };
 const TON_DEPART = 0.08;
 const NOEUDS = [
@@ -30,7 +30,7 @@ const qualifier = (v: number) => (v < -0.15 ? "NÉGATIF" : v > 0.15 ? "POSITIF" 
 
 const tonA = (frame: number) =>
   DIALOGUE.reduce(
-    (v, r, i) => interpolate(avance(frame, debutReplique(i) + 10, 22, courbes.bascule), [0, 1], [v, r.ton], bloque),
+    (v, r, i) => interpolate(avance(frame, debutReplique(i) + 8, 16, courbes.bascule), [0, 1], [v, r.ton], bloque),
     TON_DEPART,
   );
 
@@ -48,7 +48,7 @@ export const Ton: React.FC = () => {
   const frame = useCurrentFrame();
   const ton = tonA(frame);
   const couleur = couleurTon(ton);
-  const pBarre = avance(frame, 4, 20);
+  const pBarre = avance(frame, 0, 12);
   const centre = BARRE.x + BARRE.largeur / 2;
   const xTon = centre + ton * (BARRE.largeur / 2);
 
@@ -57,7 +57,7 @@ export const Ton: React.FC = () => {
       {INTERLOCUTEURS.map((nom, i) => {
         const n = NOEUDS[i];
         const parle = DIALOGUE.some((r, k) => r.qui === nom && frame >= debutReplique(k) && frame < debutReplique(k) + DUREE_REPLIQUE);
-        const p = avance(frame, i * 4, 18);
+        const p = avance(frame, i * 3, 10);
         const anneau = parle ? ((frame % 24) / 24) : 0;
         return (
           <div key={nom} style={{ position: "absolute", left: n.x - 60, top: n.y - 60, width: 120, display: "flex", flexDirection: "column", alignItems: "center", opacity: p, scale: `${0.85 + 0.15 * p}` }}>
@@ -91,9 +91,9 @@ export const Ton: React.FC = () => {
       })}
 
       {DIALOGUE.map((r, i) => {
-        const p = avance(frame, debutReplique(i), 18);
+        const p = avance(frame, debutReplique(i), 10);
         const gauche = r.qui === INTERLOCUTEURS[0];
-        const pTon = avance(frame, debutReplique(i) + 12, 16);
+        const pTon = avance(frame, debutReplique(i) + 8, 10);
         const c = couleurTon(r.ton);
         return (
           <div
@@ -157,7 +157,7 @@ export const Ton: React.FC = () => {
       {DIALOGUE.map((r, i) => (
         <Sfx key={r.texte} nom="tic-point" a={debutReplique(i)} volume={0.22} />
       ))}
-      <Sfx nom="pulsation" a={debutReplique(DIALOGUE.length - 1) + 22} volume={0.3} />
+      <Sfx nom="pulsation" a={debutReplique(DIALOGUE.length - 1) + 16} volume={0.3} />
     </VueAvenir>
   );
 };

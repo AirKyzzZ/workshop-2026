@@ -1,29 +1,30 @@
 import type React from "react";
 import { interpolate, interpolateColors, random, useCurrentFrame } from "remotion";
 import { couleurs, polices, tailles } from "../../charte";
-import { alpha, avance, bloque, formaterNombre } from "../../composants/charte/commun";
-import { positionTete } from "../../composants/charte/plan-factice";
+import { alpha, avance, bloque, brouiller, formaterNombre } from "../../composants/charte/commun";
+import { Rush } from "../../composants/charte/rush";
 import { Sfx } from "../../composants/son";
-import { valeurs } from "../../donnees";
-import { decalageActe3 } from "./commun";
-import { Panneau, Visee } from "./visee";
+import { framesDe, valeurs } from "../../donnees";
+import { Panneau } from "./visee";
 import { VueAtria } from "./vue-atria";
 
-const BADGE = 12;
-const VISEE_1 = 26;
-const VERROU_1 = 42;
-const BARRES_VISAGE = 48;
-const BARRES_EMPREINTE = 60;
-const SIMILARITE = 92;
-const FICHES_DEBUT = 106;
-const VISEE_2 = 190;
-const VERROU_2 = 204;
-const BARRES_IMPOSTEUR = 206;
-const SIMILARITE_2 = 224;
-const REFUS = 234;
+const DUREE = framesDe("3.2");
+const LECTURE = 42;
+const SFACE = Math.round(DUREE * 0.29);
+const VERROU = SFACE + 6;
+const BARRES_VISAGE = SFACE + 10;
+const BARRES_EMPREINTE = SFACE + 16;
+const SIMILARITE = SFACE + 30;
+const FICHES = SIMILARITE + 12;
+const IMPOSTEUR = Math.round(DUREE * 0.66);
+const SIMILARITE_2 = IMPOSTEUR + 12;
+const REFUS = Math.round(DUREE * 0.8);
 
-const LARGEUR_BARRES = 540;
-const HAUTEUR_BARRES = 48;
+const FLUX = { x: 110, y: 180, largeur: 880, hauteur: 495 };
+const COLONNE = { x: 1030, largeur: 780 };
+const LARGEUR_BARRES = 420;
+const HAUTEUR_BARRES = 44;
+const VISAGE_TAILLE = { largeur: 150, hauteur: 176 };
 
 const vecteur = (graine: string, bruit: number) =>
   Array.from({ length: valeurs.dimensionsEmpreinte }, (_, i) =>
@@ -32,9 +33,9 @@ const vecteur = (graine: string, bruit: number) =>
 
 const EMPREINTE = vecteur("sface-melih", 0);
 const VISAGE = EMPREINTE.map((v, i) => Math.max(-1, Math.min(1, v + (random(`sface-direct-${i}`) * 2 - 1) * 0.35)));
-const IMPOSTEUR = vecteur("sface-alexandre", 0.1);
+const IMPOSTEUR_VECTEUR = vecteur("sface-alexandre", 0.1);
 
-const FICHES = [
+const FICHES_EQUIPAGE = [
   { nom: valeurs.auteur, role: valeurs.roleAuteur },
   { nom: valeurs.temoin, role: valeurs.roleTemoin },
   { nom: valeurs.commandant, role: valeurs.roleCommandant },
@@ -56,7 +57,7 @@ const Barres: React.FC<{ vecteurs: number[]; p: number; couleur: string }> = ({ 
 };
 
 const Etiquette: React.FC<{ children: React.ReactNode; couleur?: string }> = ({ children, couleur = couleurs.texteDoux }) => (
-  <div style={{ fontFamily: polices.donnees, fontSize: tailles.etiquette, letterSpacing: "0.06em", color: couleur, marginBottom: 8 }}>{children}</div>
+  <div style={{ fontFamily: polices.donnees, fontSize: tailles.etiquette, letterSpacing: "0.06em", color: couleur, marginBottom: 6, whiteSpace: "nowrap" }}>{children}</div>
 );
 
 const Coche: React.FC<{ ok: boolean; p: number }> = ({ ok, p }) => (
@@ -69,167 +70,203 @@ const Coche: React.FC<{ ok: boolean; p: number }> = ({ ok, p }) => (
   </svg>
 );
 
-const Reperes: React.FC<{ x: number; y: number; p: number; couleur: string }> = ({ x, y, p, couleur }) => (
-  <>
-    {[
-      [-0.22, -0.1],
-      [0.22, -0.1],
-      [0, 0.1],
-      [-0.16, 0.28],
-      [0.16, 0.28],
-    ].map(([dx, dy], i) => (
-      <div
-        key={i}
-        style={{
-          position: "absolute",
-          left: x + dx * 150 - 4,
-          top: y + dy * 170 - 4,
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: couleur,
-          opacity: avance(p * 20, i * 2, 6),
-        }}
-      />
-    ))}
-  </>
-);
+const REPERES = [
+  [-0.2, -0.12],
+  [0.2, -0.12],
+  [0, 0.06],
+  [-0.14, 0.24],
+  [0.14, 0.24],
+] as const;
+
+const VisageVectoriel: React.FC<{ verrou: number; couleur: string; nom: string; pNom: number; frame: number }> = ({ verrou, couleur, nom, pNom, frame }) => {
+  const { largeur, hauteur } = VISAGE_TAILLE;
+  const cx = largeur / 2;
+  const cy = hauteur * 0.42;
+  const echelle = interpolate(verrou, [0, 1], [1.3, 1], bloque);
+  const coin = 18;
+  const bx = largeur * 0.12;
+  const by = hauteur * 0.06;
+  const bl = largeur * 0.76;
+  const bh = hauteur * 0.7;
+  return (
+    <div style={{ width: largeur, flexShrink: 0 }}>
+      <svg width={largeur} height={hauteur} style={{ display: "block", overflow: "visible" }}>
+        <rect x={0} y={0} width={largeur} height={hauteur} fill={alpha(couleurs.fond, 0.6)} stroke={couleurs.trait} strokeWidth={1} />
+        <ellipse cx={cx} cy={cy} rx={largeur * 0.26} ry={hauteur * 0.26} fill={couleurs.panneauClair} />
+        <path d={`M ${largeur * 0.12} ${hauteur} C ${largeur * 0.16} ${hauteur * 0.74}, ${largeur * 0.84} ${hauteur * 0.74}, ${largeur * 0.88} ${hauteur}`} fill={couleurs.panneauClair} />
+        <g opacity={interpolate(verrou, [0, 0.3], [0, 1], bloque)} style={{ scale: `${echelle}`, transformOrigin: `${cx}px ${cy}px` }}>
+          {[
+            [bx, by, 1, 1],
+            [bx + bl, by, -1, 1],
+            [bx, by + bh, 1, -1],
+            [bx + bl, by + bh, -1, -1],
+          ].map(([x, y, sx, sy]) => (
+            <path key={`${sx}${sy}`} d={`M ${x} ${y + sy * coin} L ${x} ${y} L ${x + sx * coin} ${y}`} fill="none" stroke={couleur} strokeWidth={2} />
+          ))}
+        </g>
+        {REPERES.map(([dx, dy], i) => (
+          <circle key={i} cx={cx + dx * largeur} cy={cy + dy * hauteur} r={3.5} fill={couleur} opacity={interpolate(verrou, [0.3 + i * 0.12, 0.5 + i * 0.12], [0, 1], bloque)} />
+        ))}
+      </svg>
+      <div style={{ marginTop: 10, fontFamily: polices.donnees, fontSize: tailles.etiquette, letterSpacing: "0.06em", color: couleur, whiteSpace: "nowrap", opacity: pNom }}>
+        {brouiller(nom, pNom, frame, nom)}
+      </div>
+    </div>
+  );
+};
 
 export const Qui: React.FC = () => {
   const frame = useCurrentFrame();
-  const f = frame + decalageActe3("3.2");
-  const tete1 = positionTete(0, f);
-  const tete2 = positionTete(1, f);
-  const refus = avance(frame, REFUS, 12);
-  const imposteur = frame >= BARRES_IMPOSTEUR;
-  const pVisage = imposteur ? avance(frame, BARRES_IMPOSTEUR, 22) : avance(frame, BARRES_VISAGE, 26);
-  const pSimilarite = imposteur ? avance(frame, SIMILARITE_2, 16) : avance(frame, SIMILARITE, 20);
+  const flux = avance(frame, 0, 10);
+  const lu = avance(frame, LECTURE, 10);
+  const refus = avance(frame, REFUS, 8);
+  const imposteur = frame >= IMPOSTEUR;
+  const pVisage = imposteur ? avance(frame, IMPOSTEUR, 14) : avance(frame, BARRES_VISAGE, 16);
+  const pSimilarite = imposteur ? avance(frame, SIMILARITE_2, 10) : avance(frame, SIMILARITE, 12);
   const similarite = imposteur
     ? interpolate(pSimilarite, [0, 1], [valeurs.similariteVisage, valeurs.similariteImposteur])
     : valeurs.similariteVisage * pSimilarite;
   const couleurSimilarite = imposteur && pSimilarite > 0.5 ? couleurs.critique : couleurs.nominal;
-  const reconnu1 = avance(frame, SIMILARITE + 16, 12);
-  const attenuation1 = 1 - 0.6 * avance(frame, VISEE_2 - 6, 14);
-  const couleur2 = interpolateColors(refus, [0, 1], [couleurs.texte, couleurs.critique]);
+  const reconnu = avance(frame, SIMILARITE + 8, 8);
+  const verrou = imposteur ? avance(frame, IMPOSTEUR - 4, 10) : avance(frame, VERROU, 12);
+  const couleurVisage = imposteur
+    ? interpolateColors(refus, [0, 1], [couleurs.texte, couleurs.critique])
+    : interpolateColors(reconnu, [0, 1], [couleurs.texte, couleurs.nominal]);
+  const nomVisage = imposteur ? valeurs.temoin : valeurs.auteur;
+  const pNomVisage = imposteur ? avance(frame, IMPOSTEUR + 2, 10) : reconnu;
+  const voileFlux = avance(frame, IMPOSTEUR, 10) * 0.45;
 
   return (
-    <VueAtria id="3.2" couche={1} tournage="BADGE ET VISAGES DEVANT LA C270">
-      <div style={{ position: "absolute", inset: 0, opacity: attenuation1 }}>
-        <Visee
-          x={tete1.x}
-          y={tete1.y}
-          largeur={170}
-          hauteur={200}
-          p={avance(frame, VISEE_1, 16)}
-          couleur={interpolateColors(reconnu1, [0, 1], [couleurs.texte, couleurs.nominal])}
-          libelle={
-            <>
-              <span style={{ color: couleurs.texteDoux }}>YUNET</span>
-              <span style={{ color: couleurs.nominal, opacity: reconnu1 }}>{valeurs.auteur}</span>
-            </>
-          }
-        />
-        <Reperes x={tete1.x} y={tete1.y} p={avance(frame, VERROU_1, 20)} couleur={couleurs.texte} />
+    <VueAtria id="3.2" couche={1} plan={<div style={{ position: "absolute", inset: 0, backgroundColor: couleurs.fond }} />}>
+      <div
+        style={{
+          position: "absolute",
+          left: FLUX.x,
+          top: FLUX.y,
+          width: FLUX.largeur,
+          height: FLUX.hauteur,
+          overflow: "hidden",
+          borderRadius: 4,
+          outline: `1px solid ${alpha(refus > 0.5 ? couleurs.critique : couleurs.texte, 0.25 + 0.5 * refus)}`,
+          boxShadow: `0 30px 80px ${alpha("#000000", 0.6)}`,
+          opacity: interpolate(flux, [0, 0.3], [0, 1], bloque),
+          clipPath: `inset(0 ${(1 - flux) * 100}% 0 0)`,
+        }}
+      >
+        <Rush nom="badge-equipier" vitesse={0.8} etalonnage="saturate(0.7) contrast(1.1) brightness(0.62)" vignette={0.45} />
+        <div style={{ position: "absolute", inset: 0, backgroundColor: couleurs.fond, opacity: voileFlux }} />
+        <div
+          style={{
+            position: "absolute",
+            left: 24,
+            top: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            fontFamily: polices.donnees,
+            fontSize: tailles.etiquette,
+            letterSpacing: "0.08em",
+            color: couleurs.texte,
+            textShadow: `0 2px 12px ${couleurs.fond}`,
+          }}
+        >
+          <div style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: couleurs.critique, opacity: 0.6 + 0.4 * Math.cos(frame / 6) }} />
+          RC522 · LECTEUR
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            width: 520,
+            boxSizing: "border-box",
+            padding: "18px 24px 22px",
+            textAlign: "center",
+            border: `2px solid ${couleurs.critique}`,
+            backgroundColor: alpha(couleurs.fond, 0.84),
+            boxShadow: `0 0 ${40 * refus}px ${alpha(couleurs.critique, 0.35)}`,
+            opacity: refus,
+            translate: "-50% -50%",
+            scale: `${interpolate(refus, [0, 1], [1.08, 1])}`,
+          }}
+        >
+          <div style={{ fontFamily: polices.display, fontWeight: 600, fontSize: 72, lineHeight: 1, paddingTop: 6, whiteSpace: "nowrap", color: couleurs.critique }}>VISAGE ≠ BADGE</div>
+          <div style={{ marginTop: 10, fontFamily: polices.donnees, fontWeight: 600, fontSize: 30, letterSpacing: "0.2em", color: couleurs.critique }}>ACCÈS REFUSÉ</div>
+        </div>
       </div>
-      <Visee
-        x={tete2.x}
-        y={tete2.y}
-        largeur={170}
-        hauteur={200}
-        p={avance(frame, VISEE_2, 16)}
-        couleur={couleur2}
-        libelleDroite
-        libelle={
-          <>
-            <span style={{ color: couleurs.texteDoux }}>YUNET</span>
-            <span style={{ color: couleurs.critique, opacity: refus }}>{valeurs.temoin}</span>
-          </>
-        }
-      />
-      <Reperes x={tete2.x} y={tete2.y} p={avance(frame, VERROU_2, 20)} couleur={couleurs.texte} />
 
-      <Panneau x={110} y={184} largeur={600} p={avance(frame, BADGE - 6, 18)} titre="RC522 · BADGE" accent={refus > 0.5 ? couleurs.critique : couleurs.nominal}>
-        <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
+      <Panneau x={COLONNE.x} y={FLUX.y} largeur={COLONNE.largeur} p={avance(frame, 4, 12)} titre="RC522 · BADGE" accent={refus > 0.5 ? couleurs.critique : lu > 0 ? couleurs.nominal : undefined}>
+        <div style={{ display: "flex", alignItems: "center", gap: 22, height: 64 }}>
           <svg width={52} height={40} viewBox="0 0 52 40">
             <rect x={1} y={1} width={50} height={38} rx={5} fill="none" stroke={couleurs.texte} strokeWidth={2} />
             <rect x={8} y={9} width={12} height={10} rx={2} fill={couleurs.attention} opacity={0.8} />
             <line x1={8} y1={28} x2={40} y2={28} stroke={couleurs.texteDoux} strokeWidth={2} />
           </svg>
-          <div style={{ fontFamily: polices.display, fontWeight: 600, fontSize: 64, lineHeight: 1, paddingTop: 6, color: couleurs.texte }}>{valeurs.auteur}</div>
+          <div style={{ fontFamily: polices.display, fontWeight: 600, fontSize: 64, lineHeight: 1, paddingTop: 6, color: couleurs.texte, whiteSpace: "pre" }}>
+            {lu > 0 ? brouiller(valeurs.auteur, lu, frame, "badge-melih") : "—"}
+          </div>
+          <div style={{ flex: 1 }} />
+          <div style={{ fontFamily: polices.donnees, fontSize: tailles.etiquette, letterSpacing: "0.08em", color: refus > 0.5 ? couleurs.critique : couleurs.texteDoux, opacity: imposteur ? avance(frame, IMPOSTEUR, 10) : 0 }}>
+            {`PORTÉ PAR ${valeurs.temoin}`}
+          </div>
         </div>
       </Panneau>
 
-      <Panneau x={110} y={362} largeur={600} p={avance(frame, BARRES_VISAGE - 8, 18)} titre={`SFACE · ${valeurs.dimensionsEmpreinte} DIMENSIONS`}>
-        <Etiquette>VISAGE</Etiquette>
-        <Barres vecteurs={imposteur ? IMPOSTEUR : VISAGE} p={pVisage} couleur={imposteur ? couleurs.critique : couleurs.texte} />
-        <div style={{ height: 12 }} />
-        <Etiquette>{`EMPREINTE · ${valeurs.auteur}`}</Etiquette>
-        <Barres vecteurs={EMPREINTE} p={avance(frame, BARRES_EMPREINTE, 26)} couleur={couleurs.nominal} />
-        <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 18, whiteSpace: "nowrap", opacity: avance(frame, SIMILARITE - 4, 10) }}>
-          <span style={{ fontFamily: polices.donnees, fontSize: tailles.etiquette, color: couleurs.texteDoux, letterSpacing: "0.06em" }}>SIMILARITÉ</span>
-          <span style={{ fontFamily: polices.donnees, fontSize: 40, color: couleurSimilarite }}>{formaterNombre(similarite, 2)}</span>
-          <span style={{ fontFamily: polices.donnees, fontSize: tailles.etiquette, color: couleurs.texteFaible }}>{`SEUIL ${formaterNombre(valeurs.seuilSimilarite, 3)}`}</span>
+      <Panneau x={COLONNE.x} y={FLUX.y + 186} largeur={COLONNE.largeur} p={avance(frame, SFACE, 12)} titre={`YUNET + SFACE · ${valeurs.dimensionsEmpreinte} DIMENSIONS`}>
+        <div style={{ display: "flex", gap: 30 }}>
+          <VisageVectoriel verrou={verrou} couleur={couleurVisage} nom={nomVisage} pNom={pNomVisage} frame={frame} />
+          <div>
+            <Etiquette>VISAGE</Etiquette>
+            <Barres vecteurs={imposteur ? IMPOSTEUR_VECTEUR : VISAGE} p={pVisage} couleur={imposteur ? couleurs.critique : couleurs.texte} />
+            <div style={{ height: 14 }} />
+            <Etiquette>{`EMPREINTE · ${valeurs.auteur}`}</Etiquette>
+            <Barres vecteurs={EMPREINTE} p={avance(frame, BARRES_EMPREINTE, 16)} couleur={couleurs.nominal} />
+            <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 16, whiteSpace: "nowrap", opacity: avance(frame, SIMILARITE - 4, 8) }}>
+              <span style={{ fontFamily: polices.donnees, fontSize: tailles.etiquette, color: couleurs.texteDoux, letterSpacing: "0.06em" }}>SIMILARITÉ</span>
+              <span style={{ fontFamily: polices.donnees, fontSize: 44, color: couleurSimilarite }}>{formaterNombre(similarite, 2)}</span>
+              <span style={{ fontFamily: polices.donnees, fontSize: tailles.etiquette, color: couleurs.texteFaible }}>{`SEUIL ${formaterNombre(valeurs.seuilSimilarite, 3)}`}</span>
+            </div>
+          </div>
         </div>
       </Panneau>
 
-      <div style={{ position: "absolute", left: 1370, top: 184, width: 460, display: "flex", flexDirection: "column", gap: 12 }}>
-        {FICHES.map((fiche, i) => {
-          const p = avance(frame, FICHES_DEBUT + i * 12, 18);
+      <div style={{ position: "absolute", left: FLUX.x, top: FLUX.y + FLUX.hauteur + 24, width: FLUX.largeur, display: "flex", gap: 12 }}>
+        {FICHES_EQUIPAGE.map((fiche, i) => {
+          const p = avance(frame, FICHES + i * 3, 10);
           const refuse = i === 1 && refus > 0;
-          const couleur = refuse ? couleurs.critique : couleurs.nominal;
+          const ok = i !== 1;
+          const couleur = refuse ? couleurs.critique : ok ? couleurs.nominal : couleurs.traitClair;
           return (
             <div
               key={fiche.nom}
               style={{
                 position: "relative",
-                padding: "14px 20px 14px 22px",
-                backgroundColor: refuse ? alpha(couleurs.critique, 0.12 * refus) : alpha(couleurs.fond, 0.78),
+                flex: 1,
+                padding: "12px 18px 12px 20px",
+                backgroundColor: refuse ? alpha(couleurs.critique, 0.12 * refus) : alpha(couleurs.panneau, 0.9),
                 border: `1px solid ${alpha(refuse ? couleurs.critique : couleurs.texte, refuse ? 0.6 : 0.1)}`,
                 borderLeft: `3px solid ${couleur}`,
                 opacity: interpolate(p, [0, 0.4], [0, 1], bloque),
-                translate: `${(1 - p) * 30}px 0`,
-                clipPath: `inset(-2px -2px -2px ${(1 - p) * 100}%)`,
+                translate: `0 ${(1 - p) * 16}px`,
               }}
             >
-              <div>
-                <div style={{ fontFamily: polices.display, fontWeight: 600, fontSize: 56, lineHeight: 1, paddingTop: 4, color: refuse ? couleurs.critique : couleurs.texte }}>{fiche.nom}</div>
-                <div style={{ marginTop: 4, fontFamily: polices.interface, fontWeight: 600, fontSize: 24, letterSpacing: "0.03em", color: couleurs.texteDoux, whiteSpace: "nowrap" }}>{fiche.role}</div>
-              </div>
-              <div style={{ position: "absolute", top: 14, right: 16 }}>
-                <Coche ok={!refuse} p={refuse ? refus : avance(frame, FICHES_DEBUT + i * 12 + 12, 12)} />
+              <div style={{ fontFamily: polices.display, fontWeight: 600, fontSize: 48, lineHeight: 1, paddingTop: 4, color: refuse ? couleurs.critique : couleurs.texte }}>{fiche.nom}</div>
+              <div style={{ marginTop: 2, fontFamily: polices.interface, fontWeight: 600, fontSize: 24, lineHeight: 1.2, color: couleurs.texteDoux }}>{fiche.role}</div>
+              <div style={{ position: "absolute", top: 12, right: 12 }}>
+                {ok || refuse ? <Coche ok={!refuse} p={refuse ? refus : avance(frame, FICHES + i * 3 + 6, 8)} /> : null}
               </div>
             </div>
           );
         })}
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          left: Math.min(tete2.x, 1150) - 220,
-          top: 556,
-          width: 440,
-          boxSizing: "border-box",
-          padding: "16px 24px 20px",
-          textAlign: "center",
-          border: `2px solid ${couleurs.critique}`,
-          backgroundColor: alpha(couleurs.fond, 0.82),
-          boxShadow: `0 0 ${40 * refus}px ${alpha(couleurs.critique, 0.35)}`,
-          opacity: refus,
-          scale: `${interpolate(refus, [0, 1], [1.08, 1])}`,
-        }}
-      >
-        <div style={{ fontFamily: polices.display, fontWeight: 600, fontSize: 60, lineHeight: 1, paddingTop: 6, whiteSpace: "nowrap", color: couleurs.critique }}>VISAGE ≠ BADGE</div>
-        <div style={{ marginTop: 10, fontFamily: polices.donnees, fontWeight: 600, fontSize: 28, letterSpacing: "0.2em", color: couleurs.critique }}>ACCÈS REFUSÉ</div>
-      </div>
-
-      <Sfx nom="telemetrie-bip" a={BADGE} volume={0.35} />
-      <Sfx nom="verrouillage" a={VERROU_1} volume={0.35} />
-      <Sfx nom="tic-point" a={SIMILARITE + 16} volume={0.3} />
-      {FICHES.map((fiche, i) => (
-        <Sfx key={fiche.nom} nom="tic-point" a={FICHES_DEBUT + i * 12 + 12} volume={0.22} />
+      <Sfx nom="telemetrie-bip" a={LECTURE} volume={0.35} />
+      <Sfx nom="verrouillage" a={VERROU} volume={0.35} />
+      <Sfx nom="tic-point" a={SIMILARITE + 8} volume={0.3} />
+      {FICHES_EQUIPAGE.map((fiche, i) => (
+        <Sfx key={fiche.nom} nom="tic-point" a={FICHES + i * 3 + 6} volume={0.18} />
       ))}
-      <Sfx nom="verrouillage" a={VERROU_2} volume={0.35} />
+      <Sfx nom="verrouillage" a={IMPOSTEUR} volume={0.3} />
       <Sfx nom="buzzer-refus" a={REFUS} volume={0.45} />
     </VueAtria>
   );

@@ -7,8 +7,8 @@ import { BarreMemoire } from "../../composants/metier/barre-memoire";
 import { Sfx } from "../../composants/son";
 import { framesDe, valeurs } from "../../donnees";
 
-const DEBUT = 6;
-const INTERVALLE = 14;
+const DEBUT = 0;
+const INTERVALLE = 9;
 const MO_PAR_GO = 1024;
 
 const MODELES = valeurs.modeles.map((m) => ({ nom: m.nom, taille: m.mo / MO_PAR_GO, libelle: m.libelle }));
@@ -16,12 +16,12 @@ const SYSTEME = valeurs.memoireGo - valeurs.memoireLibreGo - MODELES.reduce((s, 
 if (SYSTEME <= 0) throw new Error(`mémoire incohérente : ${valeurs.memoireLibreGo} Go libres ne laissent rien au système`);
 const SEGMENTS = [{ nom: "Système", taille: SYSTEME, libelle: `${Math.round(SYSTEME * MO_PAR_GO)} Mo` }, ...MODELES];
 const FIN_REMPLISSAGE = DEBUT + 16 + SEGMENTS.length * INTERVALLE + 6;
-const CONCLUSION = FIN_REMPLISSAGE + 18;
+const CONCLUSION = FIN_REMPLISSAGE + 10;
 
 export const Memoire: React.FC = () => {
   const frame = useCurrentFrame();
   const duree = framesDe("7.2");
-  const pConclusion = avance(frame, CONCLUSION, 20);
+  const pConclusion = avance(frame, CONCLUSION, 14);
 
   return (
     <FondScene>

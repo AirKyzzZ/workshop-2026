@@ -8,27 +8,27 @@ import { Sfx } from "../../composants/son";
 import { framesDe, valeurs } from "../../donnees";
 import { grilleEquipage } from "./equipage";
 
-const SORTIE_TEXTE = 118;
-const DEBUT_POINTS = 128;
-const REPERAGE = 164;
-const BASCULE = 186;
-const DECROCHE = 200;
+const DUREE = framesDe("2.3");
+const SORTIE_TEXTE = Math.round(DUREE * 0.48);
+const DEBUT_POINTS = Math.round(DUREE * 0.5);
+const REPERAGE = Math.round(DUREE * 0.62);
+const BASCULE = Math.round(DUREE * 0.68);
+const DECROCHE = Math.round(DUREE * 0.72);
 const EQUIPIER = 137;
 
 export const SansReleve: React.FC = () => {
   const frame = useCurrentFrame();
-  const duree = framesDe("2.3");
-  const reperage = avance(frame, REPERAGE, 16);
-  const bascule = avance(frame, BASCULE, 12);
-  const chute = avance(frame, DECROCHE, 50, courbes.bascule);
+  const reperage = avance(frame, REPERAGE, 10);
+  const bascule = avance(frame, BASCULE, 8);
+  const chute = avance(frame, DECROCHE, 38, courbes.bascule);
   const cible = grilleEquipage[EQUIPIER];
   const y = cible.y + chute * 54;
   const pulsation = 0.5 + 0.5 * Math.sin(frame / 5);
-  const sortie = avance(frame, duree - 14, 12, courbes.bascule);
+  const sortie = avance(frame, DUREE - 8, 7, courbes.bascule);
 
   return (
     <FondScene>
-      <Derive duree={duree}>
+      <Derive duree={DUREE}>
         <AbsoluteFill style={{ translate: "0 -30px" }}>
           <TypoCinetique
             surtitre="SI LOIN DE LA TERRE"
@@ -38,15 +38,16 @@ export const SansReleve: React.FC = () => {
               { texte: `${valeurs.psychiatres} PSYCHIATRE`, etat: "critique" },
             ]}
             taille={150}
-            debut={6}
-            decalage={8}
+            debut={0}
+            decalage={10}
+            duree={16}
             sortie={SORTIE_TEXTE}
           />
         </AbsoluteFill>
         <svg width={1920} height={1080} style={{ position: "absolute", inset: 0, opacity: 1 - sortie }}>
           {grilleEquipage.map((p, i) => {
             if (i === EQUIPIER) return null;
-            const e = avance(frame, DEBUT_POINTS + (Math.abs(p.x - cible.x) + Math.abs(p.y - cible.y)) / 40, 14);
+            const e = avance(frame, DEBUT_POINTS + (Math.abs(p.x - cible.x) + Math.abs(p.y - cible.y)) / 60, 8);
             return <circle key={i} cx={p.x} cy={p.y} r={6} fill={couleurs.traitClair} opacity={e * interpolate(reperage, [0, 1], [0.8, 0.45])} />;
           })}
           <circle
@@ -54,7 +55,7 @@ export const SansReleve: React.FC = () => {
             cy={y}
             r={7}
             fill={interpolateColors(bascule, [0, 1], [couleurs.traitClair, couleurs.attention])}
-            opacity={avance(frame, DEBUT_POINTS, 14) * interpolate(chute, [0, 1], [1, 0.55])}
+            opacity={avance(frame, DEBUT_POINTS, 8) * interpolate(chute, [0, 1], [1, 0.55])}
             style={{ filter: bascule > 0 ? `drop-shadow(0 0 ${6 + 6 * pulsation}px ${alpha(couleurs.attention, 0.8)})` : undefined }}
           />
           <g opacity={reperage} style={{ scale: `${interpolate(reperage, [0, 1], [1.8, 1])}`, transformOrigin: `${cible.x}px ${y}px` }}>
@@ -83,7 +84,7 @@ export const SansReleve: React.FC = () => {
           />
         </svg>
       </Derive>
-      <Sfx nom="impact-titre" a={34} volume={(f) => interpolate(f, [0, 10, 80], [0.28, 0.28, 0], bloque)} duree={90} />
+      <Sfx nom="impact-titre" a={20} volume={(f) => interpolate(f, [0, 10, 70], [0.28, 0.28, 0], bloque)} duree={76} />
       <Sfx nom="verrouillage" a={REPERAGE} volume={0.3} />
       <Sfx nom="pulsation" a={BASCULE} volume={0.3} />
     </FondScene>

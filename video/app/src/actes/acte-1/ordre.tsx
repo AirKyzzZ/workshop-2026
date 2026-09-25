@@ -1,46 +1,98 @@
 import type React from "react";
 import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame } from "remotion";
-import { couleurs, polices, tailles } from "../../charte";
+import { couleurs, marge, polices, tailles } from "../../charte";
 import { alpha, avance, bloque, brouiller, courbes } from "../../composants/charte/commun";
 import { Curseur, positionCurseur } from "../../composants/charte/curseur";
 import { FondScene } from "../../composants/charte/plateau";
+import { Rush } from "../../composants/charte/rush";
 import { COQUE } from "../../composants/metier/plan-vaisseau";
 import { Sfx } from "../../composants/son";
 import { valeurs } from "../../donnees";
 
 const X_PANNEAU = 310;
 const LARGEUR_PANNEAU = 1300;
-const DEBUT_BADGE = 14;
-const DEBUT_FRAPPE = 54;
-const PAR_CARACTERE = 2.2;
-const APPUI = 146;
+const DEBUT_CARTE = 10;
+const LECTURE = 30;
+const REPLI = 34;
+const DUREE_REPLI = 16;
+const DEBUT_FRAPPE = 52;
+const PAR_CARACTERE = 1.1;
+const APPUI = 100;
 
 export const COMMANDE = `AFFECTER ${valeurs.auteur.toLowerCase()} → ${valeurs.posteVital}`;
 const FIN_FRAPPE = DEBUT_FRAPPE + COMMANDE.length * PAR_CARACTERE;
 
 const DECALAGE_Y = 64;
+const RANGEE_BADGE = { y: 236 + DECALAGE_Y, hauteur: 108 };
+const VIGNETTE = { x: X_PANNEAU + 18, y: RANGEE_BADGE.y + 18, largeur: 128, hauteur: 72 };
 const BOUTON = { x: X_PANNEAU + LARGEUR_PANNEAU - 220, y: 640 + DECALAGE_Y, largeur: 220, hauteur: 70 };
 
 const CLES_CURSEUR = [
-  { frame: 104, x: 1500, y: 930 },
-  { frame: 138, x: BOUTON.x + 120, y: BOUTON.y + 40 },
+  { frame: 74, x: 1500, y: 930 },
+  { frame: 96, x: BOUTON.x + 120, y: BOUTON.y + 40 },
 ];
 
-const IconeBadge: React.FC<{ p: number; frame: number }> = ({ p, frame }) => (
-  <svg width={56} height={56} viewBox="0 0 56 56">
-    <rect x={6} y={14} width={30} height={30} rx={4} fill="none" stroke={couleurs.texte} strokeWidth={2} />
-    {[0, 1, 2].map((k) => (
-      <path
-        key={k}
-        d={`M ${40 + k * 5} ${18 - k * 3} Q ${48 + k * 6} 29 ${40 + k * 5} ${40 + k * 3}`}
-        fill="none"
-        stroke={couleurs.nominal}
-        strokeWidth={2}
-        opacity={p * (0.4 + 0.6 * Math.max(0, Math.sin(frame / 3 - k)))}
-      />
-    ))}
-  </svg>
-);
+const PlanCarte: React.FC<{ frame: number }> = ({ frame }) => {
+  const repli = avance(frame, REPLI, DUREE_REPLI, courbes.bascule);
+  const lu = avance(frame, LECTURE, 8);
+  const hud = 1 - avance(frame, REPLI, 8);
+  const eclair = interpolate(frame, [LECTURE, LECTURE + 2, LECTURE + 10], [0, 0.18, 0], bloque);
+  return (
+    <>
+      <div
+        style={{
+          position: "absolute",
+          left: interpolate(repli, [0, 1], [0, VIGNETTE.x]),
+          top: interpolate(repli, [0, 1], [0, VIGNETTE.y]),
+          width: interpolate(repli, [0, 1], [1920, VIGNETTE.largeur]),
+          height: interpolate(repli, [0, 1], [1080, VIGNETTE.hauteur]),
+          overflow: "hidden",
+          borderRadius: 4 * repli,
+          outline: `1px solid ${alpha(couleurs.texte, 0.3 * repli)}`,
+          boxShadow: `0 20px 60px ${alpha("#000000", 0.5 * repli)}`,
+        }}
+      >
+        <Rush nom="carte-nfc-captaine" debut={DEBUT_CARTE} etalonnage="saturate(0.7) contrast(1.1) brightness(0.62)" vignette={0.5 * (1 - repli)} />
+        <AbsoluteFill style={{ backgroundColor: couleurs.blanc, opacity: eclair }} />
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          top: marge,
+          left: marge,
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          opacity: hud * avance(frame, 0, 8),
+          fontFamily: polices.donnees,
+          fontSize: tailles.etiquette,
+          letterSpacing: "0.12em",
+          color: couleurs.texte,
+          textShadow: `0 2px 14px ${couleurs.fond}`,
+        }}
+      >
+        <div style={{ width: 12, height: 12, backgroundColor: lu > 0 ? couleurs.nominal : couleurs.attention, boxShadow: `0 0 14px ${alpha(lu > 0 ? couleurs.nominal : couleurs.attention, 0.7)}` }} />
+        RC522 · CARTE DU COMMANDANT
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          left: marge,
+          bottom: marge + 150,
+          display: "flex",
+          alignItems: "baseline",
+          gap: 20,
+          opacity: hud * lu,
+          translate: `0 ${(1 - lu) * 12}px`,
+          textShadow: `0 2px 18px ${couleurs.fond}`,
+        }}
+      >
+        <span style={{ fontFamily: polices.donnees, fontSize: tailles.etiquette, letterSpacing: "0.12em", color: couleurs.nominal }}>CARTE LUE</span>
+        <span style={{ fontFamily: polices.display, fontWeight: 600, fontSize: 88, lineHeight: 1, color: couleurs.blanc }}>{valeurs.commandant}</span>
+      </div>
+    </>
+  );
+};
 
 export const BarreCommandement: React.FC<{ p: number }> = ({ p }) => (
   <div
@@ -74,16 +126,16 @@ export const BarreCommandement: React.FC<{ p: number }> = ({ p }) => (
 
 export const OrdreCommandant: React.FC = () => {
   const frame = useCurrentFrame();
-  const barre = avance(frame, 0, 20);
-  const panneau = avance(frame, 6, 24);
-  const badge = avance(frame, DEBUT_BADGE, 18);
-  const badgeLu = avance(frame, DEBUT_BADGE + 14, 20);
-  const coche = avance(frame, DEBUT_BADGE + 34, 10);
+  const barre = avance(frame, LECTURE, 12);
+  const panneau = avance(frame, REPLI + 2, 14);
+  const badge = avance(frame, REPLI - 2, 12);
+  const badgeLu = avance(frame, REPLI + 4, 12);
+  const coche = avance(frame, REPLI + DUREE_REPLI, 8);
   const tapes = Math.max(0, Math.min(COMMANDE.length, Math.floor((frame - DEBUT_FRAPPE) / PAR_CARACTERE)));
   const curseur = positionCurseur(CLES_CURSEUR, frame, courbes.bascule);
-  const appui = interpolate(frame, [APPUI, APPUI + 10], [0, 1], bloque);
-  const envoye = frame >= APPUI + 3;
-  const attente = avance(frame, APPUI + 6, 12);
+  const appui = interpolate(frame, [APPUI, APPUI + 8], [0, 1], bloque);
+  const envoye = frame >= APPUI + 2;
+  const attente = avance(frame, APPUI + 4, 10);
   const clignote = frame < FIN_FRAPPE || Math.floor(frame / 8) % 2 === 0;
 
   return (
@@ -98,12 +150,13 @@ export const OrdreCommandant: React.FC = () => {
         style={{
           position: "absolute",
           left: X_PANNEAU,
-          top: 236 + DECALAGE_Y,
+          top: RANGEE_BADGE.y,
           width: LARGEUR_PANNEAU,
+          height: RANGEE_BADGE.hauteur,
           display: "flex",
           alignItems: "center",
           gap: 24,
-          padding: "18px 28px",
+          padding: `0 28px 0 ${VIGNETTE.largeur + 44}px`,
           boxSizing: "border-box",
           border: `1px solid ${alpha(couleurs.texte, 0.1)}`,
           backgroundColor: alpha(couleurs.panneau, 0.9),
@@ -111,7 +164,6 @@ export const OrdreCommandant: React.FC = () => {
           translate: `0 ${(1 - badge) * 18}px`,
         }}
       >
-        <IconeBadge p={badgeLu} frame={frame} />
         <div style={{ fontFamily: polices.donnees, fontSize: tailles.etiquette, letterSpacing: "0.12em", color: couleurs.texteDoux }}>BADGE</div>
         <div style={{ flex: 1, fontFamily: polices.donnees, fontWeight: 600, fontSize: 30, letterSpacing: "0.06em", color: couleurs.texte }}>
           {brouiller(`${valeurs.commandant} · ${valeurs.roleCommandant}`, badgeLu, frame, "badge-commandant")}
@@ -224,7 +276,8 @@ export const OrdreCommandant: React.FC = () => {
         VALIDER
       </div>
 
-      <Curseur x={curseur.x} y={curseur.y} appui={appui} opacite={interpolate(frame, [CLES_CURSEUR[0].frame, CLES_CURSEUR[0].frame + 8], [0, 1], bloque)} />
+      <Curseur x={curseur.x} y={curseur.y} appui={appui} opacite={interpolate(frame, [CLES_CURSEUR[0].frame, CLES_CURSEUR[0].frame + 6], [0, 1], bloque)} />
+      <PlanCarte frame={frame} />
     </FondScene>
   );
 };
@@ -232,8 +285,9 @@ export const OrdreCommandant: React.FC = () => {
 export const Ordre: React.FC = () => (
   <AbsoluteFill>
     <OrdreCommandant />
-    <Sfx nom="telemetrie-bip" a={DEBUT_BADGE + 14} volume={0.35} />
-    <Sfx nom="verrouillage" a={DEBUT_BADGE + 34} volume={0.25} />
+    <Sfx nom="telemetrie-bip" a={LECTURE} volume={0.35} />
+    <Sfx nom="whoosh" a={REPLI - 2} volume={0.16} />
+    <Sfx nom="verrouillage" a={REPLI + DUREE_REPLI} volume={0.25} />
     {Array.from({ length: Math.ceil(COMMANDE.length / 2) }, (_, i) => (
       <Sfx key={i} nom="tic-point" a={DEBUT_FRAPPE + i * 2 * PAR_CARACTERE} volume={0.14} />
     ))}

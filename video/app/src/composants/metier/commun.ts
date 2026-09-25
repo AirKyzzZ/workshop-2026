@@ -3,7 +3,7 @@ import { couleurs } from "../../charte";
 
 export type Niveau = "nominal" | "attention" | "critique";
 
-export const ADOUCI = Easing.bezier(0.16, 1, 0.3, 1);
+export const ADOUCI = Easing.spring({ damping: 200 });
 export const AMORTI = Easing.bezier(0.65, 0, 0.35, 1);
 
 export const progression = (frame: number, debut: number, duree: number, easing = ADOUCI): number =>

@@ -8,7 +8,7 @@ export const couleurEtat = (etat: Etat) => couleurs[etat];
 export const bloque = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
 export const courbes = {
-  entree: Easing.bezier(0.16, 1, 0.3, 1),
+  entree: Easing.spring({ damping: 200 }),
   bascule: Easing.bezier(0.65, 0, 0.35, 1),
   lineaire: Easing.linear,
 };

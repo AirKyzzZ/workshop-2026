@@ -3,23 +3,25 @@ import { useCurrentFrame } from "remotion";
 import { couleurs, polices } from "../../charte";
 import { alpha, avance, courbes } from "../../composants/charte/commun";
 import { Jauge } from "../../composants/charte/jauge";
-import { FondScene } from "../../composants/charte/plateau";
+import { Derive, FondScene } from "../../composants/charte/plateau";
 import { Sfx } from "../../composants/son";
 import { framesDe, valeurs } from "../../donnees";
 import { BAIES, COUPE, CoupeVaisseau } from "./coupe-vaisseau";
 
 const COTE_JAUGE = 320;
 
+const DUREE = framesDe("2.1");
+
 const SYSTEMES = [
-  { label: "OXYGÈNE", niveau: valeurs.niveauOxygene, debut: 34 },
-  { label: "ÉNERGIE", niveau: valeurs.niveauEnergie, debut: 52 },
-  { label: "EAU", niveau: valeurs.niveauEau, debut: 70 },
+  { label: "OXYGÈNE", niveau: valeurs.niveauOxygene, debut: 8 },
+  { label: "ÉNERGIE", niveau: valeurs.niveauEnergie, debut: Math.round(DUREE * 0.14) },
+  { label: "EAU", niveau: valeurs.niveauEau, debut: Math.round(DUREE * 0.24) },
 ];
 
 const PRINCIPES = [
-  { mot: "capteurs", debut: 98 },
-  { mot: "seuils", debut: 114 },
-  { mot: "redondance", debut: 130 },
+  { mot: "capteurs", debut: Math.round(DUREE * 0.5) },
+  { mot: "seuils", debut: Math.round(DUREE * 0.6) },
+  { mot: "redondance", debut: Math.round(DUREE * 0.7) },
 ];
 
 const Capteurs: React.FC<{ x: number; allumage: number; frame: number }> = ({ x, allumage, frame }) => (
@@ -45,18 +47,18 @@ const Capteurs: React.FC<{ x: number; allumage: number; frame: number }> = ({ x,
 
 export const SystemesVitaux: React.FC = () => {
   const frame = useCurrentFrame();
-  const duree = framesDe("2.1");
-  const trace = avance(frame, 0, 46, courbes.bascule);
-  const sortie = avance(frame, duree - 18, 16, courbes.bascule);
+  const trace = avance(frame, 0, 22, courbes.bascule);
+  const sortie = avance(frame, DUREE - 12, 10, courbes.bascule);
 
   return (
     <FondScene>
+      <Derive duree={DUREE} amplitude={0.02}>
         <CoupeVaisseau trace={trace} />
         {SYSTEMES.map((s, i) => {
-          const p = avance(frame, s.debut - 6, 18);
+          const p = avance(frame, s.debut - 4, 10);
           return (
             <div key={s.label}>
-              <Capteurs x={BAIES[i]} allumage={avance(frame, PRINCIPES[0].debut + i * 3, 10)} frame={frame} />
+              <Capteurs x={BAIES[i]} allumage={avance(frame, PRINCIPES[0].debut + i * 3, 8)} frame={frame} />
               <div
                 style={{
                   position: "absolute",
@@ -99,7 +101,7 @@ export const SystemesVitaux: React.FC = () => {
           }}
         >
           {PRINCIPES.map((p, i) => {
-            const e = avance(frame, p.debut, 14);
+            const e = avance(frame, p.debut, 10);
             return (
               <div key={p.mot} style={{ display: "flex", gap: 30, opacity: e, translate: `0 ${(1 - e) * 12}px` }}>
                 {i > 0 ? <span style={{ color: couleurs.texteFaible }}>·</span> : null}
@@ -108,6 +110,7 @@ export const SystemesVitaux: React.FC = () => {
             );
           })}
         </div>
+      </Derive>
       {SYSTEMES.map((s) => (
         <Sfx key={s.label} nom="telemetrie-bip" a={s.debut} volume={0.3} />
       ))}

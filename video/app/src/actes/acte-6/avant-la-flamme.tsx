@@ -10,11 +10,11 @@ const PIECE = { x: 150, y: 196, largeur: 860, hauteur: 470 };
 const FOYER = { x: 790, y: 470 };
 const Y_LIGNE = 588;
 const INTERRUPTEUR = 1470;
-const CHAUFFE = 4;
-const DUREE_CHAUFFE = 50;
-const SUSPICION = 28;
-const COUPURE = 66;
-const COUPEE = 72;
+const CHAUFFE = 0;
+const DUREE_CHAUFFE = 34;
+const SUSPICION = 14;
+const COUPURE = 42;
+const COUPEE = 48;
 
 const EQUIPEMENTS = [
   { x: 210, y: 300, l: 260, h: 110 },
@@ -30,8 +30,8 @@ export const AvantLaFlamme: React.FC = () => {
   const refroidi = avance(frame, COUPURE + 6, 60);
   const chaleur = chauffe * (1 - 0.45 * refroidi);
   const temperature = interpolate(chauffe, [0, 1], [valeurs.temperatureAmbiante, valeurs.temperatureSuspicion]);
-  const pSuspicion = avance(frame, SUSPICION, 12);
-  const pCoupee = avance(frame, COUPEE, 14);
+  const pSuspicion = avance(frame, SUSPICION, 10);
+  const pCoupee = avance(frame, COUPEE, 10);
   const eclair = interpolate(frame, [COUPURE, COUPURE + 2, COUPURE + 12], [0, 1, 0], bloque);
   const couleurChaleur = interpolateColors(chauffe, [0, 0.6, 1], [couleurs.texteDoux, couleurs.attention, couleurs.critique]);
   const alimentee = 1 - coupure;
@@ -139,7 +139,7 @@ export const AvantLaFlamme: React.FC = () => {
           fontSize: tailles.etiquette,
           letterSpacing: "0.08em",
           color: couleurs.texteDoux,
-          opacity: avance(frame, 10, 12),
+          opacity: avance(frame, 4, 10),
         }}
       >
         ALIMENTATION

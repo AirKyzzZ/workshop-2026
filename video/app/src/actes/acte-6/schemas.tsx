@@ -15,16 +15,16 @@ const RANGEES = [{ libelle: 244, marques: 290 }, { libelle: 328, marques: 374 },
 const COURBE = { haut: 578, bas: 702 };
 const PANNEAU = { x: 1214, largeur: 576, haut: 236, hauteur: 300 };
 
-const AGRESSIVITE = 14;
-const FIXATION = 30;
-const ISOLEMENT = 42;
-const TRACE = 62;
-const DUREE_TRACE = 64;
-const PANNEAU_DEBUT = 116;
-const PUCE = 134;
-const APPUI = 150;
-const FERMETURE = 156;
-const DUREE_FERMETURE = 22;
+const AGRESSIVITE = 6;
+const FIXATION = 18;
+const ISOLEMENT = 28;
+const TRACE = 42;
+const DUREE_TRACE = 44;
+const PANNEAU_DEBUT = 80;
+const PUCE = 92;
+const APPUI = 108;
+const FERMETURE = 114;
+const DUREE_FERMETURE = 18;
 
 const cx = (jour: number) => FRISE.x + (jour + 0.5) * COLONNE;
 const risqueA = (jour: number) => 0.1 + (valeurs.risqueEscalade - 0.1) * Math.pow(jour / (JOURS - 1), 2.2);
@@ -77,7 +77,7 @@ const Cloison: React.FC<{ x1: number; y1: number; x2: number; y2: number; p: num
 
 export const Schemas: React.FC = () => {
   const frame = useCurrentFrame();
-  const pGrille = avance(frame, 0, 20);
+  const pGrille = avance(frame, 0, 12);
   const pTrace = avance(frame, TRACE, DUREE_TRACE, courbes.bascule);
   const joursTraces = pTrace * (JOURS - 1);
   const pointsCourbe = Array.from({ length: Math.floor(joursTraces * 4) + 1 }, (_, k) => k / 4)

@@ -8,14 +8,14 @@ import { Sfx } from "../../composants/son";
 import { framesDe, valeurs } from "../../donnees";
 import { BarreCommandement } from "../acte-1/ordre";
 
-const ENTETE = 8;
-const RANGEES = 20;
-const PAS = 14;
-const LIEUX = 96;
-const PAS_LIEUX = 8;
-const CAPTURE = 40;
-const MISE_EN_AVANT = 112;
-const SEPARER = 160;
+const ENTETE = 2;
+const RANGEES = 8;
+const PAS = 10;
+const LIEUX = 56;
+const PAS_LIEUX = 6;
+const CAPTURE = 24;
+const MISE_EN_AVANT = 84;
+const SEPARER = 108;
 const LARGEUR_LISTE = 940;
 const LARGEUR_JAUGE = 220;
 
@@ -36,8 +36,8 @@ const Repere: React.FC<{ couleur: string }> = ({ couleur }) => (
 export const Conflits: React.FC = () => {
   const frame = useCurrentFrame();
   const duree = framesDe("5.5");
-  const pEntete = avance(frame, ENTETE, 14);
-  const pSeparer = avance(frame, SEPARER, 14);
+  const pEntete = avance(frame, ENTETE, 10);
+  const pSeparer = avance(frame, SEPARER, 10);
 
   return (
     <FondScene>
@@ -60,9 +60,9 @@ export const Conflits: React.FC = () => {
             <span style={{ color: couleurs.texte }}>CLASSÉES PAR RISQUE</span>
           </div>
           {PAIRES.map((p, i) => {
-            const entree = avance(frame, RANGEES + i * PAS, 16);
-            const jauge = avance(frame, RANGEES + i * PAS + 6, 26);
-            const lieu = avance(frame, LIEUX + i * PAS_LIEUX, 18);
+            const entree = avance(frame, RANGEES + i * PAS, 10);
+            const jauge = avance(frame, RANGEES + i * PAS + 4, 18);
+            const lieu = avance(frame, LIEUX + i * PAS_LIEUX, 12);
             const premier = i === 0;
             const avant = premier ? avance(frame, MISE_EN_AVANT, 14) : 0;
             const couleur = couleurRisque(p.risque);

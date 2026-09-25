@@ -11,15 +11,16 @@ import { grilleEquipage, usePointsMarque, type Point } from "./equipage";
 
 export const MARQUE = { taille: 280, haut: 330 };
 
-const SORTIE_THESE = 112;
-const APPARITION = 120;
-const ENVOL = 138;
-const DUREE_ENVOL = 34;
-const DEBUT_MARQUE = 170;
+const DUREE = framesDe("2.4");
+const SORTIE_THESE = Math.round(DUREE * 0.6);
+const APPARITION = Math.round(DUREE * 0.58);
+const ENVOL = Math.round(DUREE * 0.64);
+const DUREE_ENVOL = 24;
+const DEBUT_MARQUE = Math.round(DUREE * 0.76);
 
 const trierParX = (points: Point[]) => points.map((p, i) => ({ ...p, i })).sort((a, b) => a.x - b.x || a.y - b.y);
 
-export const MarqueCentree: React.FC<{ debut: number; duree?: number }> = ({ debut, duree = 44 }) => (
+export const MarqueCentree: React.FC<{ debut: number; duree?: number }> = ({ debut, duree = 30 }) => (
   <div style={{ position: "absolute", top: MARQUE.haut, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
     <MarqueAtria taille={MARQUE.taille} debut={debut} duree={duree} />
   </div>
@@ -27,13 +28,12 @@ export const MarqueCentree: React.FC<{ debut: number; duree?: number }> = ({ deb
 
 export const These: React.FC = () => {
   const frame = useCurrentFrame();
-  const duree = framesDe("2.4");
   const cibles = usePointsMarque(MARQUE.taille, MARQUE.haut);
   if (!cibles) return null;
 
   const depart = trierParX(grilleEquipage);
   const arrivee = trierParX(cibles);
-  const fonduPoints = 1 - avance(frame, DEBUT_MARQUE + 10, 18);
+  const fonduPoints = 1 - avance(frame, DEBUT_MARQUE + 6, 12);
 
   return (
     <FondScene>
@@ -46,17 +46,18 @@ export const These: React.FC = () => {
           ]}
           taille={128}
           alignement="centre"
-          debut={4}
-          decalage={9}
+          debut={0}
+          decalage={6}
+          duree={16}
           sortie={SORTIE_THESE}
         />
       </AbsoluteFill>
       <svg width={1920} height={1080} style={{ position: "absolute", inset: 0 }}>
         {depart.map((d, k) => {
           const a = arrivee[k];
-          const retard = random(`envol-${d.i}`) * 16;
+          const retard = random(`envol-${d.i}`) * 10;
           const p = avance(frame, ENVOL + retard, DUREE_ENVOL, courbes.bascule);
-          const e = avance(frame, APPARITION + random(`apparait-${d.i}`) * 12, 10);
+          const e = avance(frame, APPARITION + random(`apparait-${d.i}`) * 8, 8);
           const x = interpolate(p, [0, 1], [d.x, a.x]);
           const y = interpolate(p, [0, 1], [d.y, a.y]) - Math.sin(p * Math.PI) * 40;
           return (
@@ -73,7 +74,7 @@ export const These: React.FC = () => {
       </svg>
       <MarqueCentree debut={DEBUT_MARQUE} />
       <Sfx nom="whoosh" a={ENVOL - 4} volume={0.35} />
-      <Sfx nom="impact-titre" a={DEBUT_MARQUE + 4} volume={(f) => interpolate(f, [0, duree - DEBUT_MARQUE - 20, duree - DEBUT_MARQUE - 4], [0.5, 0.5, 0], bloque)} />
+      <Sfx nom="impact-titre" a={DEBUT_MARQUE + 4} volume={(f) => interpolate(f, [0, DUREE - DEBUT_MARQUE - 20, DUREE - DEBUT_MARQUE - 4], [0.5, 0.5, 0], bloque)} />
     </FondScene>
   );
 };

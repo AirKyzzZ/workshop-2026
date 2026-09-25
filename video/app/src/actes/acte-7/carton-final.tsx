@@ -8,16 +8,16 @@ import { TypoCinetique } from "../../composants/charte/typo-cinetique";
 import { Sfx } from "../../composants/son";
 import { framesDe, valeurs } from "../../donnees";
 
-const THESE = 4;
-const SORTIE_THESE = 112;
-const MARQUE = 122;
-const DUREE_MARQUE = 48;
-const CREDITS = 158;
-const PAS_CREDITS = 9;
-const NOIR = 32;
+const THESE = 0;
+const SORTIE_THESE = 80;
+const MARQUE = 86;
+const DUREE_MARQUE = 32;
+const CREDITS = 110;
+const PAS_CREDITS = 6;
+const NOIR = 18;
 
 const Credit: React.FC<{ i: number; frame: number; children: React.ReactNode; style: React.CSSProperties }> = ({ i, frame, children, style }) => {
-  const p = avance(frame, CREDITS + i * PAS_CREDITS, 20);
+  const p = avance(frame, CREDITS + i * PAS_CREDITS, 14);
   return <div style={{ ...style, opacity: p, translate: `0 ${(1 - p) * 14}px`, whiteSpace: "pre" }}>{children}</div>;
 };
 
@@ -39,7 +39,8 @@ export const CartonFinal: React.FC = () => {
             taille={128}
             alignement="centre"
             debut={THESE}
-            decalage={9}
+            decalage={6}
+            duree={16}
             sortie={SORTIE_THESE}
           />
         </AbsoluteFill>

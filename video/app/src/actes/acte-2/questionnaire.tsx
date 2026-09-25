@@ -8,8 +8,8 @@ import { framesDe } from "../../donnees";
 import { CoupeVaisseau } from "./coupe-vaisseau";
 import { grilleEquipage } from "./equipage";
 
-const DEBUT_FICHE = 66;
-const COCHE = 150;
+const DEBUT_FICHE = Math.round(framesDe("2.2") * 0.36);
+const COCHE = Math.round(framesDe("2.2") * 0.68);
 
 const Case: React.FC<{ libelle: string; coche?: number }> = ({ libelle, coche = 0 }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
@@ -35,10 +35,10 @@ const Case: React.FC<{ libelle: string; coche?: number }> = ({ libelle, coche = 
 export const Questionnaire: React.FC = () => {
   const frame = useCurrentFrame();
   const duree = framesDe("2.2");
-  const fiche = avance(frame, DEBUT_FICHE, 22);
-  const coche = avance(frame, COCHE, 14, courbes.bascule);
+  const fiche = avance(frame, DEBUT_FICHE, 12);
+  const coche = avance(frame, COCHE, 10, courbes.bascule);
   const attenuation = interpolate(fiche, [0, 1], [1, 0.55], bloque);
-  const sortie = avance(frame, duree - 14, 12, courbes.bascule);
+  const sortie = avance(frame, duree - 8, 7, courbes.bascule);
 
   return (
     <FondScene>
@@ -47,7 +47,7 @@ export const Questionnaire: React.FC = () => {
           <CoupeVaisseau trace={1} interieur={0.35} />
           <svg width={1920} height={1080} style={{ position: "absolute", inset: 0 }}>
             {grilleEquipage.map((p, i) => {
-              const e = avance(frame, 6 + random(`apparition-${i}`) * 48, 12);
+              const e = avance(frame, random(`apparition-${i}`) * 22, 8);
               return (
                 <circle
                   key={i}

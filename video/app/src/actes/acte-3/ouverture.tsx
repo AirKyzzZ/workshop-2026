@@ -1,48 +1,51 @@
 import type React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
-import { couleurs } from "../../charte";
+import { couleurs, polices, tailles } from "../../charte";
 import { Balayage } from "../../composants/charte/balayage";
-import { avance, bloque, courbes } from "../../composants/charte/commun";
+import { avance, bloque, brouiller, courbes } from "../../composants/charte/commun";
 import { OuvertureObjectif } from "../../composants/charte/ouverture-objectif";
-import { positionTete } from "../../composants/charte/plan-factice";
 import { Sfx } from "../../composants/son";
+import { valeurs } from "../../donnees";
 import { MARQUE, MarqueCentree } from "../acte-2/these";
-import { decalageActe3 } from "./commun";
-import { Visee } from "./visee";
 import { VueAtria } from "./vue-atria";
 
-const OUVERTURE = 24;
-const DUREE_OUVERTURE = 42;
-const CADRE = OUVERTURE + 26;
-const SCAN = OUVERTURE + 40;
-const PRESENCES = SCAN + 44;
+const OUVERTURE = 2;
+const DUREE_OUVERTURE = 26;
+const CADRE = 10;
+const SCAN = 24;
+const DUREE_SCAN = 30;
+const PRESENCES = SCAN + DUREE_SCAN;
 const CENTRE_MARQUE = { x: 0.5, y: (MARQUE.haut + MARQUE.taille / 2) / 1080 };
 
 export const Ouverture: React.FC = () => {
   const frame = useCurrentFrame();
-  const f = frame + decalageActe3("3.1");
-  const marque = avance(frame, OUVERTURE - 6, 22, courbes.bascule);
+  const marque = avance(frame, OUVERTURE - 2, 16, courbes.bascule);
+  const presences = avance(frame, PRESENCES, 10);
 
   return (
     <AbsoluteFill style={{ backgroundColor: couleurs.fond }}>
       <OuvertureObjectif debut={OUVERTURE} duree={DUREE_OUVERTURE} centre={CENTRE_MARQUE}>
-        <VueAtria id="3.1" debutCadre={CADRE} balayage={false}>
-          <Balayage debut={SCAN} duree={40} libelle="ANALYSE" />
-          {([0, 1] as const).map((i) => {
-            const t = positionTete(i, f);
-            return (
-              <Visee
-                key={i}
-                x={t.x}
-                y={t.y + 150}
-                largeur={330}
-                hauteur={540}
-                coin={34}
-                couleur={couleurs.texte}
-                p={avance(frame, PRESENCES + i * 6, 18)}
-              />
-            );
-          })}
+        <VueAtria id="3.1" debutCadre={CADRE} balayage={false} serre={{ vitesse: 0.9 }}>
+          <Balayage debut={SCAN} duree={DUREE_SCAN} libelle="ANALYSE" />
+          <div
+            style={{
+              position: "absolute",
+              top: 132,
+              right: 86,
+              display: "flex",
+              alignItems: "baseline",
+              gap: 16,
+              opacity: presences,
+              translate: `0 ${(1 - presences) * 10}px`,
+              fontFamily: polices.donnees,
+              fontSize: tailles.etiquette,
+              letterSpacing: "0.08em",
+              whiteSpace: "pre",
+            }}
+          >
+            <span style={{ color: couleurs.texteDoux }}>PRÉSENCES</span>
+            <span style={{ color: couleurs.nominal, fontSize: 40 }}>{brouiller(String(valeurs.presencesSerre).padStart(2, "0"), presences, frame, "presences")}</span>
+          </div>
         </VueAtria>
       </OuvertureObjectif>
       <AbsoluteFill
@@ -55,9 +58,9 @@ export const Ouverture: React.FC = () => {
       >
         <MarqueCentree debut={-120} />
       </AbsoluteFill>
-      <Sfx nom="whoosh" a={OUVERTURE - 4} volume={0.35} />
+      <Sfx nom="whoosh" a={OUVERTURE} volume={0.35} />
       <Sfx nom="balayage-scan" a={SCAN} volume={0.4} />
-      <Sfx nom="verrouillage" a={PRESENCES + 8} volume={0.22} />
+      <Sfx nom="verrouillage" a={PRESENCES} volume={0.22} />
     </AbsoluteFill>
   );
 };

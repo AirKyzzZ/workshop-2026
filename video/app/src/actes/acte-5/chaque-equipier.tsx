@@ -9,14 +9,14 @@ import { Sfx } from "../../composants/son";
 import { framesDe, valeurs } from "../../donnees";
 import { BarreCommandement } from "../acte-1/ordre";
 
-const CAPTURE = 4;
-const SURBRILLANCE = 56;
-const DEPLACEMENT = 84;
-const FICHE = 100;
-const HISTORIQUE = 126;
-const PROJECTION = 172;
-const FRANCHISSEMENT = 206;
-const RISQUE = 222;
+const CAPTURE = 2;
+const SURBRILLANCE = 36;
+const DEPLACEMENT = 54;
+const FICHE = 66;
+const HISTORIQUE = 80;
+const PROJECTION = 110;
+const FRANCHISSEMENT = 132;
+const RISQUE = 146;
 
 const CAPTURE_FINALE = { x: 1110, y: 176, largeur: 700 };
 const CENTRE_FINAL = { x: CAPTURE_FINALE.x + CAPTURE_FINALE.largeur / 2, y: CAPTURE_FINALE.y + 219 };
@@ -47,10 +47,10 @@ const HISTORIQUE_POINTS = Array.from({ length: valeurs.historiquePredictionH * 2
 });
 
 const CourbeCapacite: React.FC<{ frame: number }> = ({ frame }) => {
-  const pHistorique = avance(frame, HISTORIQUE, 44, courbes.bascule);
-  const pProjection = avance(frame, PROJECTION, 34, courbes.bascule);
-  const pFranchi = avance(frame, FRANCHISSEMENT, 14);
-  const pAxes = avance(frame, HISTORIQUE - 12, 16);
+  const pHistorique = avance(frame, HISTORIQUE, 30, courbes.bascule);
+  const pProjection = avance(frame, PROJECTION, 22, courbes.bascule);
+  const pFranchi = avance(frame, FRANCHISSEMENT, 10);
+  const pAxes = avance(frame, HISTORIQUE - 10, 10);
   const maintenant = { x: xH(0), y: yV(valeurs.capacitePrediction) };
   const fin = { x: xH(H_MAX), y: yV(valeurs.capacitePrediction + PENTE * H_MAX) };
   const croisement = { x: xH(HEURES_AVANT_SEUIL), y: yV(valeurs.seuilPropulsion) };
@@ -105,8 +105,8 @@ const CourbeCapacite: React.FC<{ frame: number }> = ({ frame }) => {
 export const ChaqueEquipier: React.FC = () => {
   const frame = useCurrentFrame();
   const duree = framesDe("5.2");
-  const deplacement = avance(frame, DEPLACEMENT, 36, courbes.bascule);
-  const pRisque = avance(frame, RISQUE, 18);
+  const deplacement = avance(frame, DEPLACEMENT, 24, courbes.bascule);
+  const pRisque = avance(frame, RISQUE, 12);
   const risque = interpolate(pRisque, [0, 1], [0, valeurs.risqueRupture], bloque);
 
   return (
@@ -143,7 +143,7 @@ export const ChaqueEquipier: React.FC = () => {
             etat="attention"
             cote="gauche"
             debut={FICHE}
-            duree={40}
+            duree={24}
             largeur={920}
           >
             <CourbeCapacite frame={frame} />

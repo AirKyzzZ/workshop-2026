@@ -11,15 +11,15 @@ import { BarreCommandement } from "../acte-1/ordre";
 
 const AUTEUR = valeurs.auteur.toLowerCase();
 const POSTE = valeurs.posteVital.toLowerCase();
-const CAPTURE = 150;
-const RECUL = 270;
+const CAPTURE = 112;
+const RECUL = framesDe("4.4") - 40;
 
 const LIGNES = [
-  { frame: 12, heure: valeurs.heureIncident, type: "incident", sujet: AUTEUR, texte: `doigt d'honneur · ${nombreFr(valeurs.graviteGeste)}`, niveau: "attention" as const },
-  { frame: 40, heure: valeurs.heureIncident, type: "conduite", sujet: AUTEUR, texte: `${nombreFr(valeurs.conduiteAvant)} → ${nombreFr(valeurs.conduiteApres)}` },
-  { frame: 68, heure: valeurs.heureOrdre, type: "ordre", sujet: valeurs.commandant.toLowerCase(), texte: `${AUTEUR} → ${POSTE}` },
-  { frame: 98, heure: valeurs.heureOrdre, type: "refus", sujet: AUTEUR, texte: `conduite ${nombreFr(valeurs.conduiteApres)}`, niveau: "critique" as const },
-  { frame: 132, heure: valeurs.heureAffectation, type: "affectation", sujet: valeurs.remplacant.toLowerCase(), texte: `→ ${POSTE}`, niveau: "nominal" as const },
+  { frame: 4, heure: valeurs.heureIncident, type: "incident", sujet: AUTEUR, texte: `doigt d'honneur · ${nombreFr(valeurs.graviteGeste)}`, niveau: "attention" as const },
+  { frame: 26, heure: valeurs.heureIncident, type: "conduite", sujet: AUTEUR, texte: `${nombreFr(valeurs.conduiteAvant)} → ${nombreFr(valeurs.conduiteApres)}` },
+  { frame: 48, heure: valeurs.heureOrdre, type: "ordre", sujet: valeurs.commandant.toLowerCase(), texte: `${AUTEUR} → ${POSTE}` },
+  { frame: 70, heure: valeurs.heureOrdre, type: "refus", sujet: AUTEUR, texte: `conduite ${nombreFr(valeurs.conduiteApres)}`, niveau: "critique" as const },
+  { frame: 92, heure: valeurs.heureAffectation, type: "affectation", sujet: valeurs.remplacant.toLowerCase(), texte: `→ ${POSTE}`, niveau: "nominal" as const },
 ];
 
 export const JournalDecisions: React.FC = () => {
@@ -43,7 +43,7 @@ export const JournalDecisions: React.FC = () => {
             zoom={[1.5, 2.3]}
             debut={CAPTURE}
             duree={duree - CAPTURE}
-            surbrillance={{ x: 0.19, y: 0.308, largeur: 0.62, hauteur: 0.04, debut: CAPTURE + 60 }}
+            surbrillance={{ x: 0.19, y: 0.308, largeur: 0.62, hauteur: 0.04, debut: CAPTURE + 40 }}
           />
         </div>
       </AbsoluteFill>

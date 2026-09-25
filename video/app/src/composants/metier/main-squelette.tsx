@@ -23,6 +23,7 @@ export type MainSqueletteProps = {
   zone?: ZoneMain;
   panneau?: PanneauMesures;
   silhouette?: boolean;
+  sourceA?: (frame: number) => number;
 };
 
 export type ZoneMain = { x: number; y: number; largeur: number; hauteur: number };
@@ -40,8 +41,8 @@ const OS: [number, number][] = [
 ];
 const BOUTS: Record<Doigt, number> = { pouce: 4, index: 8, majeur: 12, annulaire: 16, auriculaire: 20 };
 const PAUME = [0, 5, 9, 13, 17];
-const DUREE_OS = 10;
-const DUREE_MESURE = 24;
+const DUREE_OS = 8;
+const DUREE_MESURE = 18;
 const ZONE_MAIN: ZoneMain = { x: 220, y: 150, largeur: 940, hauteur: 830 };
 const PANNEAU: PanneauMesures = { x: 1824 - 600, largeur: 600, haut: 200, ligne: 112 };
 
@@ -121,6 +122,7 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
   zone: zoneMain = ZONE_MAIN,
   panneau: panneauMesures = PANNEAU,
   silhouette = false,
+  sourceA,
 }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
@@ -149,7 +151,7 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
 
   const decalages = useMemo(() => placerEtiquettes(images[0].points.map(versEcran)), [images, versEcran]);
 
-  const source = (f: number) => images[0].frame + f * vitesse;
+  const source = (f: number) => (sourceA ? sourceA(f) : images[0].frame + f * vitesse);
   const pose = poseA(images, source(frame));
   const pts = pose.map(versEcran);
 
@@ -403,10 +405,10 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
           <text x={x1Panneau} y={yVerdict + 50} fill={couleurs.critique} fontFamily={polices.donnees} fontSize={32} textAnchor="end">
             {nombreFr(verdict.score * progression(frame, debutVerdict, 20))}
           </text>
-          <text x={panneauMesures.x} y={yVerdict + 148} fill={couleurs.critique} fontFamily={polices.display} fontWeight={600} fontSize={96} filter="url(#main-lueur)" opacity={0.35}>
+          <text x={panneauMesures.x} y={yVerdict + 148} fill={couleurs.critique} fontFamily={polices.display} fontWeight={600} fontSize={82} filter="url(#main-lueur)" opacity={0.35}>
             {verdict.libelle}
           </text>
-          <text x={panneauMesures.x} y={yVerdict + 148} fill={couleurs.critique} fontFamily={polices.display} fontWeight={600} fontSize={96}>
+          <text x={panneauMesures.x} y={yVerdict + 148} fill={couleurs.critique} fontFamily={polices.display} fontWeight={600} fontSize={82}>
             {verdict.libelle}
           </text>
         </g>

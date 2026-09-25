@@ -8,15 +8,15 @@ import { Sfx } from "../../composants/son";
 import { framesDe, valeurs } from "../../donnees";
 import { OrdreCommandant } from "../acte-1/ordre";
 
-const DEBUT = 18;
-const INTERVALLE = 34;
-const ANALYSE = 24;
+const DEBUT = 6;
+const INTERVALLE = 22;
+const ANALYSE = 14;
 const debutControle = (i: number) => DEBUT + 12 + i * INTERVALLE;
 
 export const Controles: React.FC = () => {
   const frame = useCurrentFrame();
-  const panneau = avance(frame, DEBUT - 10, 18);
-  const etiquette = avance(frame, 0, 18);
+  const panneau = avance(frame, 0, 12);
+  const etiquette = avance(frame, 0, 10);
 
   return (
     <AbsoluteFill style={{ backgroundColor: couleurs.fond }}>
