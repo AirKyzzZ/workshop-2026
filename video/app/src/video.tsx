@@ -4,6 +4,7 @@ import { registre } from "./actes/registre";
 import { AttentePolices } from "./attente-polices";
 import { couleurs } from "./charte";
 import { CartonProvisoire } from "./composants/carton-provisoire";
+import { SousTitres } from "./composants/charte/sous-titres";
 import { FPS, repliques, scenes } from "./donnees";
 import { framesScene, type Scene } from "./timing";
 
@@ -25,6 +26,12 @@ export const SuiteDeScenes: React.FC<{ liste: Scene[] }> = ({ liste }) => (
               ) : (
                 <CartonProvisoire id={scene.id} texte={replique?.texte} />
               )}
+              {replique && Contenu ? (
+                <SousTitres
+                  texte={replique.texte}
+                  duree={Math.round(replique.dureeS * FPS)}
+                />
+              ) : null}
               {replique?.genere ? (
                 <Audio src={staticFile(replique.fichier)} />
               ) : null}

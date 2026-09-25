@@ -7,7 +7,7 @@ import { scenesActe5 } from "./acte-5";
 import { scenesActe6 } from "./acte-6";
 import { scenesActe7 } from "./acte-7";
 
-export const registre: Record<string, React.FC> = {
+export const registre: Partial<Record<string, React.FC>> = {
   ...scenesActe1,
   ...scenesActe2,
   ...scenesActe3,
