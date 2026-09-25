@@ -12,3 +12,7 @@ models/
 .claude/
 
 .atria_console_token
+
+!video/app/public/voix/*.wav
+!video/app/public/audio/sfx/*.wav
+!video/app/public/audio/musique/musique.wav
