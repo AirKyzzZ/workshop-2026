@@ -26,15 +26,15 @@ export type PlanVaisseauProps = {
 
 type Vec = { x: number; y: number };
 
-const LARGEUR_COMP = 420;
-const HAUTEUR_COMP = 250;
+export const LARGEUR_COMP = 420;
+export const HAUTEUR_COMP = 250;
 const Y_HAUT = 222;
 const Y_BAS = 608;
-const Y_COURSIVE = 540;
+export const Y_COURSIVE = 540;
 const LARGEUR_PORTE = 64;
 const DUREE_TRANSITION = 14;
 const COLONNES = [262, 722, 1182];
-const DISPOSITION: Record<IdCompartiment, { x: number; y: number; haut: boolean }> = {
+export const DISPOSITION: Record<IdCompartiment, { x: number; y: number; haut: boolean }> = {
   laboratoire: { x: COLONNES[0], y: Y_HAUT, haut: true },
   infirmerie: { x: COLONNES[1], y: Y_HAUT, haut: true },
   pont: { x: COLONNES[2], y: Y_HAUT, haut: true },
@@ -42,7 +42,7 @@ const DISPOSITION: Record<IdCompartiment, { x: number; y: number; haut: boolean 
   serre: { x: COLONNES[1], y: Y_BAS, haut: false },
   reacteur: { x: COLONNES[2], y: Y_BAS, haut: false },
 };
-const COQUE =
+export const COQUE =
   "M 330 160 L 1530 160 C 1600 160 1628 196 1648 250 L 1752 540 L 1648 830 C 1628 884 1600 920 1530 920 L 330 920 C 236 920 170 856 170 762 L 170 318 C 170 224 236 160 330 160 Z";
 
 const COULEUR_ETAT: Record<EtatCompartiment, string> = {

@@ -9,65 +9,12 @@ import { Jauge } from "../composants/charte/jauge";
 import { Lecture } from "../composants/charte/lecture";
 import { MarqueAtria } from "../composants/charte/marque-atria";
 import { OuvertureObjectif } from "../composants/charte/ouverture-objectif";
+import { PlanFactice } from "../composants/charte/plan-factice";
 import { Rembobinage } from "../composants/charte/rembobinage";
 import { SousTitres } from "../composants/charte/sous-titres";
 import { TypoCinetique } from "../composants/charte/typo-cinetique";
 
 export type Demo = { id: string; composant: React.FC; dureeS: number };
-
-const PlanFactice: React.FC<{ desature?: boolean }> = ({ desature = false }) => {
-  const frame = useCurrentFrame();
-  return (
-    <AbsoluteFill style={{ backgroundColor: "#0C110E", overflow: "hidden", filter: desature ? "saturate(0.35) brightness(0.8)" : undefined }}>
-      <AbsoluteFill
-        style={{
-          scale: 1.08,
-          translate: `${interpolate(frame, [0, 300], [0, -36])}px 0`,
-          background:
-            "radial-gradient(ellipse 42% 38% at 24% 18%, #4F7355 0%, transparent 70%), radial-gradient(ellipse 40% 50% at 80% 34%, #35553E 0%, transparent 72%), radial-gradient(ellipse 90% 45% at 50% 105%, #1E3024 0%, transparent 70%), linear-gradient(180deg, #17221B 0%, #0A0E0B 100%)",
-        }}
-      >
-        {[0.1, 0.32, 0.68, 0.9].map((x) => (
-          <div
-            key={x}
-            style={{
-              position: "absolute",
-              top: -40,
-              left: `${x * 100}%`,
-              width: 520,
-              height: 260,
-              translate: "-50% 0",
-              background: "radial-gradient(ellipse closest-side, rgba(220, 240, 204, 0.32), transparent)",
-            }}
-          />
-        ))}
-        {[0.08, 0.2, 0.74, 0.86].map((x, i) => (
-          <div
-            key={x}
-            style={{
-              position: "absolute",
-              top: 360 + (i % 2) * 60,
-              left: `${x * 100}%`,
-              width: 260,
-              height: 420,
-              borderRadius: "48% 52% 20% 20%",
-              background: "radial-gradient(ellipse at 50% 30%, #3E6B45 0%, #1C3322 60%, transparent 75%)",
-              filter: "blur(10px)",
-              opacity: 0.9,
-            }}
-          />
-        ))}
-        {[0.4, 0.58].map((x, i) => (
-          <div key={x} style={{ position: "absolute", left: `${x * 100}%`, top: 330 + i * 24, filter: "blur(5px)" }}>
-            <div style={{ width: 130, height: 150, borderRadius: "50%", backgroundColor: "#0A0C0B", marginLeft: 85 }} />
-            <div style={{ width: 300, height: 700, marginTop: 14, borderRadius: "120px 120px 20px 20px", backgroundColor: "#0A0C0B" }} />
-          </div>
-        ))}
-      </AbsoluteFill>
-      <AbsoluteFill style={{ background: "radial-gradient(ellipse 80% 80% at 50% 50%, transparent 50%, rgba(0,0,0,0.55) 100%)" }} />
-    </AbsoluteFill>
-  );
-};
 
 const Fond: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <AbsoluteFill style={{ backgroundColor: couleurs.fond }}>{children}</AbsoluteFill>

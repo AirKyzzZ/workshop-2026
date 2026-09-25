@@ -10,9 +10,10 @@ export type TranscriptionProps = {
   entete: string;
   legende?: { frame: number; niveaux: GraviteLegende[] };
   largeur?: number;
+  hauteurMin?: number;
 };
 
-export const Transcription: React.FC<TranscriptionProps> = ({ mots, entete, legende, largeur = 1100 }) => {
+export const Transcription: React.FC<TranscriptionProps> = ({ mots, entete, legende, largeur = 1100, hauteurMin = 200 }) => {
   const frame = useCurrentFrame();
   const premier = mots.length > 0 ? mots[0].frame : 0;
   const pEntete = progression(frame, premier - 14, 14);
@@ -55,7 +56,7 @@ export const Transcription: React.FC<TranscriptionProps> = ({ mots, entete, lege
           columnGap: 16,
           rowGap: 76,
           paddingTop: 76,
-          minHeight: 200,
+          minHeight: hauteurMin,
           fontFamily: polices.interface,
           fontSize: 48,
           lineHeight: 1.25,

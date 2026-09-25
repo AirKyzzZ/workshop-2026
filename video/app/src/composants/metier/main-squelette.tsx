@@ -20,7 +20,13 @@ export type MainSqueletteProps = {
   vitesse?: number;
   cadrage?: "main" | "image";
   formatSource?: number;
+  zone?: ZoneMain;
+  panneau?: PanneauMesures;
+  silhouette?: boolean;
 };
+
+export type ZoneMain = { x: number; y: number; largeur: number; hauteur: number };
+export type PanneauMesures = { x: number; largeur: number; haut: number; ligne: number };
 
 type Vec = { x: number; y: number };
 
@@ -36,8 +42,8 @@ const BOUTS: Record<Doigt, number> = { pouce: 4, index: 8, majeur: 12, annulaire
 const PAUME = [0, 5, 9, 13, 17];
 const DUREE_OS = 10;
 const DUREE_MESURE = 24;
-const ZONE_MAIN = { x: 220, y: 150, largeur: 940, hauteur: 830 };
-const PANNEAU = { x: 1824 - 600, largeur: 600, haut: 200, ligne: 112 };
+const ZONE_MAIN: ZoneMain = { x: 220, y: 150, largeur: 940, hauteur: 830 };
+const PANNEAU: PanneauMesures = { x: 1824 - 600, largeur: 600, haut: 200, ligne: 112 };
 
 const poseA = (images: ImageMain[], source: number): PointMain[] => {
   const suivante = images.findIndex((im) => im.frame > source);
@@ -112,6 +118,9 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
   vitesse = 1,
   cadrage = "main",
   formatSource = 16 / 9,
+  zone: zoneMain = ZONE_MAIN,
+  panneau: panneauMesures = PANNEAU,
+  silhouette = false,
 }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
@@ -129,14 +138,14 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
     const maxX = Math.max(...tous.map((p) => p.x * formatSource));
     const minY = Math.min(...tous.map((p) => p.y));
     const maxY = Math.max(...tous.map((p) => p.y));
-    const echelle = Math.min(ZONE_MAIN.largeur / (maxX - minX), ZONE_MAIN.hauteur / (maxY - minY));
-    const ox = ZONE_MAIN.x + (ZONE_MAIN.largeur - (maxX - minX) * echelle) / 2;
-    const oy = ZONE_MAIN.y + (ZONE_MAIN.hauteur - (maxY - minY) * echelle) / 2;
+    const echelle = Math.min(zoneMain.largeur / (maxX - minX), zoneMain.hauteur / (maxY - minY));
+    const ox = zoneMain.x + (zoneMain.largeur - (maxX - minX) * echelle) / 2;
+    const oy = zoneMain.y + (zoneMain.hauteur - (maxY - minY) * echelle) / 2;
     return (p: PointMain): Vec => ({
       x: ox + (p.x * formatSource - minX) * echelle,
       y: oy + (p.y - minY) * echelle,
     });
-  }, [cadrage, images, formatSource, width, height]);
+  }, [cadrage, images, formatSource, width, height, zoneMain]);
 
   const decalages = useMemo(() => placerEtiquettes(images[0].points.map(versEcran)), [images, versEcran]);
 
@@ -165,7 +174,7 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
     extrapolateRight: "clamp",
   });
   const pointsVisibles = Math.min(NB_POINTS, Math.max(0, Math.ceil((frame - debut) / intervallePoint)));
-  const yVerdict = PANNEAU.haut + mesures.length * PANNEAU.ligne + 44;
+  const yVerdict = panneauMesures.haut + mesures.length * panneauMesures.ligne + 44;
 
   const centrePaume = {
     x: PAUME.reduce((s, i) => s + pts[i].x, 0) / PAUME.length,
@@ -181,12 +190,16 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
   const boite = cadre(pts);
   const cadreInitial = cadre(images[0].points.map(versEcran));
   const echelleMax = Math.max(2.5, ...resultats.map((r) => r.ratio * 1.1));
-  const x1Panneau = PANNEAU.x + PANNEAU.largeur;
+  const x1Panneau = panneauMesures.x + panneauMesures.largeur;
+  const epaisseurDoigt = Math.hypot(pts[5].x - pts[17].x, pts[5].y - pts[17].y) * 0.34;
   const debutPanneau = finSquelette - 6;
 
   return (
     <svg width={width} height={height} style={{ position: "absolute", inset: 0, overflow: "visible" }}>
       <defs>
+        <filter id="main-chair" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="9" />
+        </filter>
         <filter id="main-lueur" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="7" result="flou" />
           <feMerge>
@@ -195,6 +208,15 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
           </feMerge>
         </filter>
       </defs>
+
+      {silhouette ? (
+        <g filter="url(#main-chair)" opacity={0.9}>
+          <polygon points={[0, 1, 5, 9, 13, 17].map((i) => `${pts[i].x},${pts[i].y}`).join(" ")} fill="#312D2A" stroke="#312D2A" strokeWidth={epaisseurDoigt} strokeLinejoin="round" />
+          {OS.map(([a, b]) => (
+            <line key={`chair-${a}-${b}`} x1={pts[a].x} y1={pts[a].y} x2={pts[b].x} y2={pts[b].y} stroke="#312D2A" strokeWidth={epaisseurDoigt} strokeLinecap="round" />
+          ))}
+        </g>
+      ) : null}
 
       <g style={{ opacity: progression(frame, debut - 10, 14) }}>
         <text
@@ -321,10 +343,10 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
       ) : null}
 
       <g style={{ opacity: progression(frame, debutPanneau, 16), translate: `${interpolate(progression(frame, debutPanneau, 20), [0, 1], [24, 0])}px 0px` }}>
-        <text x={PANNEAU.x} y={PANNEAU.haut - 64} fill={couleurs.texteDoux} fontFamily={polices.donnees} fontSize={24} letterSpacing="0.06em">
+        <text x={panneauMesures.x} y={panneauMesures.haut - 64} fill={couleurs.texteDoux} fontFamily={polices.donnees} fontSize={24} letterSpacing="0.06em">
           {libelles.titre}
         </text>
-        <line x1={PANNEAU.x} y1={PANNEAU.haut - 36} x2={x1Panneau} y2={PANNEAU.haut - 36} stroke={couleurs.trait} strokeWidth={1.5} />
+        <line x1={panneauMesures.x} y1={panneauMesures.haut - 36} x2={x1Panneau} y2={panneauMesures.haut - 36} stroke={couleurs.trait} strokeWidth={1.5} />
       </g>
 
       {resultats.map((r, i) => {
@@ -334,14 +356,14 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
         const pLigne = progression(frame, t0 + 6, DUREE_MESURE - 6);
         const pStatut = progression(frame, t0 + DUREE_MESURE - 2, 10);
         const couleurStatut = r.tendu ? couleurs.attention : couleurs.texteDoux;
-        const y = PANNEAU.haut + i * PANNEAU.ligne;
+        const y = panneauMesures.haut + i * panneauMesures.ligne;
         const seuil = r.doigt === "pouce" ? seuils.pouce : seuils.doigt;
-        const xSeuil = PANNEAU.x + PANNEAU.largeur * (seuil / echelleMax);
+        const xSeuil = panneauMesures.x + panneauMesures.largeur * (seuil / echelleMax);
         const actif = frame >= t0 && frame < debutMesure(i + 1);
         return (
           <g key={r.doigt} style={{ opacity: pRangee, translate: `${interpolate(pRangee, [0, 1], [18, 0])}px 0px` }}>
-            <rect x={PANNEAU.x - 24} y={y + 8} width={4} height={PANNEAU.ligne - 28} fill={couleurs.blanc} opacity={actif ? 1 : 0} />
-            <text x={PANNEAU.x} y={y + 50} fill={couleurs.texte} fontFamily={polices.display} fontWeight={500} fontSize={56} letterSpacing="0.02em">
+            <rect x={panneauMesures.x - 24} y={y + 8} width={4} height={panneauMesures.ligne - 28} fill={couleurs.blanc} opacity={actif ? 1 : 0} />
+            <text x={panneauMesures.x} y={y + 50} fill={couleurs.texte} fontFamily={polices.display} fontWeight={500} fontSize={56} letterSpacing="0.02em">
               {r.libelle}
             </text>
             <text x={x1Panneau - 140} y={y + 42} fill={couleurStatut} fontFamily={polices.donnees} fontSize={24} letterSpacing="0.08em" textAnchor="end" opacity={pStatut}>
@@ -350,8 +372,8 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
             <text x={x1Panneau} y={y + 46} fill={pStatut > 0.5 ? couleurStatut : couleurs.texte} fontFamily={polices.donnees} fontSize={38} textAnchor="end">
               {nombreFr(r.ratio * pLigne)}
             </text>
-            <rect x={PANNEAU.x} y={y + 72} width={PANNEAU.largeur} height={4} fill={couleurs.trait} />
-            <rect x={PANNEAU.x} y={y + 72} width={PANNEAU.largeur * Math.min(1, (r.ratio * pLigne) / echelleMax)} height={4} fill={interpolateColors(pStatut, [0, 1], [couleurs.blanc, couleurStatut])} />
+            <rect x={panneauMesures.x} y={y + 72} width={panneauMesures.largeur} height={4} fill={couleurs.trait} />
+            <rect x={panneauMesures.x} y={y + 72} width={panneauMesures.largeur * Math.min(1, (r.ratio * pLigne) / echelleMax)} height={4} fill={interpolateColors(pStatut, [0, 1], [couleurs.blanc, couleurStatut])} />
             <line x1={xSeuil} y1={y + 62} x2={xSeuil} y2={y + 86} stroke={couleurs.texteDoux} strokeWidth={2} />
           </g>
         );
@@ -359,8 +381,8 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
 
       {mesures.length > 0 ? (
         <text
-          x={PANNEAU.x + PANNEAU.largeur * (seuils.doigt / echelleMax)}
-          y={PANNEAU.haut + mesures.length * PANNEAU.ligne + 2}
+          x={panneauMesures.x + panneauMesures.largeur * (seuils.doigt / echelleMax)}
+          y={panneauMesures.haut + mesures.length * panneauMesures.ligne + 2}
           fill={couleurs.texteDoux}
           fontFamily={polices.donnees}
           fontSize={24}
@@ -374,17 +396,17 @@ export const MainSquelette: React.FC<MainSqueletteProps> = ({
 
       {verdict && pVerdict > 0 ? (
         <g style={{ opacity: pVerdict, translate: `0px ${interpolate(pVerdict, [0, 1], [16, 0])}px` }}>
-          <line x1={PANNEAU.x} y1={yVerdict} x2={PANNEAU.x + PANNEAU.largeur * progression(frame, debutVerdict, 20)} y2={yVerdict} stroke={couleurs.critique} strokeWidth={2} />
-          <text x={PANNEAU.x} y={yVerdict + 48} fill={couleurs.texteDoux} fontFamily={polices.donnees} fontSize={24} letterSpacing="0.06em">
+          <line x1={panneauMesures.x} y1={yVerdict} x2={panneauMesures.x + panneauMesures.largeur * progression(frame, debutVerdict, 20)} y2={yVerdict} stroke={couleurs.critique} strokeWidth={2} />
+          <text x={panneauMesures.x} y={yVerdict + 48} fill={couleurs.texteDoux} fontFamily={polices.donnees} fontSize={24} letterSpacing="0.06em">
             {verdict.titre}
           </text>
           <text x={x1Panneau} y={yVerdict + 50} fill={couleurs.critique} fontFamily={polices.donnees} fontSize={32} textAnchor="end">
             {nombreFr(verdict.score * progression(frame, debutVerdict, 20))}
           </text>
-          <text x={PANNEAU.x} y={yVerdict + 148} fill={couleurs.critique} fontFamily={polices.display} fontWeight={600} fontSize={96} filter="url(#main-lueur)" opacity={0.35}>
+          <text x={panneauMesures.x} y={yVerdict + 148} fill={couleurs.critique} fontFamily={polices.display} fontWeight={600} fontSize={96} filter="url(#main-lueur)" opacity={0.35}>
             {verdict.libelle}
           </text>
-          <text x={PANNEAU.x} y={yVerdict + 148} fill={couleurs.critique} fontFamily={polices.display} fontWeight={600} fontSize={96}>
+          <text x={panneauMesures.x} y={yVerdict + 148} fill={couleurs.critique} fontFamily={polices.display} fontWeight={600} fontSize={96}>
             {verdict.libelle}
           </text>
         </g>

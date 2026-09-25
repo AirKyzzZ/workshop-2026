@@ -11,6 +11,7 @@ export type RembobinageProps = {
   debut?: number;
   fondu?: number;
   libelle?: string;
+  bas?: number;
   children?: React.ReactNode;
 };
 
@@ -27,6 +28,7 @@ export const Rembobinage: React.FC<RembobinageProps> = ({
   debut = 0,
   fondu = 8,
   libelle = "REMBOBINAGE",
+  bas = marge,
   children,
 }) => {
   const frame = useCurrentFrame();
@@ -111,7 +113,7 @@ export const Rembobinage: React.FC<RembobinageProps> = ({
           position: "absolute",
           left: marge,
           right: marge,
-          bottom: marge,
+          bottom: bas,
           opacity: enveloppe,
           display: "flex",
           flexDirection: "column",
